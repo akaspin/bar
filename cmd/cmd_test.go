@@ -26,7 +26,7 @@ func Test_CleanCmd_FromBLOB(t *testing.T) {
 	in, err := os.Open(bn)
 	assert.NoError(t, err)
 	defer in.Close()
-	out := bytes.NewBuffer([]byte{})
+	out := bytes.NewBuffer(nil)
 
 	err = cmd.CleanCmd([]string{"clean"}, in, out, os.Stderr)
 	assert.NoError(t, err)
@@ -44,7 +44,7 @@ func Test_CleanCmd_FromManifest(t *testing.T) {
 	}).String()
 
 	in := bytes.NewBuffer([]byte(expect))
-	out := bytes.NewBuffer([]byte{})
+	out := bytes.NewBuffer(nil)
 
 	err := cmd.CleanCmd([]string{"clean"}, in, out, os.Stderr)
 	assert.NoError(t, err)
