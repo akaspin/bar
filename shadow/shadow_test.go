@@ -7,39 +7,10 @@ import (
 	"bytes"
 	"os"
 	"strings"
-	"io/ioutil"
-	"gopkg.in/bufio.v1"
+"github.com/akaspin/bar/fixtures"
 )
 
-// Make temporary BLOB
-func makeBLOB(size int64) (name string, err error)  {
-	f, err := ioutil.TempFile("", "")
-	if err != nil {
-		return
-	}
-	defer f.Close()
-	name = f.Name()
 
-	var i int64
-	var j uint8
-	buf := bufio.NewWriter(f)
-
-	for i=0; i < size; i++ {
-		if _, err = buf.Write([]byte{j}); err != nil {
-			return
-		}
-		j++
-		if j > 126 {
-			j = 0
-		}
-	}
-	err = buf.Flush()
-	return
-}
-
-func killBLOB(name string) (err error) {
-	return os.Remove(name)
-}
 
 func Test_Shadow_ToString(t *testing.T) {
 	idHex := []byte("ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c")
@@ -68,10 +39,10 @@ func Test_Shadow_FromManifest(t *testing.T) {
 	assert.Equal(t, in, (*m).String())
 }
 
-func Test_Shadow_FromBLOB_50M(t *testing.T)  {
-	bn, err := makeBLOB(1024 * 1024 * 50)
+func Test_Shadow_FromBLOB_20M(t *testing.T)  {
+	bn, err := fixtures.MakeBLOB(1024 * 1024 * 20 + 5)
 	assert.NoError(t, err)
-	defer killBLOB(bn)
+	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
 	r, err := os.Open(bn)
@@ -80,13 +51,13 @@ func Test_Shadow_FromBLOB_50M(t *testing.T)  {
 
 	err = m.FromBlob(r)
 	assert.NoError(t, err)
-	assert.Equal(t, "BAR:SHADOW\n\nversion 0.1.0\nid 3339defdb3e5b3a2a71941b6b2bbdf7bb6525b61ba7eafb2cdb47428b3b65110\nsize 52428800\n\n", (*m).String())
+	assert.Equal(t, "BAR:SHADOW\n\nversion 0.1.0\nid 9e39ad7cf632a038a5a2e0f9144f6ea4aff04ff11803c169cb24f60e56444f08\nsize 20971525\n\n", (*m).String())
 }
 
-func Test_Shadow_FromBLOB_5M(t *testing.T)  {
-	bn, err := makeBLOB(1024 * 1024 * 5)
+func Test_Shadow_FromBLOB_2M(t *testing.T)  {
+	bn, err := fixtures.MakeBLOB(1024 * 1024 * 2 + 467)
 	assert.NoError(t, err)
-	defer killBLOB(bn)
+	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
 	r, err := os.Open(bn)
@@ -95,13 +66,13 @@ func Test_Shadow_FromBLOB_5M(t *testing.T)  {
 
 	err = m.FromBlob(r)
 	assert.NoError(t, err)
-	assert.Equal(t, "BAR:SHADOW\n\nversion 0.1.0\nid 8a4038267545a17fa808226ac40c1d402275eb865e82ddc11ca37e6c326121a4\nsize 5242880\n\n", (*m).String())
+	assert.Equal(t, "BAR:SHADOW\n\nversion 0.1.0\nid fd76eb2f9866a12c6c3a2f884d5350b38319bc510106a7ba78789cc5507158b8\nsize 2097619\n\n", (*m).String())
 }
 
 func Test_Shadow_FromBLOB_2K(t *testing.T)  {
-	bn, err := makeBLOB(1024 * 2)
+	bn, err := fixtures.MakeBLOB(1024 * 2)
 	assert.NoError(t, err)
-	defer killBLOB(bn)
+	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
 	r, err := os.Open(bn)
@@ -114,9 +85,9 @@ func Test_Shadow_FromBLOB_2K(t *testing.T)  {
 }
 
 func Test_Shadow_FromBLOB_3b(t *testing.T)  {
-	bn, err := makeBLOB(3)
+	bn, err := fixtures.MakeBLOB(3)
 	assert.NoError(t, err)
-	defer killBLOB(bn)
+	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
 	r, err := os.Open(bn)
@@ -136,10 +107,10 @@ func Test_Shadow_FromAny_Manifest(t *testing.T) {
 	assert.Equal(t, in, (*m).String())
 }
 
-func Test_Shadow_FromAny_50M(t *testing.T)  {
-	bn, err := makeBLOB(1024 * 1024 * 50)
+func Test_Shadow_FromAny_20M(t *testing.T)  {
+	bn, err := fixtures.MakeBLOB(1024 * 1024 * 20 + 5)
 	assert.NoError(t, err)
-	defer killBLOB(bn)
+	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
 	r, err := os.Open(bn)
@@ -148,13 +119,13 @@ func Test_Shadow_FromAny_50M(t *testing.T)  {
 
 	err = m.FromAny(r)
 	assert.NoError(t, err)
-	assert.Equal(t, "BAR:SHADOW\n\nversion 0.1.0\nid 3339defdb3e5b3a2a71941b6b2bbdf7bb6525b61ba7eafb2cdb47428b3b65110\nsize 52428800\n\n", (*m).String())
+	assert.Equal(t, "BAR:SHADOW\n\nversion 0.1.0\nid 9e39ad7cf632a038a5a2e0f9144f6ea4aff04ff11803c169cb24f60e56444f08\nsize 20971525\n\n", (*m).String())
 }
 
-func Test_Shadow_FromAny_5M(t *testing.T)  {
-	bn, err := makeBLOB(1024 * 1024 * 5)
+func Test_Shadow_FromAny_2M(t *testing.T)  {
+	bn, err := fixtures.MakeBLOB(1024 * 1024 * 2 + 467)
 	assert.NoError(t, err)
-	defer killBLOB(bn)
+	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
 	r, err := os.Open(bn)
@@ -163,13 +134,13 @@ func Test_Shadow_FromAny_5M(t *testing.T)  {
 
 	err = m.FromAny(r)
 	assert.NoError(t, err)
-	assert.Equal(t, "BAR:SHADOW\n\nversion 0.1.0\nid 8a4038267545a17fa808226ac40c1d402275eb865e82ddc11ca37e6c326121a4\nsize 5242880\n\n", (*m).String())
+	assert.Equal(t, "BAR:SHADOW\n\nversion 0.1.0\nid fd76eb2f9866a12c6c3a2f884d5350b38319bc510106a7ba78789cc5507158b8\nsize 2097619\n\n", (*m).String())
 }
 
 func Test_Shadow_FromAny_2K(t *testing.T)  {
-	bn, err := makeBLOB(1024 * 2)
+	bn, err := fixtures.MakeBLOB(1024 * 2)
 	assert.NoError(t, err)
-	defer killBLOB(bn)
+	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
 	r, err := os.Open(bn)
@@ -182,9 +153,9 @@ func Test_Shadow_FromAny_2K(t *testing.T)  {
 }
 
 func Test_Shadow_FromAny_3b(t *testing.T)  {
-	bn, err := makeBLOB(3)
+	bn, err := fixtures.MakeBLOB(3)
 	assert.NoError(t, err)
-	defer killBLOB(bn)
+	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
 	r, err := os.Open(bn)
