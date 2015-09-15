@@ -2,18 +2,25 @@
 
 BLOB shadow replaces BLOB in working tree and git index.
 
-    BAR:BLOB:SHADOW
+    BAR:SHADOW
     
-    <version>
-    <hash>
-    <size>
+    version <version>
+    id <hash>
+    size <size>
     (ending \n)
 
 Shadow file always starts with `BAR:BLOB:SHADOW` header. `<version>` is just 
-for compatibility check. 
+for compatibility check. `<hash>` is regular SHA3-256 hash in hex notation. 
+`<size>` is regular BLOB size in bytes. For example:
 
-`<hash>` must be formed as following:
-
-    sha256:...
+    BAR:SHADOW
     
-`<size>` is regular BLOB size in bytes.
+    version 0.1.0
+    id 3339defdb3e5b3a2a71941b6b2bbdf7bb6525b61ba7eafb2cdb47428b3b65110
+    size 52428800
+    
+    ---
+    
+
+    
+    
