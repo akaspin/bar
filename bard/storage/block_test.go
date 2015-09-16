@@ -17,7 +17,7 @@ func Test_BlockDriver1(t *testing.T) {
 	defer fixtures.KillBLOB(bn)
 
 	// take manifest
-	m, err := shadow.NewShadow(bn)
+	m, err := shadow.NewShadow(bn, false)
 	assert.NoError(t, err)
 
 	// Try to store file

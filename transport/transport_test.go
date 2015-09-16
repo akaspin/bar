@@ -39,12 +39,12 @@ func Test_Upload(t *testing.T) {
 	assert.NoError(t, err)
 	defer fixtures.KillBLOB(bn)
 
-	m, err := shadow.NewShadow(bn)
+	m, err := shadow.NewShadow(bn, false)
 
 	tr := &transport.Transport{endpoint}
 	err = tr.Push(bn, m)
 	assert.NoError(t, err)
 
-	m2, err := shadow.NewShadow(storedName(root, m))
+	m2, err := shadow.NewShadow(storedName(root, m), false)
 	assert.Equal(t, m.String(), m2.String())
 }

@@ -3,6 +3,9 @@ import (
 	"io/ioutil"
 	"bufio"
 	"os"
+	"io"
+	"bytes"
+	"strings"
 )
 
 // Make temporary BLOB
@@ -33,4 +36,23 @@ func MakeBLOB(size int64) (name string, err error)  {
 
 func KillBLOB(name string) (err error) {
 	return os.Remove(name)
+}
+
+func CleanManifest(in string) (out string) {
+	r := bufio.NewReader(bytes.NewReader([]byte(in)))
+	o := new(bytes.Buffer)
+	var buf []byte
+	var err error
+	for {
+		buf, _, err = r.ReadLine()
+		if err == io.EOF {
+			err = nil
+			break
+		} else if err != nil {
+			return
+		}
+		_, err = o.Write([]byte(strings.TrimSpace(string(buf)) + "\n"))
+	}
+	out = string(o.Bytes())
+	return
 }
