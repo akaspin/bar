@@ -8,9 +8,21 @@ import (
 	"os"
 	"strings"
 "github.com/akaspin/bar/fixtures"
+	"golang.org/x/crypto/sha3"
 )
 
+func Test_SHA3(t *testing.T) {
 
+	hasher1 := sha3.New256()
+	hasher1.Write([]byte("mama_myla_ramu"))
+
+	hasher2 := sha3.New256()
+	hasher2.Write([]byte("mama_"))
+	hasher2.Write([]byte("myla_"))
+	hasher2.Write([]byte("ramu"))
+
+	assert.Equal(t, hasher1.Sum(nil), hasher2.Sum(nil))
+}
 
 func Test_Shadow_ToString(t *testing.T) {
 	idHex := []byte("ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c")
