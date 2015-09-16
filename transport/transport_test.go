@@ -10,6 +10,9 @@ import (
 	"net/url"
 	"github.com/akaspin/bar/transport"
 	"github.com/akaspin/bar/shadow"
+	"os"
+	"path/filepath"
+	"encoding/hex"
 )
 
 func runServer(t *testing.T, root string) (endpoint *url.URL)  {
@@ -22,10 +25,15 @@ func runServer(t *testing.T, root string) (endpoint *url.URL)  {
 	return
 }
 
+func storedName(root string, m *shadow.Shadow) string {
+	s := hex.EncodeToString(m.ID)
+	return filepath.Join(root, s[:2], s)
+}
+
 func Test_Upload(t *testing.T) {
-	endpoint := runServer(t, "fix-up-local")
-	t.Log(endpoint)
-	tr := &transport.Transport{endpoint}
+	root := "fix-up-local"
+	endpoint := runServer(t, root)
+	defer os.RemoveAll(root)
 
 	bn, err := fixtures.MakeBLOB(1024 * 1024 *2 + 56)
 	assert.NoError(t, err)
@@ -33,6 +41,10 @@ func Test_Upload(t *testing.T) {
 
 	m, err := shadow.NewShadow(bn)
 
+	tr := &transport.Transport{endpoint}
 	err = tr.Push(bn, m)
 	assert.NoError(t, err)
+
+	m2, err := shadow.NewShadow(storedName(root, m))
+	assert.Equal(t, m.String(), m2.String())
 }
