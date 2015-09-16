@@ -1,6 +1,8 @@
 # BLOB Info
 
-    GET /v0/blob/info/<id>
+    GET /v0/blob/info/<blob-id>
+    
+Response is simple full BLOB manifest
     
     
 

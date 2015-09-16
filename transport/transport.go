@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"path"
 	"net/http"
-	"encoding/hex"
 	"os"
 )
 
@@ -28,16 +27,21 @@ func (t *Transport) Push(filename string, manifest *shadow.Shadow) (err error) {
 
 	req := &http.Request{
 		Method: "POST",
-		URL: t.apiURL("/blob/upload"),
-		Header: http.Header{
-			"BLOB-ID": {hex.EncodeToString(manifest.ID)},
-			"BLOB-Size": {fmt.Sprintf("%d", manifest.Size)},
-		},
+		URL: t.apiURL(fmt.Sprintf("/blob/upload/%x", manifest.ID)),
 		Body: r,
 		ContentLength: manifest.Size,
 	}
 	_, err = http.DefaultClient.Do(req)
 
+	return
+}
+
+func (t *Transport) Info(id []byte) (err error) {
+	req := &http.Request{
+		Method: "GET",
+		URL: t.apiURL(fmt.Sprintf("/blob/info/%x", id)),
+	}
+	_, err = http.DefaultClient.Do(req)
 	return
 }
 

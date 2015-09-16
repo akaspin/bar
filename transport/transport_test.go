@@ -39,12 +39,28 @@ func Test_Upload(t *testing.T) {
 	assert.NoError(t, err)
 	defer fixtures.KillBLOB(bn)
 
-	m, err := shadow.NewShadow(bn, false)
+	m, err := shadow.NewShadowFromFile(bn, true)
 
 	tr := &transport.Transport{endpoint}
 	err = tr.Push(bn, m)
 	assert.NoError(t, err)
 
-	m2, err := shadow.NewShadow(storedName(root, m), false)
+	m2, err := shadow.NewShadowFromFile(storedName(root, m), true)
 	assert.Equal(t, m.String(), m2.String())
+}
+
+func Test_Info(t *testing.T) {
+	root := "fix-info-local"
+	endpoint := runServer(t, root)
+	defer os.RemoveAll(root)
+
+	bn, err := fixtures.MakeBLOB(1024 * 1024 *2 + 56)
+	assert.NoError(t, err)
+	defer fixtures.KillBLOB(bn)
+
+	m, err := shadow.NewShadowFromFile(bn, false)
+	tr := &transport.Transport{endpoint}
+
+	err = tr.Info(m.ID)
+	assert.NoError(t, err)
 }

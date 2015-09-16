@@ -34,7 +34,7 @@ type Shadow struct {
 	Chunks []Chunk
 }
 
-func NewShadow(filename string, full bool) (res *Shadow, err error) {
+func NewShadowFromFile(filename string, full bool) (res *Shadow, err error) {
 	r, err := os.Open(filename)
 	if err != nil {
 		return
