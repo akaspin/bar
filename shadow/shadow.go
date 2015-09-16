@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"gopkg.in/bufio.v1"
 	"golang.org/x/crypto/sha3"
+	"hash"
+	"os"
 )
 
 const (
@@ -25,6 +27,17 @@ type Shadow struct {
 	ID []byte
 	Size int64
 	Chunks []Chunk
+}
+
+func NewShadow(filename string) (res *Shadow, err error) {
+	r, err := os.Open(filename)
+	if err != nil {
+		return
+	}
+	defer r.Close()
+	res = &Shadow{}
+	err = res.FromAny(r)
+	return
 }
 
 func (s Shadow) String() (res string) {
@@ -61,7 +74,6 @@ func (s *Shadow) FromAny(in io.Reader) (err error) {
 	if string(maybeHeader) == SHADOW_HEADER {
 		err = s.FromManifest(r)
 	} else {
-
 		err = s.FromBlob(r)
 	}
 	return
@@ -123,16 +135,28 @@ func (s *Shadow) FromManifest(in io.Reader) (err error) {
 		err = fmt.Errorf("bad ending %s", string(data))
 	}
 
+	s.IsFromShadow = true
+
 	return
 }
 
 // Initialize manifest from BLOB
 func (s *Shadow) FromBlob(in io.Reader) (err error) {
+	var chunkHasher hash.Hash
 	hasher := sha3.New256()
 	var written int64
 	for {
-		written, err = io.CopyN(hasher, in, CHUNK_SIZE)
+		chunk := Chunk{
+			Offset: s.Size,
+		}
+		chunkHasher = sha3.New256()
+
+		written, err = io.CopyN(io.MultiWriter(hasher, chunkHasher), in, CHUNK_SIZE)
 		s.Size += written
+		chunk.Size = written
+		chunk.ID = chunkHasher.Sum(nil)
+		s.Chunks = append(s.Chunks, chunk)
+
 		if err == io.EOF {
 			err = nil
 			break

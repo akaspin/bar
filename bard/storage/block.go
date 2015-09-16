@@ -18,8 +18,8 @@ func NewBlockStorageFactory(root string, split int) *BlockStorageFactory {
 	return &BlockStorageFactory{root, split}
 }
 
-func (f *BlockStorageFactory) GetStorage() *BlockStorage  {
-	return NewBlockStorage(f.root, f.split)
+func (f *BlockStorageFactory) GetStorage() (StorageDriver, error)  {
+	return NewBlockStorage(f.root, f.split), nil
 }
 
 // Simple block device storage
@@ -41,6 +41,7 @@ func (s *BlockStorage) StoreBLOB(id string, size int64, in io.Reader) (err error
 	}
 	defer w.Close()
 
+	// TODO: squash internal hasher
 	hasher := sha3.New256()
 
 	mw := io.MultiWriter(w, hasher)
@@ -62,8 +63,12 @@ func (s *BlockStorage) StoreBLOB(id string, size int64, in io.Reader) (err error
 	return
 }
 
-func (s *BlockStorage) Destroy(id string) (err error) {
+func (s *BlockStorage) DestroyBLOB(id string) (err error) {
 	err = os.Remove(s.blobFileName(id))
+	return
+}
+
+func (s *BlockStorage) Close() (err error) {
 	return
 }
 

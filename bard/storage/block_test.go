@@ -17,14 +17,11 @@ func Test_BlockDriver1(t *testing.T) {
 	defer fixtures.KillBLOB(bn)
 
 	// take manifest
-	r, err := os.Open(bn)
+	m, err := shadow.NewShadow(bn)
 	assert.NoError(t, err)
-	m := &shadow.Shadow{}
-	assert.NoError(t, m.FromAny(r))
-	r.Close()
 
 	// Try to store file
-	r, err = os.Open(bn)
+	r, err := os.Open(bn)
 	assert.NoError(t, err)
 	defer r.Close()
 
@@ -32,5 +29,9 @@ func Test_BlockDriver1(t *testing.T) {
 
 	err = s.StoreBLOB(hex.EncodeToString(m.ID), m.Size, r)
 	assert.NoError(t, err)
-	defer s.Destroy(hex.EncodeToString(m.ID))
+	defer cleanup()
+}
+
+func cleanup() {
+	os.RemoveAll(sPath)
 }
