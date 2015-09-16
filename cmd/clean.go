@@ -3,22 +3,24 @@ import (
 	"io"
 	"github.com/akaspin/bar/shadow"
 	"flag"
-	"github.com/tamtam-im/flags"
 )
 
-// Implement clean subcommand
-// Use "-full" option to get chunks
-func CleanCmd(args []string, in io.Reader, out, errOut io.Writer) (err error) {
-	var full bool
-	fs := flag.NewFlagSet("clean", flag.ExitOnError)
-	fs.BoolVar(&full, "full", false, "include chunks to manifest")
-	if err = fs.Parse(args[1:]); err != nil {
-		return
-	}
-	flags.New().SetFlagSet(fs).Boot()
+type CleanSubCommand struct {
+	endpoint string
+	full bool
+	strict bool
+}
+
+func (c *CleanSubCommand) FS(fs *flag.FlagSet) {
+	fs.BoolVar(&c.full, "full", false, "include chunks into manifest")
+	fs.BoolVar(&c.strict, "strict", false, "check blobs on server")
+	addEndpointToFS(fs, &c.endpoint)
+}
+
+func (c *CleanSubCommand) Do(in io.Reader, out, errOut io.Writer) (err error) {
 
 	s := &shadow.Shadow{}
-	if err = s.FromAny(in, full); err != nil {
+	if err = s.FromAny(in, c.full); err != nil {
 		errOut.Write([]byte(err.Error()))
 		return
 	}
