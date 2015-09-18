@@ -37,10 +37,18 @@ BLOB instead shadows use `barctl blow`
     
 `barctl blow` scans all shadows and replaces them with downloaded BLOBs.
 
-To replace BLOB with shadow use `barctl squash`.
+To replace BLOB with shadow use barctl squash`.
 
     $ barctl blow /my/blobs/**
     
 `barctl squash` will replace all BLOBs with them shadows. If BLOB is not 
 exists on bard server - it will be uploaded before replace.
+
+To get status of blobs use `barctl status`:
+
+    $ barctl status /my/blobs/**
+    
+    FILE                SHADOW      REMOTE
+    my/blobs/test.txt   no          yes
+    
 
