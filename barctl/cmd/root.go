@@ -3,6 +3,7 @@ import (
 	"github.com/tamtam-im/flags"
 	"io"
 	"flag"
+	"fmt"
 )
 
 type SubCommand interface  {
@@ -22,12 +23,16 @@ func addEndpointToFS(fs *flag.FlagSet, v *string)  {
 }
 
 
-type subcommand func(args []string, in io.Reader, out, errOut io.Writer) error
-
-func route(s string) SubCommand {
-	return (map[string]SubCommand{
-		"shadow": &CleanCommand{},
+func route(s string) (res SubCommand, err error) {
+	res, ok := (map[string]SubCommand{
+		"git-clean": &GitCleanCommand{},
+		"git-cat": &GitCatCommand{},
 	})[s]
+	if !ok {
+		err = fmt.Errorf("%s not found")
+	}
+
+	return
 }
 
 func Root(args []string, in io.Reader, out, errOut io.Writer) (err error) {
@@ -38,8 +43,10 @@ func Root(args []string, in io.Reader, out, errOut io.Writer) (err error) {
 	if len(f.FlagSet.Args()) == 0 {
 		f.Usage()
 	}
-
-	sub := route(f.FlagSet.Args()[0])
+	sub, err := route(f.FlagSet.Args()[0])
+	if err != nil {
+		return
+	}
 
 	subFS := flag.NewFlagSet(f.FlagSet.Args()[0], flag.ExitOnError)
 	sub.FS(subFS)
