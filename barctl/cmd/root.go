@@ -27,6 +27,7 @@ func route(s string) (res SubCommand, err error) {
 	res, ok := (map[string]SubCommand{
 		"git-clean": &GitCleanCommand{},
 		"git-cat": &GitCatCommand{},
+		"upload": &UploadCommand{},
 	})[s]
 	if !ok {
 		err = fmt.Errorf("%s not found")

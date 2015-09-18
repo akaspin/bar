@@ -1,16 +1,16 @@
 package handler
 import (
-	"github.com/akaspin/bar/bard/storage"
-	"net/http"
+"github.com/akaspin/bar/bard/storage"
+"net/http"
 	"fmt"
 )
 
-type InfoHandler struct {
+type CheckHandler struct {
 	Storage *storage.StoragePool
 	Prefix string
 }
 
-func (h *InfoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)  {
+func (h *CheckHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)  {
 	var id string
 	var err error
 
