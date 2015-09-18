@@ -25,13 +25,18 @@ func (t *Transport) Push(filename string, manifest *shadow.Shadow) (err error) {
 	}
 	defer r.Close()
 
-	req := &http.Request{
-		Method: "POST",
-		URL: t.apiURL(fmt.Sprintf("/blob/upload/%x", manifest.ID)),
-		Body: r,
-		ContentLength: manifest.Size,
+	req, err := http.NewRequest("POST",
+		t.apiURL(fmt.Sprintf("/blob/upload/%x", manifest.ID)).String(),
+		r,
+	)
+	req.Close = true
+	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("blob-size", fmt.Sprintf("%d", manifest.Size))
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return
 	}
-	_, err = http.DefaultClient.Do(req)
+	defer res.Body.Close()
 
 	return
 }

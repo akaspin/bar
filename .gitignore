@@ -2,3 +2,4 @@
 /bard/storage/test_storage
 /transport/fix_*
 /dist
+!cmd

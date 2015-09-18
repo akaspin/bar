@@ -34,14 +34,14 @@ type Shadow struct {
 	Chunks []Chunk
 }
 
-func NewShadowFromFile(filename string, full bool) (res *Shadow, err error) {
+func NewShadowFromFile(filename string, full bool, chunkSize int64) (res *Shadow, err error) {
 	r, err := os.Open(filename)
 	if err != nil {
 		return
 	}
 	defer r.Close()
 	res = &Shadow{}
-	err = res.FromAny(r, full)
+	err = res.FromAny(r, full, chunkSize)
 	return
 }
 
@@ -82,7 +82,7 @@ func (s *Shadow) Serialize(out io.Writer) (err error) {
 }
 
 // Initialise from any source
-func (s *Shadow) FromAny(in io.Reader, full bool) (err error) {
+func (s *Shadow) FromAny(in io.Reader, full bool, chunkSize int64) (err error) {
 	var n int
 	maybeHeader := make([]byte, len([]byte(SHADOW_HEADER)))
 
@@ -95,7 +95,7 @@ func (s *Shadow) FromAny(in io.Reader, full bool) (err error) {
 	if string(maybeHeader) == SHADOW_HEADER {
 		err = s.FromManifest(r, full)
 	} else {
-		err = s.FromBlob(r, full)
+		err = s.FromBlob(r, full, chunkSize)
 	}
 	return
 }
@@ -219,7 +219,7 @@ func (s *Shadow) FromManifest(in io.Reader, full bool) (err error) {
 }
 
 // Initialize manifest from BLOB
-func (s *Shadow) FromBlob(in io.Reader, full bool) (err error) {
+func (s *Shadow) FromBlob(in io.Reader, full bool, chunkSize int64) (err error) {
 	var chunkHasher hash.Hash
 	var w io.Writer
 	var chunk Chunk
@@ -233,13 +233,13 @@ func (s *Shadow) FromBlob(in io.Reader, full bool) (err error) {
 			}
 			chunkHasher = sha3.New256()
 			w = io.MultiWriter(hasher, chunkHasher)
-			written, err = io.CopyN(w, in, CHUNK_SIZE)
+			written, err = io.CopyN(w, in, chunkSize)
 			s.Size += written
 			chunk.Size = written
 			chunk.ID = chunkHasher.Sum(nil)
 			s.Chunks = append(s.Chunks, chunk)
 		} else {
-			written, err = io.CopyN(hasher, in, CHUNK_SIZE)
+			written, err = io.CopyN(hasher, in, chunkSize)
 			s.Size += written
 		}
 

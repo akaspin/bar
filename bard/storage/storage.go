@@ -13,8 +13,10 @@ type StorageFactory interface {
 type StorageDriver interface {
 	io.Closer
 
-	// Get BLOB info
-//	Describe(id string)
+	IsExists(id string) (ok bool, err error)
+
+	// Get BLOB shadow in full form
+//	Describe(id string, out io.Writer) (err error)
 
 	// Store BLOB from reader
 	StoreBLOB(id string, size int64, in io.Reader) (err error)

@@ -10,6 +10,8 @@ type SubCommand interface  {
 	// Init flagset
 	FS(fs *flag.FlagSet)
 
+	//
+
 	// Handle
 	Do(in io.Reader, out, errOut io.Writer) (err error)
 }
@@ -24,7 +26,7 @@ type subcommand func(args []string, in io.Reader, out, errOut io.Writer) error
 
 func route(s string) SubCommand {
 	return (map[string]SubCommand{
-		"clean": &CleanSubCommand{},
+		"shadow": &CleanCommand{},
 	})[s]
 }
 
@@ -38,6 +40,7 @@ func Root(args []string, in io.Reader, out, errOut io.Writer) (err error) {
 	}
 
 	sub := route(f.FlagSet.Args()[0])
+
 	subFS := flag.NewFlagSet(f.FlagSet.Args()[0], flag.ExitOnError)
 	sub.FS(subFS)
 

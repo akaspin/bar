@@ -10,4 +10,5 @@ Response is simple full BLOB manifest
 
 Simple upload can be done by following request:
 
-    POST /v0/blob/upload (multipart)
+    POST /v1/blob/upload/<blob-id>
+    

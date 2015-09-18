@@ -1,6 +1,6 @@
 package main
 import (
-	"github.com/akaspin/bar/cmd"
+	"github.com/akaspin/bar/barctl/cmd"
 	"os"
 )
 

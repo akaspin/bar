@@ -140,7 +140,7 @@ func Test_Shadow_FromBLOB_20M(t *testing.T)  {
 	assert.NoError(t, err)
 	defer r.Close()
 
-	err = m.FromBlob(r, true)
+	err = m.FromBlob(r, true, shadow.CHUNK_SIZE)
 	assert.NoError(t, err)
 	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
 
@@ -245,7 +245,7 @@ func Test_Shadow_FromBLOB_2M(t *testing.T)  {
 	assert.NoError(t, err)
 	defer r.Close()
 
-	err = m.FromBlob(r, true)
+	err = m.FromBlob(r, true, shadow.CHUNK_SIZE)
 	assert.NoError(t, err)
 	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
 
@@ -278,7 +278,7 @@ func Test_Shadow_FromBLOB_2K(t *testing.T)  {
 	assert.NoError(t, err)
 	defer r.Close()
 
-	err = m.FromBlob(r, true)
+	err = m.FromBlob(r, true, shadow.CHUNK_SIZE)
 	assert.NoError(t, err)
 	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
 
@@ -303,7 +303,7 @@ func Test_Shadow_FromBLOB_3b(t *testing.T)  {
 	assert.NoError(t, err)
 	defer r.Close()
 
-	err = m.FromBlob(r, true)
+	err = m.FromBlob(r, true, shadow.CHUNK_SIZE)
 	assert.NoError(t, err)
 	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
 
@@ -326,7 +326,7 @@ func Test_Shadow_FromAny_Manifest(t *testing.T) {
 		size 4
 		`
 	m := &shadow.Shadow{}
-	err := m.FromAny(strings.NewReader(in), false)
+	err := m.FromAny(strings.NewReader(in), false, shadow.CHUNK_SIZE)
 	assert.NoError(t, err)
 	assert.Equal(t, fixtures.CleanManifest(in), (*m).String())
 }
@@ -341,7 +341,7 @@ func Test_Shadow_FromAny_20M(t *testing.T)  {
 	assert.NoError(t, err)
 	defer r.Close()
 
-	err = m.FromAny(r, false)
+	err = m.FromAny(r, false, shadow.CHUNK_SIZE)
 	assert.NoError(t, err)
 	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
 
@@ -361,7 +361,7 @@ func Test_Shadow_FromAny_2M(t *testing.T)  {
 	assert.NoError(t, err)
 	defer r.Close()
 
-	err = m.FromAny(r, false)
+	err = m.FromAny(r, false, shadow.CHUNK_SIZE)
 	assert.NoError(t, err)
 	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
 
@@ -381,7 +381,7 @@ func Test_Shadow_FromAny_2K(t *testing.T)  {
 	assert.NoError(t, err)
 	defer r.Close()
 
-	err = m.FromAny(r, false)
+	err = m.FromAny(r, false, shadow.CHUNK_SIZE)
 	assert.NoError(t, err)
 	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
 
@@ -401,7 +401,7 @@ func Test_Shadow_FromAny_3b(t *testing.T)  {
 	assert.NoError(t, err)
 	defer r.Close()
 
-	err = m.FromAny(r, false)
+	err = m.FromAny(r, false, shadow.CHUNK_SIZE)
 	assert.NoError(t, err)
 	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
 

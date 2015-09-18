@@ -32,6 +32,19 @@ func NewBlockStorage(root string, split int) *BlockStorage {
 	return &BlockStorage{root, split}
 }
 
+func (s *BlockStorage) IsExists(id string) (ok bool, err error) {
+	_, err = os.Stat(s.blobFileName(id))
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return
+	}
+	ok = true
+	return
+
+}
+
 func (s *BlockStorage) StoreBLOB(id string, size int64, in io.Reader) (err error) {
 	caOpts := contentaddressable.DefaultOptions()
 	caOpts.Hasher = sha3.New256()

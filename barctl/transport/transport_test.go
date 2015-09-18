@@ -8,11 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"fmt"
 	"net/url"
-	"github.com/akaspin/bar/transport"
+	"github.com/akaspin/bar/barctl/transport"
 	"github.com/akaspin/bar/shadow"
 	"os"
-	"path/filepath"
-	"encoding/hex"
 )
 
 func runServer(t *testing.T, root string) (endpoint *url.URL)  {
@@ -25,11 +23,6 @@ func runServer(t *testing.T, root string) (endpoint *url.URL)  {
 	return
 }
 
-func storedName(root string, m *shadow.Shadow) string {
-	s := hex.EncodeToString(m.ID)
-	return filepath.Join(root, s[:2], s)
-}
-
 func Test_Upload(t *testing.T) {
 	root := "fix-up-local"
 	endpoint := runServer(t, root)
@@ -39,13 +32,14 @@ func Test_Upload(t *testing.T) {
 	assert.NoError(t, err)
 	defer fixtures.KillBLOB(bn)
 
-	m, err := shadow.NewShadowFromFile(bn, true)
+	m, err := shadow.NewShadowFromFile(bn, true, shadow.CHUNK_SIZE)
 
 	tr := &transport.Transport{endpoint}
 	err = tr.Push(bn, m)
 	assert.NoError(t, err)
 
-	m2, err := shadow.NewShadowFromFile(storedName(root, m), true)
+	m2, err := shadow.NewShadowFromFile(
+		fixtures.StoredName(root, m.ID), true, shadow.CHUNK_SIZE)
 	assert.Equal(t, m.String(), m2.String())
 }
 
@@ -58,7 +52,7 @@ func Test_Info(t *testing.T) {
 	assert.NoError(t, err)
 	defer fixtures.KillBLOB(bn)
 
-	m, err := shadow.NewShadowFromFile(bn, false)
+	m, err := shadow.NewShadowFromFile(bn, false, shadow.CHUNK_SIZE)
 	tr := &transport.Transport{endpoint}
 
 	err = tr.Info(m.ID)
