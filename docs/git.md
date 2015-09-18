@@ -10,10 +10,12 @@ Configure git
     git config filter.bar.clean "barctl git-clean %f"
     git config filter.bar.smudge "barctl git-smudge -endpoint=http://my.bar/v1 %f"
     git config diff.bar "barctl git-cat"
-    echo "barctl pre-commit -endpoint=http://my.bar/v1" > .git/hooks/pre-commit
-    chmod +x .git/hooks/pre-commit
     
     $ barctl init -endpoint=http://my.bar/v1 | sh
+    $ barctl install-hook -endpoint=http://my.bar/v1
+    
+    $ cat .git/hook/pre-commit
+    barctl pre-commit -endpoint=http://my.bar/v1
     
 # Usage
 
@@ -37,9 +39,9 @@ BLOB instead shadows use `barctl blow`
     
 `barctl blow` scans all shadows and replaces them with downloaded BLOBs.
 
-To replace BLOB with shadow use barctl squash`.
+To replace BLOB with shadow use `barctl squash`.
 
-    $ barctl blow /my/blobs/**
+    $ barctl squash /my/blobs/**
     
 `barctl squash` will replace all BLOBs with them shadows. If BLOB is not 
 exists on bard server - it will be uploaded before replace.

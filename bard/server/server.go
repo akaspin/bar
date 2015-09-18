@@ -12,6 +12,8 @@ func Serve(addr string, storagePool *storage.StoragePool) (err error) {
 		storagePool, "/v1/blob/upload/"})
 	mux.Handle("/v1/blob/info/", &handler.InfoHandler{
 		storagePool, "/v1/blob/info/"})
+	mux.Handle("/v1/blob/check", &handler.CheckHandler{
+		storagePool})
 
 	s := &http.Server{Addr:addr, Handler: mux}
 	err = s.ListenAndServe()

@@ -58,3 +58,30 @@ func Test_Info(t *testing.T) {
 	err = tr.Info(m.ID)
 	assert.NoError(t, err)
 }
+
+func Test_Exists(t *testing.T) {
+	root := "fix-exists-local"
+	endpoint := runServer(t, root)
+	defer os.RemoveAll(root)
+
+	bn1, err := fixtures.MakeBLOB(1024 * 1024 *2 + 56)
+	assert.NoError(t, err)
+	defer fixtures.KillBLOB(bn1)
+
+	bn2, err := fixtures.MakeBLOB(1024 * 1024 *2 + 58)
+	assert.NoError(t, err)
+	defer fixtures.KillBLOB(bn2)
+
+	m1, err := shadow.NewShadowFromFile(bn1, true, shadow.CHUNK_SIZE)
+	m2, err := shadow.NewShadowFromFile(bn2, true, shadow.CHUNK_SIZE)
+
+	tr := &transport.Transport{endpoint}
+	err = tr.Push(bn1, m1)
+	assert.NoError(t, err)
+
+	r1, err := tr.Check([][]byte{
+		m1.ID, m2.ID,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, r1[0], m1.ID)
+}

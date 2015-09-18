@@ -6,6 +6,10 @@ import (
 	"path"
 	"net/http"
 	"os"
+	"bytes"
+	"io/ioutil"
+	"strings"
+	"encoding/hex"
 )
 
 
@@ -39,6 +43,37 @@ func (t *Transport) Push(filename string, manifest *shadow.Shadow) (err error) {
 	}
 	defer res.Body.Close()
 
+	return
+}
+
+func (t *Transport) Check(ids [][]byte) (res [][]byte, err error) {
+	buf := new(bytes.Buffer)
+
+	for _, id := range ids {
+		if _, err = buf.WriteString(fmt.Sprintf("%x\n", id)); err != nil {
+			return
+		}
+	}
+
+	resp, err := http.Post(t.apiURL("/blob/check").String(),
+		"application/octet-stream", buf)
+	if err != nil {
+		return
+	}
+	bodyBuf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	for _, i := range strings.Split(string(bodyBuf), "\n") {
+		var id []byte
+		id, err = hex.DecodeString(i)
+		if err != nil {
+			return
+		}
+		res = append(res, id)
+	}
 	return
 }
 

@@ -1,23 +1,39 @@
 package handler
 import (
-"github.com/akaspin/bar/bard/storage"
-"net/http"
-	"fmt"
+	"github.com/akaspin/bar/bard/storage"
+	"net/http"
+	"io/ioutil"
+	"strings"
 )
 
+// Check for existent blobs. Takes list of needed blobs and
+// responses with list of existent blobs.
 type CheckHandler struct {
 	Storage *storage.StoragePool
-	Prefix string
 }
 
 func (h *CheckHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)  {
-	var id string
-	var err error
-
-	if _, err = fmt.Sscanf(r.URL.Path, h.Prefix + "%s", &id); err != nil {
+	buf, err := ioutil.ReadAll(r.Body)
+	if err != nil {
 		w.WriteHeader(500)
 		return
 	}
+	s, err := h.Storage.Take()
+	if err != nil {
+		w.WriteHeader(500)
+		return
+	}
+	defer h.Storage.Release(s)
 
-	w.WriteHeader(200)
+	res := []string{}
+	for _, id := range strings.Split(string(buf), "\n") {
+		if id == "" {
+			continue
+		}
+		if ok, _ := s.IsExists(id); ok {
+			res = append(res, id)
+		}
+	}
+
+	w.Write([]byte(strings.Join(res, "\n")))
 }
