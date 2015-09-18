@@ -8,6 +8,7 @@ import (
 	"os"
 )
 
+
 type Transport struct {
 	// bard endpoint. http://example.com/v1
 	Endpoint *url.URL

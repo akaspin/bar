@@ -22,8 +22,7 @@ func (c *GitCatCommand) Do(in io.Reader, out, errOut io.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	fmt.Fprintf(out, "BAR-SHADOW-BLOB %t %s %x\n",
-		s.IsFromShadow, c.fs.Args()[0], s.ID)
+	fmt.Fprintf(out, "BAR-SHADOW-BLOB %x\n", s.ID)
 	return
 }
 
