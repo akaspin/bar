@@ -79,7 +79,7 @@ func Test_Exists(t *testing.T) {
 	err = tr.Push(bn1, m1)
 	assert.NoError(t, err)
 
-	r1, err := tr.Check([][]byte{
+	r1, err := tr.Check([]string{
 		m1.ID, m2.ID,
 	})
 	assert.NoError(t, err)

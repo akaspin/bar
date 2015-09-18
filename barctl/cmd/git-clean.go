@@ -34,7 +34,7 @@ func (c *GitCleanCommand) Do(in io.Reader, out, errOut io.Writer) (err error) {
 		fmt.Fprintf(errOut, "warning %s is already shadow", c.fs.Args())
 	}
 	if c.id {
-		fmt.Fprintf(out, "%x", s.ID)
+		fmt.Fprintf(out, "%s", s.ID)
 	} else {
 		err = s.Serialize(out)
 	}

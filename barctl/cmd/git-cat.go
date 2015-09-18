@@ -22,7 +22,7 @@ func (c *GitCatCommand) Do(in io.Reader, out, errOut io.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	fmt.Fprintf(out, "BAR-SHADOW-BLOB %x\n", s.ID)
+	fmt.Fprintf(out, "BAR-SHADOW-BLOB %s\n", s.ID)
 	return
 }
 

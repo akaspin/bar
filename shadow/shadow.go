@@ -8,6 +8,7 @@ import (
 	"hash"
 	"os"
 	"strings"
+	"encoding/hex"
 )
 
 const (
@@ -17,19 +18,19 @@ const (
 )
 
 type Chunk struct  {
-	ID []byte
+	ID string
 	Size int64
 	Offset int64
 }
 
 func (c Chunk) String() string {
-	return fmt.Sprintf("id %x\nsize %d\noffset %d\n\n", c.ID, c.Size, c.Offset)
+	return fmt.Sprintf("id %s\nsize %d\noffset %d\n\n", c.ID, c.Size, c.Offset)
 }
 
 type Shadow struct {
 	IsFromShadow bool
 	Version string
-	ID []byte
+	ID string
 	Size int64
 	Chunks []Chunk
 }
@@ -62,7 +63,7 @@ func (s *Shadow) Serialize(out io.Writer) (err error) {
 	if _, err = out.Write([]byte(SHADOW_HEADER)); err != nil {
 		return
 	}
-	body := fmt.Sprintf("\n\nversion %s\nid %x\nsize %d\n\n",
+	body := fmt.Sprintf("\n\nversion %s\nid %s\nsize %d\n\n",
 		VERSION, s.ID, s.Size)
 	if _, err = out.Write([]byte(body)); err != nil {
 		return
@@ -139,7 +140,7 @@ func (s *Shadow) FromManifest(in io.Reader, full bool) (err error) {
 	if data, err = s.nextLine(br, buf); err != nil {
 		return
 	}
-	if _, err = fmt.Sscanf(data, "id %x", &s.ID); err != nil {
+	if _, err = fmt.Sscanf(data, "id %s", &s.ID); err != nil {
 		return
 	}
 
@@ -188,7 +189,7 @@ func (s *Shadow) FromManifest(in io.Reader, full bool) (err error) {
 		if data, err = s.nextLine(br, buf); err != nil {
 			return
 		}
-		if _, err = fmt.Sscanf(data, "id %x", &chunk.ID); err != nil {
+		if _, err = fmt.Sscanf(data, "id %s", &chunk.ID); err != nil {
 			return
 		}
 		// chunk size
@@ -236,7 +237,7 @@ func (s *Shadow) FromBlob(in io.Reader, full bool, chunkSize int64) (err error) 
 			written, err = io.CopyN(w, in, chunkSize)
 			s.Size += written
 			chunk.Size = written
-			chunk.ID = chunkHasher.Sum(nil)
+			chunk.ID = hex.EncodeToString(chunkHasher.Sum(nil))
 			s.Chunks = append(s.Chunks, chunk)
 		} else {
 			written, err = io.CopyN(hasher, in, chunkSize)
@@ -251,7 +252,7 @@ func (s *Shadow) FromBlob(in io.Reader, full bool, chunkSize int64) (err error) 
 			return
 		}
 	}
-	s.ID = hasher.Sum(nil)
+	s.ID = hex.EncodeToString(hasher.Sum(nil))
 	s.Version = VERSION
 	return
 }

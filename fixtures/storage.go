@@ -1,10 +1,8 @@
 package fixtures
 import (
-	"encoding/hex"
 	"path/filepath"
 )
 
-func StoredName(root string, id []byte) string {
-	s := hex.EncodeToString(id)
-	return filepath.Join(root, s[:2], s)
+func StoredName(root string, id string) string {
+	return filepath.Join(root, id[:2], id)
 }

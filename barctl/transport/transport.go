@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"io/ioutil"
 	"strings"
-	"encoding/hex"
 )
 
 
@@ -31,7 +30,7 @@ func (t *Transport) Push(filename string, manifest *shadow.Shadow) (err error) {
 	defer r.Close()
 
 	req, err := http.NewRequest("POST",
-		t.apiURL(fmt.Sprintf("/blob/upload/%x", manifest.ID)).String(),
+		t.apiURL(fmt.Sprintf("/blob/upload/%s", manifest.ID)).String(),
 		r,
 	)
 	req.Close = true
@@ -46,11 +45,11 @@ func (t *Transport) Push(filename string, manifest *shadow.Shadow) (err error) {
 	return
 }
 
-func (t *Transport) Check(ids [][]byte) (res [][]byte, err error) {
+func (t *Transport) Check(ids []string) (res []string, err error) {
 	buf := new(bytes.Buffer)
 
 	for _, id := range ids {
-		if _, err = buf.WriteString(fmt.Sprintf("%x\n", id)); err != nil {
+		if _, err = buf.WriteString(fmt.Sprintf("%s\n", id)); err != nil {
 			return
 		}
 	}
@@ -67,20 +66,18 @@ func (t *Transport) Check(ids [][]byte) (res [][]byte, err error) {
 	defer resp.Body.Close()
 
 	for _, i := range strings.Split(string(bodyBuf), "\n") {
-		var id []byte
-		id, err = hex.DecodeString(i)
 		if err != nil {
 			return
 		}
-		res = append(res, id)
+		res = append(res, i)
 	}
 	return
 }
 
-func (t *Transport) Info(id []byte) (err error) {
+func (t *Transport) Info(id string) (err error) {
 	req := &http.Request{
 		Method: "GET",
-		URL: t.apiURL(fmt.Sprintf("/blob/info/%x", id)),
+		URL: t.apiURL(fmt.Sprintf("/blob/info/%s", id)),
 	}
 	_, err = http.DefaultClient.Do(req)
 	return

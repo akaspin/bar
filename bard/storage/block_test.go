@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"github.com/akaspin/bar/shadow"
-	"encoding/hex"
 )
 
 const sPath  = "test_storage"
@@ -27,7 +26,7 @@ func Test_BlockDriver_StoreBLOB(t *testing.T) {
 
 	s := storage.NewBlockStorage(sPath, 2)
 
-	err = s.StoreBLOB(hex.EncodeToString(m.ID), m.Size, r)
+	err = s.StoreBLOB(m.ID, m.Size, r)
 	assert.NoError(t, err)
 	defer cleanup()
 
@@ -55,11 +54,11 @@ func Test_BlockDriver_Exists(t *testing.T) {
 
 	s := storage.NewBlockStorage(sPath, 2)
 
-	err = s.StoreBLOB(hex.EncodeToString(m.ID), m.Size, r)
+	err = s.StoreBLOB(m.ID, m.Size, r)
 	assert.NoError(t, err)
 	defer cleanup()
 
-	ok, err := s.IsExists(hex.EncodeToString(m.ID))
+	ok, err := s.IsExists(m.ID)
 	assert.NoError(t, err)
 	assert.True(t, ok)
 }

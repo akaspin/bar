@@ -2,7 +2,6 @@ package shadow_test
 import (
 	"testing"
 	"github.com/akaspin/bar/shadow"
-	"encoding/hex"
 	"github.com/stretchr/testify/assert"
 	"bytes"
 	"os"
@@ -25,10 +24,7 @@ func Test_SHA3(t *testing.T) {
 }
 
 func Test_Shadow_ToStringFull(t *testing.T) {
-	idHex := []byte("ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c")
-	id := make([]byte, hex.DecodedLen(len(idHex)))
-	_, err := hex.Decode(id, idHex)
-	assert.NoError(t, err)
+	id := "ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c"
 
 	sh := &shadow.Shadow{
 		false,
@@ -36,7 +32,7 @@ func Test_Shadow_ToStringFull(t *testing.T) {
 		id,
 		1234,
 		[]shadow.Chunk{
-			shadow.Chunk{idHex, 1234, 0},
+			shadow.Chunk{id, 1234, 0},
 		},
 	}
 
@@ -47,17 +43,14 @@ func Test_Shadow_ToStringFull(t *testing.T) {
 		size 1234
 
 
-		id 61633933346439613838623432616133623430656637633831613964656531616164356132636464636362303061653661626162396333383039356663313563
+		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c
 		size 1234
 		offset 0
 		`), (*sh).String())
 }
 
 func Test_Shadow_ToStringShort(t *testing.T) {
-	idHex := []byte("ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c")
-	id := make([]byte, hex.DecodedLen(len(idHex)))
-	_, err := hex.Decode(id, idHex)
-	assert.NoError(t, err)
+	id := "ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c"
 
 	sh := &shadow.Shadow{
 		false,

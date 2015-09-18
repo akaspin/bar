@@ -8,6 +8,9 @@ import (
 	"fmt"
 )
 
+// Upload
+//
+//     find -t file | barctl upload
 type UploadCommand struct {
 	endpoint string
 	chunkSize int64
@@ -51,7 +54,9 @@ func (c *UploadCommand) Do(in io.Reader, out, errOut io.Writer) (err error) {
 		feed = append(feed, ingest)
 	}
 
+	// If ids given - do precheck request
 	for _, entity := range feed {
+
 		fmt.Println(entity.name, entity.id)
 	}
 
