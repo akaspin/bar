@@ -35,20 +35,20 @@ But on checkout all non-existent BLOBs will be become *Shadows*. Shadow file
 has same name. But by design it is just small text manifest. To get normal 
 BLOB instead shadows use `barctl blow`
 
-    $ barctl blow /my/blobs/*
+    $ barctl blow -git /my/blobs/*
     
 `barctl blow` scans all shadows and replaces them with downloaded BLOBs.
 
 To replace BLOB with shadow use `barctl squash`.
 
-    $ barctl squash /my/blobs/*
+    $ barctl squash -git /my/blobs/*
     
 `barctl squash` will replace all BLOBs with them shadows. If BLOB is not 
 exists on bard server - it will be uploaded before replace.
 
 To get status of blobs use `barctl status`:
 
-    $ barctl status /my/blobs/*
+    $ barctl status -git /my/blobs/*
     
     FILE                SHADOW      REMOTE
     my/blobs/test.txt   no          yes

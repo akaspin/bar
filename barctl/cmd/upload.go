@@ -3,21 +3,29 @@ import (
 	"flag"
 	"io"
 	"github.com/akaspin/bar/shadow"
-	"bufio"
-	"strings"
 	"fmt"
+	"github.com/akaspin/bar/barctl/transport"
+	"net/url"
+	"sync"
+	"os"
 )
 
-// Upload
+// Upload BLOBS to bard server
 //
-//     find -t file | barctl upload
+//     barctl upload FILE [FILE...]
+//
+// Where FILE is path to regular file.
 type UploadCommand struct {
 	endpoint string
 	chunkSize int64
 	streams int
+	transportPool *transport.TransportPool
+	hasherPool *shadow.HasherPool
+	fs *flag.FlagSet
 }
 
 func (c *UploadCommand) FS(fs *flag.FlagSet) {
+	c.fs = fs
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
 	fs.Int64Var(&c.chunkSize, "chunk-size", shadow.CHUNK_SIZE,
@@ -27,38 +35,63 @@ func (c *UploadCommand) FS(fs *flag.FlagSet) {
 }
 
 func (c *UploadCommand) Do(in io.Reader, out, errOut io.Writer) (err error) {
-	// Collect files to upload
-	var data []byte
-	var feed []struct{
-		name string
-		id string
+	u, err := url.Parse(c.endpoint)
+	if err != nil {
+		return
 	}
-	r := bufio.NewReader(in)
-	for {
-		data, _, err = r.ReadLine()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return
-		}
-		f := strings.Split(string(data), " ")
-		ingest := struct{
-			name string
-			id string
-		}{f[0], ""}
-		if len(f) > 1 {
-			ingest.id = f[1]
-		}
-		feed = append(feed, ingest)
+	c.transportPool = transport.NewTransportPool(u, c.streams, 0)
+	c.hasherPool = shadow.NewHasherPool(c.streams, 0, c.chunkSize)
+
+	// Filter files and request existence on bard
+	blobShadows := c.collectShadows(errOut)
+	fmt.Println(blobShadows)
+
+	return
+}
+
+func (c *UploadCommand) collectShadows(errOut io.Writer) (
+	res map[string]*shadow.Shadow,
+) {
+	res = map[string]*shadow.Shadow{}
+	var wg sync.WaitGroup
+	for _, entity := range c.fs.Args() {
+		wg.Add(1)
+		go func(entity string) {
+			defer wg.Done()
+			if err1 := c.collectOneShadow(entity, res); err1 != nil {
+				fmt.Fprintln(errOut, err1)
+			}
+		}(entity)
+
 	}
+	wg.Wait()
+	return
+}
 
-	// If ids given - do precheck request
-	for _, entity := range feed {
+func (c *UploadCommand) collectOneShadow(
+	entity string,
+	res map[string]*shadow.Shadow,
+) (err error) {
 
-		fmt.Println(entity.name, entity.id)
+	if _, exists := res[entity]; exists {
+		return
+	}
+	var r1 *os.File
+	if r1, err = os.Open(entity); err != nil {
+		return
+	}
+	defer r1.Close()
+
+	s, err := c.hasherPool.MakeOne(r1, true)
+	if err != nil {
+		return
+	}
+	if !s.IsFromShadow {
+		res[entity] = s
 	}
 
 	return
 }
+
+
+

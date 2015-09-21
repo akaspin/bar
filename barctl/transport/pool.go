@@ -16,7 +16,7 @@ type TransportPool struct  {
 	p *pools.ResourcePool
 }
 
-func NewStoragePool(endpoint *url.URL, max int, timeout time.Duration) *TransportPool {
+func NewTransportPool(endpoint *url.URL, max int, timeout time.Duration) *TransportPool {
 	newFn := func() (res pools.Resource, err error) {
 		res = &poolWrapper{&Transport{endpoint}}
 		return

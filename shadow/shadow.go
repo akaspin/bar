@@ -84,16 +84,12 @@ func (s *Shadow) Serialize(out io.Writer) (err error) {
 
 // Initialise from any source
 func (s *Shadow) FromAny(in io.Reader, full bool, chunkSize int64) (err error) {
-	var n int
-	maybeHeader := make([]byte, len([]byte(SHADOW_HEADER)))
-
-	// check header signature
-	if n, err = in.Read(maybeHeader); err != nil {
+	r, isShadow, err := Detect(in)
+	if err != nil {
 		return
 	}
 
-	r := io.MultiReader(bytes.NewBuffer(maybeHeader[:n]), in)
-	if string(maybeHeader) == SHADOW_HEADER {
+	if isShadow {
 		err = s.FromManifest(r, full)
 	} else {
 		err = s.FromBlob(r, full, chunkSize)
