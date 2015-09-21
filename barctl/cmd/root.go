@@ -9,19 +9,11 @@ import (
 type SubCommand interface  {
 
 	// Init flagset
-	FS(fs *flag.FlagSet)
-
-	//
+	Bind(fs *flag.FlagSet, in io.Reader, out, errOut io.Writer) (err error)
 
 	// Handle
-	Do(in io.Reader, out, errOut io.Writer) (err error)
+	Do() (err error)
 }
-
-func addEndpointToFS(fs *flag.FlagSet, v *string)  {
-	fs.StringVar(v, "endpoint", "http://127.0.0.1:3000/v1",
-		"bard endpoint")
-}
-
 
 func route(s string) (res SubCommand, err error) {
 	res, ok := (map[string]SubCommand{
@@ -50,8 +42,10 @@ func Root(args []string, in io.Reader, out, errOut io.Writer) (err error) {
 	}
 
 	subFS := flag.NewFlagSet(f.FlagSet.Args()[0], flag.ExitOnError)
-	sub.FS(subFS)
+	if err = sub.Bind(subFS, in, out, errOut); err != nil {
+		return
+	}
 
 	flags.New(subFS).NoEnv().Boot(f.FlagSet.Args())
-	return sub.Do(in, out, errOut)
+	return sub.Do()
 }

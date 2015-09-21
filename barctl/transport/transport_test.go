@@ -8,23 +8,12 @@ import (
 	"os"
 )
 
-//func runServer(t *testing.T, root string) (endpoint *url.URL)  {
-//	p := storage.NewStoragePool(storage.NewBlockStorageFactory(root, 2), 200, time.Minute)
-//	port, err := fixtures.GetOpenPort()
-//	assert.NoError(t, err)
-//	go server.Serve(fmt.Sprintf(":%d", port), p)
-//	endpoint, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d/v1", port))
-//	assert.NoError(t, err)
-//	return
-//}
-
 func Test_Upload(t *testing.T) {
 	root := "fix-up-local"
 	endpoint := fixtures.RunServer(t, root)
 	defer os.RemoveAll(root)
 
-	bn, err := fixtures.MakeBLOB(1024 * 1024 *2 + 56)
-	assert.NoError(t, err)
+	bn := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 56)
 	defer fixtures.KillBLOB(bn)
 
 	m, err := fixtures.NewShadowFromFile(bn, true, shadow.CHUNK_SIZE)
@@ -34,7 +23,7 @@ func Test_Upload(t *testing.T) {
 	assert.NoError(t, err)
 
 	m2, err := fixtures.NewShadowFromFile(
-		fixtures.StoredName(root, m.ID), true, shadow.CHUNK_SIZE)
+		fixtures.ServerStoredName(root, m.ID), true, shadow.CHUNK_SIZE)
 	assert.Equal(t, m.String(), m2.String())
 }
 
@@ -43,8 +32,7 @@ func Test_Info(t *testing.T) {
 	endpoint := fixtures.RunServer(t, root)
 	defer os.RemoveAll(root)
 
-	bn, err := fixtures.MakeBLOB(1024 * 1024 *2 + 56)
-	assert.NoError(t, err)
+	bn := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 56)
 	defer fixtures.KillBLOB(bn)
 
 	m, err := fixtures.NewShadowFromFile(bn, false, shadow.CHUNK_SIZE)
@@ -59,12 +47,10 @@ func Test_Exists(t *testing.T) {
 	endpoint := fixtures.RunServer(t, root)
 	defer os.RemoveAll(root)
 
-	bn1, err := fixtures.MakeBLOB(1024 * 1024 *2 + 56)
-	assert.NoError(t, err)
+	bn1 := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 56)
 	defer fixtures.KillBLOB(bn1)
 
-	bn2, err := fixtures.MakeBLOB(1024 * 1024 *2 + 58)
-	assert.NoError(t, err)
+	bn2 := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 58)
 	defer fixtures.KillBLOB(bn2)
 
 	m1, err := fixtures.NewShadowFromFile(bn1, true, shadow.CHUNK_SIZE)

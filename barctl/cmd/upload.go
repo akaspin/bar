@@ -21,20 +21,28 @@ type UploadCommand struct {
 	streams int
 	transportPool *transport.TransportPool
 	hasherPool *shadow.HasherPool
+
 	fs *flag.FlagSet
+	in io.Reader
+	out, errOut io.Writer
 }
 
-func (c *UploadCommand) FS(fs *flag.FlagSet) {
+func (c *UploadCommand) Bind(fs *flag.FlagSet, in io.Reader, out, errOut io.Writer) (err error) {
 	c.fs = fs
+	c.in = in
+	c.out, c.errOut = out, errOut
+
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
 	fs.Int64Var(&c.chunkSize, "chunk-size", shadow.CHUNK_SIZE,
 		"upload chunk size")
 	fs.IntVar(&c.streams, "streams", 10,
 		"concurrent upload streams count")
+
+	return
 }
 
-func (c *UploadCommand) Do(in io.Reader, out, errOut io.Writer) (err error) {
+func (c *UploadCommand) Do() (err error) {
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return
@@ -42,7 +50,7 @@ func (c *UploadCommand) Do(in io.Reader, out, errOut io.Writer) (err error) {
 	c.transportPool = transport.NewTransportPool(u, c.streams, 0)
 	c.hasherPool = shadow.NewHasherPool(c.streams, 0, c.chunkSize)
 
-	toUpload, err := c.precheck(errOut)
+	toUpload, err := c.precheck()
 
 	var wg sync.WaitGroup
 	for f, s := range toUpload {
@@ -51,13 +59,13 @@ func (c *UploadCommand) Do(in io.Reader, out, errOut io.Writer) (err error) {
 			defer wg.Done()
 			t, err := c.transportPool.Take()
 			if err != nil {
-				fmt.Fprintln(errOut, err)
+				fmt.Fprintln(c.errOut, err)
 				return
 			}
 			defer c.transportPool.Release(t)
 			err = t.Push(f, s)
 			if err != nil {
-				fmt.Fprintln(errOut, err)
+				fmt.Fprintln(c.errOut, err)
 			}
 		}(f, s)
 	}
@@ -66,9 +74,9 @@ func (c *UploadCommand) Do(in io.Reader, out, errOut io.Writer) (err error) {
 	return
 }
 
-func (c *UploadCommand) precheck(errOut io.Writer) (res map[string]*shadow.Shadow, err error) {
+func (c *UploadCommand) precheck() (res map[string]*shadow.Shadow, err error) {
 	// Filter files and request existence on bard
-	res = c.collectShadows(errOut)
+	res = c.collectShadows()
 
 	// Precheck on bard
 	var req []string
@@ -101,8 +109,7 @@ func (c *UploadCommand) precheck(errOut io.Writer) (res map[string]*shadow.Shado
 
 }
 
-
-func (c *UploadCommand) collectShadows(errOut io.Writer) (
+func (c *UploadCommand) collectShadows() (
 	res map[string]*shadow.Shadow,
 ) {
 	res = map[string]*shadow.Shadow{}
@@ -112,7 +119,7 @@ func (c *UploadCommand) collectShadows(errOut io.Writer) (
 		go func(entity string) {
 			defer wg.Done()
 			if err1 := c.collectOneShadow(entity, res); err1 != nil {
-				fmt.Fprintln(errOut, err1)
+				fmt.Fprintln(c.errOut, err1)
 			}
 		}(entity)
 

@@ -7,14 +7,14 @@ import (
 	"bytes"
 	"strings"
 	"github.com/akaspin/bar/shadow"
+	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
 // Make temporary BLOB
-func MakeBLOB(size int64) (name string, err error)  {
+func MakeBLOB(t *testing.T, size int64) (name string)  {
 	f, err := ioutil.TempFile("", "")
-	if err != nil {
-		return
-	}
+	assert.NoError(t, err)
 	defer f.Close()
 	name = f.Name()
 
@@ -23,15 +23,14 @@ func MakeBLOB(size int64) (name string, err error)  {
 	buf := bufio.NewWriter(f)
 
 	for i=0; i < size; i++ {
-		if _, err = buf.Write([]byte{j}); err != nil {
-			return
-		}
+		_, err = buf.Write([]byte{j})
+		assert.NoError(t, err)
 		j++
 		if j > 126 {
 			j = 0
 		}
 	}
-	err = buf.Flush()
+	assert.NoError(t, buf.Flush())
 	return
 }
 

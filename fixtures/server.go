@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 "github.com/akaspin/bar/bard/server"
 	"fmt"
+	"path/filepath"
 )
 
 func RunServer(t *testing.T, root string) (endpoint *url.URL)  {
@@ -17,4 +18,8 @@ func RunServer(t *testing.T, root string) (endpoint *url.URL)  {
 	endpoint, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d/v1", port))
 	assert.NoError(t, err)
 	return
+}
+
+func ServerStoredName(root string, id string) string {
+	return filepath.Join(root, id[:2], id)
 }

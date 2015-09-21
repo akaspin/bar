@@ -11,8 +11,7 @@ import (
 const sPath  = "test_storage"
 
 func Test_BlockDriver_StoreBLOB(t *testing.T) {
-	bn, err := fixtures.MakeBLOB(10)
-	assert.NoError(t, err)
+	bn := fixtures.MakeBLOB(t, 10)
 	defer fixtures.KillBLOB(bn)
 
 	// take manifest
@@ -31,7 +30,7 @@ func Test_BlockDriver_StoreBLOB(t *testing.T) {
 	defer cleanup()
 
 	// check stored file manifest
-	m2, err := fixtures.NewShadowFromFile(fixtures.StoredName(sPath, m.ID),
+	m2, err := fixtures.NewShadowFromFile(fixtures.ServerStoredName(sPath, m.ID),
 		true, shadow.CHUNK_SIZE)
 	assert.NoError(t, err)
 
@@ -39,8 +38,7 @@ func Test_BlockDriver_StoreBLOB(t *testing.T) {
 }
 
 func Test_BlockDriver_Exists(t *testing.T) {
-	bn, err := fixtures.MakeBLOB(10)
-	assert.NoError(t, err)
+	bn := fixtures.MakeBLOB(t, 10)
 	defer fixtures.KillBLOB(bn)
 
 	// take manifest

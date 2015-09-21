@@ -124,8 +124,7 @@ func Test_Shadow_FromFullManifestShort(t *testing.T) {
 
 
 func Test_Shadow_FromBLOB_20M(t *testing.T)  {
-	bn, err := fixtures.MakeBLOB(1024 * 1024 * 20 + 5)
-	assert.NoError(t, err)
+	bn := fixtures.MakeBLOB(t, 1024 * 1024 * 20 + 5)
 	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
@@ -229,8 +228,7 @@ func Test_Shadow_FromBLOB_20M(t *testing.T)  {
 }
 
 func Test_Shadow_FromBLOB_2M(t *testing.T)  {
-	bn, err := fixtures.MakeBLOB(1024 * 1024 * 2 + 467)
-	assert.NoError(t, err)
+	bn := fixtures.MakeBLOB(t, 1024 * 1024 * 2 + 467)
 	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
@@ -262,8 +260,7 @@ func Test_Shadow_FromBLOB_2M(t *testing.T)  {
 }
 
 func Test_Shadow_FromBLOB_2K(t *testing.T)  {
-	bn, err := fixtures.MakeBLOB(1024 * 2)
-	assert.NoError(t, err)
+	bn := fixtures.MakeBLOB(t, 1024 * 2)
 	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
@@ -287,8 +284,7 @@ func Test_Shadow_FromBLOB_2K(t *testing.T)  {
 }
 
 func Test_Shadow_FromBLOB_3b(t *testing.T)  {
-	bn, err := fixtures.MakeBLOB(3)
-	assert.NoError(t, err)
+	bn := fixtures.MakeBLOB(t, 3)
 	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
@@ -325,8 +321,7 @@ func Test_Shadow_FromAny_Manifest(t *testing.T) {
 }
 
 func Test_Shadow_FromAny_20M(t *testing.T)  {
-	bn, err := fixtures.MakeBLOB(1024 * 1024 * 20 + 5)
-	assert.NoError(t, err)
+	bn := fixtures.MakeBLOB(t, 1024 * 1024 * 20 + 5)
 	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
@@ -345,8 +340,7 @@ func Test_Shadow_FromAny_20M(t *testing.T)  {
 }
 
 func Test_Shadow_FromAny_2M(t *testing.T)  {
-	bn, err := fixtures.MakeBLOB(1024 * 1024 * 2 + 467)
-	assert.NoError(t, err)
+	bn := fixtures.MakeBLOB(t, 1024 * 1024 * 2 + 467)
 	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
@@ -365,8 +359,7 @@ func Test_Shadow_FromAny_2M(t *testing.T)  {
 }
 
 func Test_Shadow_FromAny_2K(t *testing.T)  {
-	bn, err := fixtures.MakeBLOB(1024 * 2)
-	assert.NoError(t, err)
+	bn := fixtures.MakeBLOB(t, 1024 * 2)
 	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
@@ -385,8 +378,7 @@ func Test_Shadow_FromAny_2K(t *testing.T)  {
 }
 
 func Test_Shadow_FromAny_3b(t *testing.T)  {
-	bn, err := fixtures.MakeBLOB(3)
-	assert.NoError(t, err)
+	bn := fixtures.MakeBLOB(t, 3)
 	defer fixtures.KillBLOB(bn)
 
 	m := &shadow.Shadow{}
