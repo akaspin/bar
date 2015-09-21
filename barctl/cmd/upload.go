@@ -43,8 +43,9 @@ func (c *UploadCommand) Do(in io.Reader, out, errOut io.Writer) (err error) {
 	c.hasherPool = shadow.NewHasherPool(c.streams, 0, c.chunkSize)
 
 	// Filter files and request existence on bard
-	blobShadows := c.collectShadows(errOut)
-	fmt.Println(blobShadows)
+//	blobShadows := c.collectShadows(errOut)
+
+	// Precheck on
 
 	return
 }

@@ -6,7 +6,6 @@ import (
 	"gopkg.in/bufio.v1"
 	"golang.org/x/crypto/sha3"
 	"hash"
-	"os"
 	"strings"
 	"encoding/hex"
 )
@@ -33,17 +32,6 @@ type Shadow struct {
 	ID string
 	Size int64
 	Chunks []Chunk
-}
-
-func NewShadowFromFile(filename string, full bool, chunkSize int64) (res *Shadow, err error) {
-	r, err := os.Open(filename)
-	if err != nil {
-		return
-	}
-	defer r.Close()
-	res = &Shadow{}
-	err = res.FromAny(r, full, chunkSize)
-	return
 }
 
 func (s Shadow) String() (res string) {

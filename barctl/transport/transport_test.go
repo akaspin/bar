@@ -32,13 +32,13 @@ func Test_Upload(t *testing.T) {
 	assert.NoError(t, err)
 	defer fixtures.KillBLOB(bn)
 
-	m, err := shadow.NewShadowFromFile(bn, true, shadow.CHUNK_SIZE)
+	m, err := fixtures.NewShadowFromFile(bn, true, shadow.CHUNK_SIZE)
 
 	tr := &transport.Transport{endpoint}
 	err = tr.Push(bn, m)
 	assert.NoError(t, err)
 
-	m2, err := shadow.NewShadowFromFile(
+	m2, err := fixtures.NewShadowFromFile(
 		fixtures.StoredName(root, m.ID), true, shadow.CHUNK_SIZE)
 	assert.Equal(t, m.String(), m2.String())
 }
@@ -52,7 +52,7 @@ func Test_Info(t *testing.T) {
 	assert.NoError(t, err)
 	defer fixtures.KillBLOB(bn)
 
-	m, err := shadow.NewShadowFromFile(bn, false, shadow.CHUNK_SIZE)
+	m, err := fixtures.NewShadowFromFile(bn, false, shadow.CHUNK_SIZE)
 	tr := &transport.Transport{endpoint}
 
 	err = tr.Info(m.ID)
@@ -72,8 +72,8 @@ func Test_Exists(t *testing.T) {
 	assert.NoError(t, err)
 	defer fixtures.KillBLOB(bn2)
 
-	m1, err := shadow.NewShadowFromFile(bn1, true, shadow.CHUNK_SIZE)
-	m2, err := shadow.NewShadowFromFile(bn2, true, shadow.CHUNK_SIZE)
+	m1, err := fixtures.NewShadowFromFile(bn1, true, shadow.CHUNK_SIZE)
+	m2, err := fixtures.NewShadowFromFile(bn2, true, shadow.CHUNK_SIZE)
 
 	tr := &transport.Transport{endpoint}
 	err = tr.Push(bn1, m1)

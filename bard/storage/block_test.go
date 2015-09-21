@@ -16,7 +16,7 @@ func Test_BlockDriver_StoreBLOB(t *testing.T) {
 	defer fixtures.KillBLOB(bn)
 
 	// take manifest
-	m, err := shadow.NewShadowFromFile(bn, true, shadow.CHUNK_SIZE)
+	m, err := fixtures.NewShadowFromFile(bn, true, shadow.CHUNK_SIZE)
 	assert.NoError(t, err)
 
 	// Try to store file
@@ -31,7 +31,7 @@ func Test_BlockDriver_StoreBLOB(t *testing.T) {
 	defer cleanup()
 
 	// check stored file manifest
-	m2, err := shadow.NewShadowFromFile(fixtures.StoredName(sPath, m.ID),
+	m2, err := fixtures.NewShadowFromFile(fixtures.StoredName(sPath, m.ID),
 		true, shadow.CHUNK_SIZE)
 	assert.NoError(t, err)
 
@@ -44,7 +44,7 @@ func Test_BlockDriver_Exists(t *testing.T) {
 	defer fixtures.KillBLOB(bn)
 
 	// take manifest
-	m, err := shadow.NewShadowFromFile(bn, true, shadow.CHUNK_SIZE)
+	m, err := fixtures.NewShadowFromFile(bn, true, shadow.CHUNK_SIZE)
 	assert.NoError(t, err)
 
 	// Try to store file

@@ -6,6 +6,7 @@ import (
 	"io"
 	"bytes"
 	"strings"
+	"github.com/akaspin/bar/shadow"
 )
 
 // Make temporary BLOB
@@ -54,5 +55,16 @@ func CleanManifest(in string) (out string) {
 		_, err = o.Write([]byte(strings.TrimSpace(string(buf)) + "\n"))
 	}
 	out = string(o.Bytes())
+	return
+}
+
+func NewShadowFromFile(filename string, full bool, chunkSize int64) (res *shadow.Shadow, err error) {
+	r, err := os.Open(filename)
+	if err != nil {
+		return
+	}
+	defer r.Close()
+	res = &shadow.Shadow{}
+	err = res.FromAny(r, full, chunkSize)
 	return
 }

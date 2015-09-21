@@ -33,13 +33,14 @@ func NewHasherPool(n int, timeout time.Duration, chunkSize int64) *HasherPool {
 	return &HasherPool{pools.NewResourcePool(newFn, n, n, timeout)}
 }
 
+// Make one shadow from reader
 func (p *HasherPool) MakeOne(in io.Reader, full bool) (res *Shadow, err error)  {
 	r, err := p.pool.TryGet()
 	if err != nil {
 		return
 	}
-	h := r.(*hasherResource).h
 	defer p.pool.Put(r)
+	h := r.(*hasherResource).h
 	res, err = h.Shadow(in, full)
 	return
 }
