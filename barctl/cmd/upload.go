@@ -42,13 +42,65 @@ func (c *UploadCommand) Do(in io.Reader, out, errOut io.Writer) (err error) {
 	c.transportPool = transport.NewTransportPool(u, c.streams, 0)
 	c.hasherPool = shadow.NewHasherPool(c.streams, 0, c.chunkSize)
 
-	// Filter files and request existence on bard
-//	blobShadows := c.collectShadows(errOut)
+	toUpload, err := c.precheck(errOut)
 
-	// Precheck on
+	var wg sync.WaitGroup
+	for f, s := range toUpload {
+		wg.Add(1)
+		go func(f string, s *shadow.Shadow) {
+			defer wg.Done()
+			t, err := c.transportPool.Take()
+			if err != nil {
+				fmt.Fprintln(errOut, err)
+				return
+			}
+			defer c.transportPool.Release(t)
+			err = t.Push(f, s)
+			if err != nil {
+				fmt.Fprintln(errOut, err)
+			}
+		}(f, s)
+	}
+	wg.Wait()
 
 	return
 }
+
+func (c *UploadCommand) precheck(errOut io.Writer) (res map[string]*shadow.Shadow, err error) {
+	// Filter files and request existence on bard
+	res = c.collectShadows(errOut)
+
+	// Precheck on bard
+	var req []string
+	t, err := c.transportPool.Take()
+	if err != nil {
+		return
+	}
+	defer c.transportPool.Release(t)
+	for _, s := range res {
+		req = append(req, s.ID)
+	}
+	resp, err := t.Check(req)
+	if err != nil {
+		return
+	}
+
+	byID := map[string]string{}
+	for f, s := range res {
+		if _, exists := byID[s.ID]; !exists {
+			byID[s.ID] = f
+		}
+	}
+	for _, id := range resp {
+		if f, ok := byID[id]; ok {
+			delete(res, f)
+		}
+	}
+
+	return
+
+}
+
 
 func (c *UploadCommand) collectShadows(errOut io.Writer) (
 	res map[string]*shadow.Shadow,
