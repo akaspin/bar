@@ -47,8 +47,6 @@ in .gitattributes like "/my/blobs diff=bar filter=bar".
 For listing above it should return:
 
 	fixtures/aa.txt : 845b6321fec6848de5bf28d0312f19e9faee872ee68a308b7aa935a59c601f78
-
-
 */
 func ParseCommitDiff(in io.Reader) (res map[string]string, err error) {
 	var data []byte
