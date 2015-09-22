@@ -4,7 +4,6 @@ import (
 	"github.com/akaspin/bar/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/barctl/transport"
-	"github.com/akaspin/bar/shadow"
 	"os"
 )
 
@@ -16,14 +15,14 @@ func Test_Upload(t *testing.T) {
 	bn := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 56)
 	defer fixtures.KillBLOB(bn)
 
-	m, err := fixtures.NewShadowFromFile(bn, true, shadow.CHUNK_SIZE)
+	m, err := fixtures.NewShadowFromFile(bn)
 
 	tr := &transport.Transport{endpoint}
 	err = tr.Push(bn, m)
 	assert.NoError(t, err)
 
 	m2, err := fixtures.NewShadowFromFile(
-		fixtures.ServerStoredName(root, m.ID), true, shadow.CHUNK_SIZE)
+		fixtures.ServerStoredName(root, m.ID))
 	assert.Equal(t, m.String(), m2.String())
 }
 
@@ -35,7 +34,7 @@ func Test_Info(t *testing.T) {
 	bn := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 56)
 	defer fixtures.KillBLOB(bn)
 
-	m, err := fixtures.NewShadowFromFile(bn, false, shadow.CHUNK_SIZE)
+	m, err := fixtures.NewShadowFromFile(bn)
 	tr := &transport.Transport{endpoint}
 
 	err = tr.Info(m.ID)
@@ -53,8 +52,8 @@ func Test_Exists(t *testing.T) {
 	bn2 := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 58)
 	defer fixtures.KillBLOB(bn2)
 
-	m1, err := fixtures.NewShadowFromFile(bn1, true, shadow.CHUNK_SIZE)
-	m2, err := fixtures.NewShadowFromFile(bn2, true, shadow.CHUNK_SIZE)
+	m1, err := fixtures.NewShadowFromFile(bn1)
+	m2, err := fixtures.NewShadowFromFile(bn2)
 
 	tr := &transport.Transport{endpoint}
 	err = tr.Push(bn1, m1)

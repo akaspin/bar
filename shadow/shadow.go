@@ -16,15 +16,7 @@ const (
 	VERSION = "0.1.0"
 )
 
-type Chunk struct  {
-	ID string
-	Size int64
-	Offset int64
-}
 
-func (c Chunk) String() string {
-	return fmt.Sprintf("id %s\nsize %d\noffset %d\n\n", c.ID, c.Size, c.Offset)
-}
 
 type Shadow struct {
 	IsFromShadow bool
@@ -42,10 +34,6 @@ func (s Shadow) String() (res string) {
 	return
 }
 
-func (s *Shadow) HasChunks() bool {
-	return len(s.Chunks) > 0
-}
-
 // write initialized manifest to specific stream
 func (s *Shadow) Serialize(out io.Writer) (err error) {
 	if _, err = out.Write([]byte(SHADOW_HEADER)); err != nil {
@@ -57,36 +45,34 @@ func (s *Shadow) Serialize(out io.Writer) (err error) {
 		return
 	}
 
-	if s.HasChunks() {
-		if _, err = out.Write([]byte("\n")); err != nil {
+	if _, err = out.Write([]byte("\n")); err != nil {
+		return
+	}
+	for _, chunk := range s.Chunks {
+		if _, err = out.Write([]byte(chunk.String())); err != nil {
 			return
-		}
-		for _, chunk := range s.Chunks {
-			if _, err = out.Write([]byte(chunk.String())); err != nil {
-				return
-			}
 		}
 	}
 	return
 }
 
-// Initialise from any source
-func (s *Shadow) FromAny(in io.Reader, full bool, chunkSize int64) (err error) {
+func New(in io.Reader, size int64) (res *Shadow, err error) {
 	r, isShadow, err := Detect(in)
 	if err != nil {
 		return
 	}
 
+	res = &Shadow{}
 	if isShadow {
-		err = s.FromManifest(r, full)
+		err = res.parseManifest(r)
 	} else {
-		err = s.FromBlob(r, full, chunkSize)
+		err = res.parseBlob(r, GuessChunkSize(size))
 	}
 	return
 }
 
 // Parse manifest
-func (s *Shadow) FromManifest(in io.Reader, full bool) (err error) {
+func (s *Shadow) parseManifest(in io.Reader) (err error) {
 	s.IsFromShadow = true
 
 	var buf []byte
@@ -118,8 +104,6 @@ func (s *Shadow) FromManifest(in io.Reader, full bool) (err error) {
 		return
 	}
 
-	// TODO: semver check
-
 	// Read id
 	if data, err = s.nextLine(br, buf); err != nil {
 		return
@@ -142,10 +126,6 @@ func (s *Shadow) FromManifest(in io.Reader, full bool) (err error) {
 	}
 	if len(buf) > 0 {
 		err = fmt.Errorf("bad ending %s", data)
-	}
-
-	if !full {
-		return
 	}
 
 	// read chunks
@@ -204,7 +184,7 @@ func (s *Shadow) FromManifest(in io.Reader, full bool) (err error) {
 }
 
 // Initialize manifest from BLOB
-func (s *Shadow) FromBlob(in io.Reader, full bool, chunkSize int64) (err error) {
+func (s *Shadow) parseBlob(in io.Reader, chunkSize int64) (err error) {
 	var chunkHasher hash.Hash
 	var w io.Writer
 	var chunk Chunk
@@ -212,22 +192,16 @@ func (s *Shadow) FromBlob(in io.Reader, full bool, chunkSize int64) (err error) 
 	var written int64
 
 	for {
-		if full {
-			chunk = Chunk{
-				Offset: s.Size,
-			}
-			chunkHasher = sha3.New256()
-			w = io.MultiWriter(hasher, chunkHasher)
-			written, err = io.CopyN(w, in, chunkSize)
-			s.Size += written
-			chunk.Size = written
-			chunk.ID = hex.EncodeToString(chunkHasher.Sum(nil))
-			s.Chunks = append(s.Chunks, chunk)
-		} else {
-			written, err = io.CopyN(hasher, in, chunkSize)
-			s.Size += written
+		chunk = Chunk{
+			Offset: s.Size,
 		}
-
+		chunkHasher = sha3.New256()
+		w = io.MultiWriter(hasher, chunkHasher)
+		written, err = io.CopyN(w, in, chunkSize)
+		s.Size += written
+		chunk.Size = written
+		chunk.ID = hex.EncodeToString(chunkHasher.Sum(nil))
+		s.Chunks = append(s.Chunks, chunk)
 
 		if err == io.EOF {
 			err = nil

@@ -48,7 +48,7 @@ func (c *UploadCommand) Do() (err error) {
 		return
 	}
 	c.transportPool = transport.NewTransportPool(u, c.streams, 0)
-	c.hasherPool = shadow.NewHasherPool(c.streams, 0, c.chunkSize)
+	c.hasherPool = shadow.NewHasherPool(c.streams, 0)
 
 	toUpload, err := c.precheck()
 
@@ -142,7 +142,7 @@ func (c *UploadCommand) collectOneShadow(
 	}
 	defer r1.Close()
 
-	s, err := c.hasherPool.MakeOne(r1, true)
+	s, err := c.hasherPool.MakeOne(r1, 0)
 	if err != nil {
 		return
 	}

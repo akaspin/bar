@@ -6,9 +6,8 @@ import (
 	"flag"
 	"github.com/stretchr/testify/assert"
 	"os"
-"github.com/tamtam-im/flags"
-	"github.com/akaspin/bar/shadow"
-"github.com/akaspin/bar/barctl/transport"
+	"github.com/tamtam-im/flags"
+	"github.com/akaspin/bar/barctl/transport"
 )
 
 
@@ -25,17 +24,17 @@ func TestUpload1(t *testing.T)  {
 	// make some blobs
 	bn1 := fixtures.MakeBLOB(t, 1234)
 	defer fixtures.KillBLOB(bn1)
-	sh1, err := fixtures.NewShadowFromFile(bn1, true, shadow.CHUNK_SIZE)
+	sh1, err := fixtures.NewShadowFromFile(bn1)
 	assert.NoError(t, err)
 
 	bn2 := fixtures.MakeBLOB(t, 12)
 	defer fixtures.KillBLOB(bn2)
-	sh2, err := fixtures.NewShadowFromFile(bn2, true, shadow.CHUNK_SIZE)
+	sh2, err := fixtures.NewShadowFromFile(bn2)
 	assert.NoError(t, err)
 
 	bn3 := fixtures.MakeBLOB(t, 4567)
 	defer fixtures.KillBLOB(bn3)
-	sh3, err := fixtures.NewShadowFromFile(bn3, true, shadow.CHUNK_SIZE)
+	sh3, err := fixtures.NewShadowFromFile(bn3)
 	assert.NoError(t, err)
 
 	// upload third blob

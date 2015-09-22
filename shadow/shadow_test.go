@@ -3,10 +3,7 @@ import (
 	"testing"
 	"github.com/akaspin/bar/shadow"
 	"github.com/stretchr/testify/assert"
-	"bytes"
-	"os"
-	"strings"
-"github.com/akaspin/bar/fixtures"
+	"github.com/akaspin/bar/fixtures"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -25,6 +22,17 @@ func Test_SHA3(t *testing.T) {
 
 func Test_Shadow_ToStringFull(t *testing.T) {
 	id := "ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c"
+	expect := fixtures.FixStream(`BAR:SHADOW
+
+		version 0.1.0
+		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c
+		size 1234
+
+
+		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c
+		size 1234
+		offset 0
+		`)
 
 	sh := &shadow.Shadow{
 		false,
@@ -36,55 +44,10 @@ func Test_Shadow_ToStringFull(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
-
-		version 0.1.0
-		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c
-		size 1234
-
-
-		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c
-		size 1234
-		offset 0
-		`), (*sh).String())
+	assert.Equal(t, expect, (*sh).String())
 }
 
-func Test_Shadow_ToStringShort(t *testing.T) {
-	id := "ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c"
-
-	sh := &shadow.Shadow{
-		false,
-		"0.0.1",
-		id,
-		1234,
-		nil,
-	}
-
-	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
-
-		version 0.1.0
-		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c
-		size 1234
-		`), (*sh).String())
-}
-
-func Test_Shadow_FromManifestShort(t *testing.T) {
-	in := `BAR:SHADOW
-
-		version 0.1.0
-		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c
-		size 1234
-		`
-	m := &shadow.Shadow{}
-	err := m.FromManifest(bytes.NewReader(
-		[]byte(in),
-	), false)
-	assert.NoError(t, err)
-	assert.Equal(t, fixtures.CleanManifest(in), (*m).String())
-	assert.False(t, m.HasChunks())
-}
-
-func Test_Shadow_FromManifestFull(t *testing.T) {
+func Test_Shadow_New1(t *testing.T) {
 	in := `BAR:SHADOW
 
 		version 0.1.0
@@ -96,45 +59,18 @@ func Test_Shadow_FromManifestFull(t *testing.T) {
 		size 1234
 		offset 0
 		`
-	m := &shadow.Shadow{}
-	err := m.FromManifest(bytes.NewReader(
-		[]byte(in),
-	), true)
+	m, err := shadow.New(fixtures.CleanInput(in))
 	assert.NoError(t, err)
-	assert.Equal(t, fixtures.CleanManifest(in), (*m).String())
-	assert.True(t, m.HasChunks())
+	assert.Equal(t, fixtures.FixStream(in), (*m).String())
 }
 
-func Test_Shadow_FromFullManifestShort(t *testing.T) {
-	in := `BAR:SHADOW
-
-		version 0.1.0
-		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c
-		size 1234
-		`
-	m := &shadow.Shadow{}
-	err := m.FromManifest(bytes.NewReader(
-		[]byte(in),
-	), false)
-	assert.NoError(t, err)
-	assert.Equal(t, fixtures.CleanManifest(in), (*m).String())
-	assert.False(t, m.HasChunks())
-}
-
-
-
-func Test_Shadow_FromBLOB_20M(t *testing.T)  {
+func Test_Shadow_NewFromBLOB_20M(t *testing.T)  {
 	bn := fixtures.MakeBLOB(t, 1024 * 1024 * 20 + 5)
 	defer fixtures.KillBLOB(bn)
 
-	m := &shadow.Shadow{}
-	r, err := os.Open(bn)
+	m, err := fixtures.NewShadowFromFile(bn)
 	assert.NoError(t, err)
-	defer r.Close()
-
-	err = m.FromBlob(r, true, shadow.CHUNK_SIZE)
-	assert.NoError(t, err)
-	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
+	assert.Equal(t, fixtures.FixStream(`BAR:SHADOW
 
 		version 0.1.0
 		id 9e39ad7cf632a038a5a2e0f9144f6ea4aff04ff11803c169cb24f60e56444f08
@@ -227,18 +163,13 @@ func Test_Shadow_FromBLOB_20M(t *testing.T)  {
 		`), (*m).String())
 }
 
-func Test_Shadow_FromBLOB_2M(t *testing.T)  {
+func Test_Shadow_NewFromBLOB_2M(t *testing.T)  {
 	bn := fixtures.MakeBLOB(t, 1024 * 1024 * 2 + 467)
 	defer fixtures.KillBLOB(bn)
 
-	m := &shadow.Shadow{}
-	r, err := os.Open(bn)
+	m, err := fixtures.NewShadowFromFile(bn)
 	assert.NoError(t, err)
-	defer r.Close()
-
-	err = m.FromBlob(r, true, shadow.CHUNK_SIZE)
-	assert.NoError(t, err)
-	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
+	assert.Equal(t, fixtures.FixStream(`BAR:SHADOW
 
 		version 0.1.0
 		id fd76eb2f9866a12c6c3a2f884d5350b38319bc510106a7ba78789cc5507158b8
@@ -259,18 +190,13 @@ func Test_Shadow_FromBLOB_2M(t *testing.T)  {
 		`), (*m).String())
 }
 
-func Test_Shadow_FromBLOB_2K(t *testing.T)  {
+func Test_Shadow_NewFromBLOB_2K(t *testing.T)  {
 	bn := fixtures.MakeBLOB(t, 1024 * 2)
 	defer fixtures.KillBLOB(bn)
 
-	m := &shadow.Shadow{}
-	r, err := os.Open(bn)
+	m, err := fixtures.NewShadowFromFile(bn)
 	assert.NoError(t, err)
-	defer r.Close()
-
-	err = m.FromBlob(r, true, shadow.CHUNK_SIZE)
-	assert.NoError(t, err)
-	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
+	assert.Equal(t, fixtures.FixStream(`BAR:SHADOW
 
 		version 0.1.0
 		id be4215176932949d887fa82241bbe0b03a44dc16ee2d23eedbc973e511ae8bb2
@@ -283,18 +209,13 @@ func Test_Shadow_FromBLOB_2K(t *testing.T)  {
 		`), (*m).String())
 }
 
-func Test_Shadow_FromBLOB_3b(t *testing.T)  {
+func Test_Shadow_NewFromBLOB_3b(t *testing.T)  {
 	bn := fixtures.MakeBLOB(t, 3)
 	defer fixtures.KillBLOB(bn)
 
-	m := &shadow.Shadow{}
-	r, err := os.Open(bn)
+	m, err := fixtures.NewShadowFromFile(bn)
 	assert.NoError(t, err)
-	defer r.Close()
-
-	err = m.FromBlob(r, true, shadow.CHUNK_SIZE)
-	assert.NoError(t, err)
-	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
+	assert.Equal(t, fixtures.FixStream(`BAR:SHADOW
 
 		version 0.1.0
 		id 1186d49a4ad620618f760f29da2c593b2ec2cc2ced69dc16817390d861e62253
@@ -307,91 +228,16 @@ func Test_Shadow_FromBLOB_3b(t *testing.T)  {
 		`), (*m).String())
 }
 
-func Test_Shadow_FromAny_Manifest(t *testing.T) {
-	in := `BAR:SHADOW
-
-		version 0.1.0
-		id 82783ef12d68fd4c57fd7a8d7e42e7b71fc0fd13e5e30d459f15bc64a298395c
-		size 4
-		`
-	m := &shadow.Shadow{}
-	err := m.FromAny(strings.NewReader(in), false, shadow.CHUNK_SIZE)
-	assert.NoError(t, err)
-	assert.Equal(t, fixtures.CleanManifest(in), (*m).String())
-}
-
-func Test_Shadow_FromAny_20M(t *testing.T)  {
-	bn := fixtures.MakeBLOB(t, 1024 * 1024 * 20 + 5)
+func Benchmark_Shadow_NewFromBLOB_500MB(b *testing.B)  {
+	bn, err := fixtures.MakeBLOBPure(1024 * 1024 * 500)
+	if err != nil {
+		b.Fail()
+	}
 	defer fixtures.KillBLOB(bn)
 
-	m := &shadow.Shadow{}
-	r, err := os.Open(bn)
-	assert.NoError(t, err)
-	defer r.Close()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = fixtures.NewShadowFromFile(bn)
+	}
 
-	err = m.FromAny(r, false, shadow.CHUNK_SIZE)
-	assert.NoError(t, err)
-	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
-
-		version 0.1.0
-		id 9e39ad7cf632a038a5a2e0f9144f6ea4aff04ff11803c169cb24f60e56444f08
-		size 20971525
-		`), (*m).String())
-}
-
-func Test_Shadow_FromAny_2M(t *testing.T)  {
-	bn := fixtures.MakeBLOB(t, 1024 * 1024 * 2 + 467)
-	defer fixtures.KillBLOB(bn)
-
-	m := &shadow.Shadow{}
-	r, err := os.Open(bn)
-	assert.NoError(t, err)
-	defer r.Close()
-
-	err = m.FromAny(r, false, shadow.CHUNK_SIZE)
-	assert.NoError(t, err)
-	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
-
-		version 0.1.0
-		id fd76eb2f9866a12c6c3a2f884d5350b38319bc510106a7ba78789cc5507158b8
-		size 2097619
-		`), (*m).String())
-}
-
-func Test_Shadow_FromAny_2K(t *testing.T)  {
-	bn := fixtures.MakeBLOB(t, 1024 * 2)
-	defer fixtures.KillBLOB(bn)
-
-	m := &shadow.Shadow{}
-	r, err := os.Open(bn)
-	assert.NoError(t, err)
-	defer r.Close()
-
-	err = m.FromAny(r, false, shadow.CHUNK_SIZE)
-	assert.NoError(t, err)
-	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
-
-		version 0.1.0
-		id be4215176932949d887fa82241bbe0b03a44dc16ee2d23eedbc973e511ae8bb2
-		size 2048
-		`), (*m).String())
-}
-
-func Test_Shadow_FromAny_3b(t *testing.T)  {
-	bn := fixtures.MakeBLOB(t, 3)
-	defer fixtures.KillBLOB(bn)
-
-	m := &shadow.Shadow{}
-	r, err := os.Open(bn)
-	assert.NoError(t, err)
-	defer r.Close()
-
-	err = m.FromAny(r, false, shadow.CHUNK_SIZE)
-	assert.NoError(t, err)
-	assert.Equal(t, fixtures.CleanManifest(`BAR:SHADOW
-
-		version 0.1.0
-		id 1186d49a4ad620618f760f29da2c593b2ec2cc2ced69dc16817390d861e62253
-		size 3
-		`), (*m).String())
 }

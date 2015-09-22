@@ -8,7 +8,7 @@ import (
 )
 
 func Test_Diff1(t *testing.T) {
-	src := fixtures.CleanManifest(`
+	src := fixtures.FixStream(`
 		diff --git a/.gitattributes b/.gitattributes
 		index 6a54f64..cb16f98 100644
 		--- a/.gitattributes

@@ -13,8 +13,16 @@ import (
 
 // Make temporary BLOB
 func MakeBLOB(t *testing.T, size int64) (name string)  {
-	f, err := ioutil.TempFile("", "")
+	name, err := MakeBLOBPure(size)
 	assert.NoError(t, err)
+	return
+}
+
+func MakeBLOBPure(size int64) (name string, err error)  {
+	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		return
+	}
 	defer f.Close()
 	name = f.Name()
 
@@ -24,13 +32,15 @@ func MakeBLOB(t *testing.T, size int64) (name string)  {
 
 	for i=0; i < size; i++ {
 		_, err = buf.Write([]byte{j})
-		assert.NoError(t, err)
+		if err != nil {
+			return
+		}
 		j++
 		if j > 126 {
 			j = 0
 		}
 	}
-	assert.NoError(t, buf.Flush())
+	err = buf.Flush()
 	return
 }
 
@@ -38,7 +48,8 @@ func KillBLOB(name string) (err error) {
 	return os.Remove(name)
 }
 
-func CleanManifest(in string) (out string) {
+// Clean input and return new reader
+func CleanInput(in string) (out io.Reader, size int64) {
 	r := bufio.NewReader(bytes.NewReader([]byte(in)))
 	o := new(bytes.Buffer)
 	var buf []byte
@@ -53,17 +64,29 @@ func CleanManifest(in string) (out string) {
 		}
 		_, err = o.Write([]byte(strings.TrimSpace(string(buf)) + "\n"))
 	}
-	out = string(o.Bytes())
+	out = bytes.NewReader(o.Bytes())
+	size = int64(len(o.Bytes()))
 	return
 }
 
-func NewShadowFromFile(filename string, full bool, chunkSize int64) (res *shadow.Shadow, err error) {
+func FixStream(in string) (res string) {
+	r, _ := CleanInput(in)
+	data, _ := ioutil.ReadAll(r)
+	res = string(data)
+	return
+}
+
+func NewShadowFromFile(filename string) (res *shadow.Shadow, err error) {
+	info, err := os.Stat(filename)
+	if err != nil {
+		return
+	}
+
 	r, err := os.Open(filename)
 	if err != nil {
 		return
 	}
 	defer r.Close()
-	res = &shadow.Shadow{}
-	err = res.FromAny(r, full, chunkSize)
+	res, err = shadow.New(r, info.Size())
 	return
 }

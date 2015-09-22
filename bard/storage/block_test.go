@@ -5,7 +5,6 @@ import (
 	"github.com/akaspin/bar/fixtures"
 	"github.com/stretchr/testify/assert"
 	"os"
-	"github.com/akaspin/bar/shadow"
 )
 
 const sPath  = "test_storage"
@@ -15,7 +14,7 @@ func Test_BlockDriver_StoreBLOB(t *testing.T) {
 	defer fixtures.KillBLOB(bn)
 
 	// take manifest
-	m, err := fixtures.NewShadowFromFile(bn, true, shadow.CHUNK_SIZE)
+	m, err := fixtures.NewShadowFromFile(bn)
 	assert.NoError(t, err)
 
 	// Try to store file
@@ -30,8 +29,7 @@ func Test_BlockDriver_StoreBLOB(t *testing.T) {
 	defer cleanup()
 
 	// check stored file manifest
-	m2, err := fixtures.NewShadowFromFile(fixtures.ServerStoredName(sPath, m.ID),
-		true, shadow.CHUNK_SIZE)
+	m2, err := fixtures.NewShadowFromFile(fixtures.ServerStoredName(sPath, m.ID))
 	assert.NoError(t, err)
 
 	assert.Equal(t, m.String(), m2.String())
@@ -42,7 +40,7 @@ func Test_BlockDriver_Exists(t *testing.T) {
 	defer fixtures.KillBLOB(bn)
 
 	// take manifest
-	m, err := fixtures.NewShadowFromFile(bn, true, shadow.CHUNK_SIZE)
+	m, err := fixtures.NewShadowFromFile(bn)
 	assert.NoError(t, err)
 
 	// Try to store file

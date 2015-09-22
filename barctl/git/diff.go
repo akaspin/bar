@@ -11,7 +11,7 @@ Parses git diff for pre-commit hook. Bar-tracked files must be registered
 in .gitattributes like "/my/blobs diff=bar filter=bar".
 
 
-	$ git diff --cached -z --no-color HEAD
+	$ git diff --staged -z --no-color HEAD
 	diff --git a/.gitattributes b/.gitattributes
 	index 6a54f64..cb16f98 100644
 	--- a/.gitattributes
