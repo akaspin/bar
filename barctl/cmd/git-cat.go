@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"github.com/akaspin/bar/barctl/git"
-	"strings"
 )
 
 // Cat for commit diff.
@@ -36,7 +35,6 @@ func (c *GitCatCommand) Bind(fs *flag.FlagSet, in io.Reader, out, errOut io.Writ
 
 func (c *GitCatCommand) Do() (err error) {
 	n := c.fs.Args()[0]
-	outsider := strings.HasPrefix(n, "/")
 	info, err := os.Stat(c.fs.Args()[0])
 	if err != nil {
 		return
@@ -47,14 +45,17 @@ func (c *GitCatCommand) Do() (err error) {
 		return
 	}
 
-	var r io.Reader
-	if outsider {
-		// outsider
-		r, err = os.Open(n)
-		if err != nil {
-			return
-		}
-		defer r.(*os.File).Close()
+	fr, err := os.Open(n)
+	if err != nil {
+		return
+	}
+	defer fr.Close()
+
+	r, isShadow, err := shadow.Detect(fr)
+	var s *shadow.Shadow
+
+	if isShadow {
+		s, err = shadow.New(r, info.Size())
 	} else {
 		var oid string
 		oid, err = git.GetFileOID(gitRoot, n)
@@ -65,13 +66,12 @@ func (c *GitCatCommand) Do() (err error) {
 		if err != nil {
 			return
 		}
+		s, err = shadow.New(r, info.Size())
 	}
 
-	s, err := shadow.New(r, info.Size())
 	if err != nil {
 		return
 	}
-
 	fmt.Fprintf(c.out, "BAR-SHADOW-BLOB %s\n", s.ID)
 	return
 }
