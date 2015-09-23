@@ -2,14 +2,26 @@ SRC=$(shell find . -type f -name '*.go')
 V=$(shell git describe --always --tags --dirty)
 APP=bar
 REPO=github.com/akaspin/${APP}
+INSTALL_DIR=${GOPATH}/bin
 
-.PHONY: clean
+.PHONY: clean uninstall
 
 clean:
 	@rm -rf dist
+	@rm -rf testdata
 
-install:
-	@CGO_ENABLED=0 go install \
+install: ${INSTALL_DIR}/bard ${INSTALL_DIR}/barctl
+
+uninstall:
+	rm ${INSTALL_DIR}/bard ${INSTALL_DIR}/barctl
+
+${INSTALL_DIR}/bard: ${SRC}
+	CGO_ENABLED=0 go install \
+		-a -installsuffix cgo \
+		-ldflags '-s -X main.Version=${V}' ${REPO}/bard
+
+${INSTALL_DIR}/barctl: ${SRC}
+	CGO_ENABLED=0 go install \
 		-a -installsuffix cgo \
 		-ldflags '-s -X main.Version=${V}' ${REPO}/barctl
 

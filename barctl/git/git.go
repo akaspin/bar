@@ -8,6 +8,17 @@ import (
 	"fmt"
 )
 
+type CommitBLOB struct {
+
+	// Git OID to get cached manifest
+	OID string
+
+	// bar BLOB ID
+	ID string
+
+	// BLOB filename
+	Filename string
+}
 
 // Get git top directory
 //
@@ -116,5 +127,79 @@ func (g *Git) Cat(oid string) (res io.Reader, err error) {
 		return
 	}
 	res = bytes.NewReader(raw)
+	return
+}
+
+// Run diff against HEAD
+//
+//    $ git diff --cached --staged --full-index --no-color HEAD
+//
+func (g *Git) Diff() (res io.Reader, err error) {
+	raw, err := g.Run("diff",
+		"--cached", "--staged", "--full-index", "--no-color", "HEAD").Output()
+	if err != nil {
+		return
+	}
+	res = bytes.NewReader(raw)
+	return
+}
+
+// Get BLOBs to upload for pre-commit hook.
+//
+//    diff --git a/fixtures/bb.txt b/fixtures/bb.txt
+//    index 1b28d39c1a2600a86355cd90b25d32e273e91f57..39599d03bfcccc04f209e2bbf74b75b7878b837f 100644
+//    --- a/fixtures/bb.txt
+//    +++ b/fixtures/bb.txt
+//    @@ -1 +1 @@
+//    -BAR-SHADOW-BLOB 8d52e76479a51b51135c493c56c2ee32f64866af0d518f97e0c3432bc057b0b7
+//    +BAR-SHADOW-BLOB a554e7d8ecf0c26939167320c04c386f4d19efc74881e905fa5c5934501abeca
+//
+// where:
+//
+//    diff --git <skip>                 <- detect new file
+//    index <skip>...<OID> <skip>       <- extract OID
+//    <skip>
+//    +++ b/<Filename>                  <- extract filename
+//    <skip>
+//    +BAR-SHADOW-BLOB <ID>             <- Assume as BLOB and extract ID
+//
+func (g *Git) ParseDiff(r io.Reader) (res []CommitBLOB, err error) {
+	var data []byte
+	var line string
+	buf := bufio.NewReader(r)
+
+	var oid, id, filename string
+	for {
+		data, _, err = buf.ReadLine()
+		if err == io.EOF {
+			err = nil
+			return
+		} else if err != nil {
+			return
+		}
+		line = strings.TrimSpace(string(data))
+
+		if strings.HasPrefix(line, "diff --git ") {
+			// New file
+			oid, id, filename = "", "", ""
+			continue
+		}
+
+		if strings.HasPrefix(line, "index") {
+			oid = line[48:88]
+			continue
+		}
+
+		if strings.HasPrefix(line, "+++ b/") {
+			filename = strings.TrimPrefix(line, "+++ b/")
+			continue
+		}
+
+		if strings.HasPrefix(line, "-BAR-SHADOW-BLOB ") {
+			id = strings.TrimPrefix(line, "-BAR-SHADOW-BLOB ")
+			res = append(res, CommitBLOB{oid, id, filename})
+			continue
+		}
+	}
 	return
 }

@@ -65,3 +65,28 @@ func Test_Exists(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, r1[0], m1.ID)
 }
+
+func Test_DeclareCommitTx(t *testing.T) {
+	root := "fix-declare-commit-tx-local"
+	endpoint := fixtures.RunServer(t, root)
+	defer os.RemoveAll(root)
+
+	bn1 := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 56)
+	defer fixtures.KillBLOB(bn1)
+
+	bn2 := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 58)
+	defer fixtures.KillBLOB(bn2)
+
+	m1, err := fixtures.NewShadowFromFile(bn1)
+	m2, err := fixtures.NewShadowFromFile(bn2)
+
+	tr := &transport.Transport{endpoint}
+	err = tr.Push(bn1, m1)
+	assert.NoError(t, err)
+
+	r1, err := tr.DeclareCommitTx("test", []string{
+		m1.ID, m2.ID,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, r1[0], m1.ID)
+}

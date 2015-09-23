@@ -1,18 +1,18 @@
 package handler
 import (
-	"github.com/akaspin/bar/bard/storage"
-	"net/http"
+"github.com/akaspin/bar/bard/storage"
+"net/http"
 	"io/ioutil"
 	"encoding/json"
 )
 
-// Check for existent blobs. Takes list of needed blobs and
-// responses with list of existent blobs.
-type CheckHandler struct {
+
+type DeclareCommitTxHandler struct {
 	Storage *storage.StoragePool
+	Prefix string
 }
 
-func (h *CheckHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)  {
+func (h *DeclareCommitTxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)  {
 	buf, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(500)

@@ -3,3 +3,4 @@
 /transport/fix_*
 /dist
 !cmd
+/testdata

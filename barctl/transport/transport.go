@@ -6,9 +6,9 @@ import (
 	"path"
 	"net/http"
 	"os"
-	"bytes"
 	"io/ioutil"
-	"strings"
+	"encoding/json"
+	"bytes"
 )
 
 
@@ -17,12 +17,42 @@ type Transport struct {
 	Endpoint *url.URL
 }
 
-// Push BLOB regardless of index state. Filename MUST be relative
-func (t *Transport) Push(filename string, manifest *shadow.Shadow) (err error) {
-	if manifest.IsFromShadow {
-		err = fmt.Errorf("%x is shadow skip push")
+// Declare commit transaction and get existent ids.
+// This similar to Transport.Check but declares new git commit. See DoneCommit
+func (t *Transport) DeclareCommitTx(txID string, ids []string) (res []string, err error) {
+	buf, err := json.Marshal(ids)
+
+	resp, err := http.Post(t.apiURL(
+		fmt.Sprintf("/tx/commit/declare/%s", txID),
+	).String(),
+		"application/octet-stream", bytes.NewReader(buf))
+	if err != nil {
+		return
 	}
 
+	bodyBuf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	err = json.Unmarshal(bodyBuf, &res)
+	return
+}
+
+// Done commit transaction
+func (t *Transport) DoneCommitTx(txID, commitID string) (err error) {
+	// TODO
+	return
+}
+
+func (t *Transport) AbortCommitTx(txID string) (err error) {
+	// TODO
+	return
+}
+
+// Push BLOB regardless of index state. Filename MUST be relative
+func (t *Transport) Push(filename string, manifest *shadow.Shadow) (err error) {
 	r, err := os.Open(filename)
 	if err != nil {
 		return
@@ -46,31 +76,21 @@ func (t *Transport) Push(filename string, manifest *shadow.Shadow) (err error) {
 }
 
 func (t *Transport) Check(ids []string) (res []string, err error) {
-	buf := new(bytes.Buffer)
-
-	for _, id := range ids {
-		if _, err = buf.WriteString(fmt.Sprintf("%s\n", id)); err != nil {
-			return
-		}
-	}
+	buf, err := json.Marshal(ids)
 
 	resp, err := http.Post(t.apiURL("/blob/check").String(),
-		"application/octet-stream", buf)
+		"application/octet-stream", bytes.NewReader(buf))
 	if err != nil {
 		return
 	}
+
 	bodyBuf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}
 	defer resp.Body.Close()
 
-	for _, i := range strings.Split(string(bodyBuf), "\n") {
-		if err != nil {
-			return
-		}
-		res = append(res, i)
-	}
+	err = json.Unmarshal(bodyBuf, &res)
 	return
 }
 
