@@ -2,6 +2,9 @@ package cmd
 import (
 	"flag"
 	"io"
+	"github.com/akaspin/bar/barctl/git"
+	"fmt"
+	"strings"
 )
 
 
@@ -19,5 +22,23 @@ func (c *GitPreCommitCmd) Bind(fs *flag.FlagSet, in io.Reader, out, errOut io.Wr
 }
 
 func (c *GitPreCommitCmd) Do() (err error) {
+	g, err := git.NewGit("")
+	if err != nil {
+		return
+	}
+
+	// Check dirty status
+	dirty, err := g.DirtyFiles()
+	if err != nil {
+		return
+	}
+	dirty, err = g.FilterByDiff("bar", dirty...)
+	if len(dirty) > 0 {
+		err = fmt.Errorf("Dirty BLOBs in working tree. Run following command to add BLOBs:\n\n    git -C %s add %s\n",
+			g.Root, strings.Join(dirty, " "))
+	}
+
+	// Collect BLOBs from diff
+
 	return
 }

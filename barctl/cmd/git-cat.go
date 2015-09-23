@@ -40,7 +40,7 @@ func (c *GitCatCommand) Do() (err error) {
 		return
 	}
 
-	gitRoot, err := git.GetGitTop()
+	g, err := git.NewGit("")
 	if err != nil {
 		return
 	}
@@ -58,11 +58,11 @@ func (c *GitCatCommand) Do() (err error) {
 		s, err = shadow.New(r, info.Size())
 	} else {
 		var oid string
-		oid, err = git.GetFileOID(gitRoot, n)
+		oid, err = g.OID(n)
 		if err != nil {
 			return
 		}
-		r, err = git.CatFile(oid)
+		r, err = g.Cat(oid)
 		if err != nil {
 			return
 		}

@@ -19,6 +19,7 @@ func route(s string) (res SubCommand, err error) {
 	res, ok := (map[string]SubCommand{
 		"git-clean": &GitCleanCommand{},
 		"git-cat": &GitCatCommand{},
+		"git-pre-commit": &GitPreCommitCmd{},
 		"upload": &UploadCommand{},
 	})[s]
 	if !ok {
