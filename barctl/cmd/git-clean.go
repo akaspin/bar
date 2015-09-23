@@ -7,10 +7,28 @@ import (
 	"os"
 )
 
+/*
+Git clean. Used on `git add ...`. Equivalent of:
+
+	$ cat my/file | barctl git-clean my/file
+
+This command takes STDIN and filename and prints shadow
+manifest to STDOUT.
+
+To use with git register bar in git:
+
+	# .git/config
+	[filter "bar"]
+		clean = barctl git-clean -endpoint=http://my.bar.server/v1 %f
+
+	# .gitattributes
+	my/blobs    filter=bar
+
+STDIN is cat of file in working tree. Git will place STDOUT to
+stage area.
+*/
 type GitCleanCommand struct {
 	id bool
-	full bool
-	chunkSize int64
 	silent bool
 	fs *flag.FlagSet
 	in io.Reader

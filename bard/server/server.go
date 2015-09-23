@@ -10,8 +10,6 @@ func Serve(addr string, storagePool *storage.StoragePool) (err error) {
 
 	mux.Handle("/v1/blob/upload/", &handler.SimpleUploadHandler{
 		storagePool, "/v1/blob/upload/"})
-	mux.Handle("/v1/blob/info/", &handler.InfoHandler{
-		storagePool, "/v1/blob/info/"})
 	mux.Handle("/v1/blob/check", &handler.CheckHandler{
 		storagePool})
 	mux.Handle("/v1/tx/commit/declare/", &handler.DeclareCommitTxHandler{

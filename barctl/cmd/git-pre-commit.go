@@ -15,11 +15,24 @@ import (
 )
 
 
-// Git pre-commit hook. Used to upload all new/changed blobs
-// to bard server:
-//
-// - Fails on uncommited bar-tracked BLOBs.
-// - If working directory is clean - uploads BLOBs to bard.
+/*
+Git pre-commit hook. Used to upload all new/changed blobs
+to bard server:
+
+- Fails on uncommited bar-tracked BLOBs.
+- If working directory is clean - uploads BLOBs to bard.
+
+To use with git git-clean MUST be registered in git. Also
+git pre-commit hook MUST be registered:
+
+	$ cat > .git/hooks/pre-commit <<EOF
+	#!/usr/bin/env sh
+	set -e
+	barctl git-pre-commit -endpoint=http://my.bar.server/v1
+	EOF
+	chmod +x .git/hooks/pre-commit
+*/
+
 type GitPreCommitCmd struct {
 	errOut io.Writer
 	endpoint string
