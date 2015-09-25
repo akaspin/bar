@@ -8,9 +8,12 @@ import (
 "github.com/akaspin/bar/bard/server"
 	"fmt"
 	"path/filepath"
+	"github.com/tamtam-im/logx"
 )
 
 func RunServer(t *testing.T, root string) (endpoint *url.URL)  {
+	logx.SetLevel(logx.DEBUG)
+
 	p := storage.NewStoragePool(storage.NewBlockStorageFactory(root, 2), 200, time.Minute)
 	port, err := GetOpenPort()
 	assert.NoError(t, err)

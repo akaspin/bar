@@ -21,15 +21,15 @@ import (
 //
 type GitCatCommand struct {
 	fs *flag.FlagSet
-	out, errOut io.Writer
+	out io.Writer
+
 	strict bool
 	chunkSize int64
 }
 
-func (c *GitCatCommand) Bind(fs *flag.FlagSet, in io.Reader, out, errOut io.Writer) (err error) {
+func (c *GitCatCommand) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	c.fs = fs
 	c.out = out
-	c.errOut = errOut
 	return
 }
 
@@ -52,10 +52,17 @@ func (c *GitCatCommand) Do() (err error) {
 	defer fr.Close()
 
 	r, isShadow, err := shadow.Detect(fr)
+	if err != nil {
+		return
+	}
+
 	var s *shadow.Shadow
 
 	if isShadow {
 		s, err = shadow.New(r, info.Size())
+		if err != nil {
+			return
+		}
 	} else {
 		var oid string
 		oid, err = g.OID(n)

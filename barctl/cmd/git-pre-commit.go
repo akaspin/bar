@@ -12,6 +12,7 @@ import (
 	"github.com/akaspin/bar/shadow"
 	"path/filepath"
 	"time"
+"github.com/tamtam-im/logx"
 )
 
 
@@ -34,21 +35,21 @@ git pre-commit hook MUST be registered:
 */
 
 type GitPreCommitCmd struct {
-	errOut io.Writer
 	endpoint string
 	trans *transport.TransportPool
 	txId string
 	gitCli *git.Git
 }
 
-func (c *GitPreCommitCmd) Bind(fs *flag.FlagSet, in io.Reader, out, errOut io.Writer) (err error) {
-	c.errOut = errOut
+func (c *GitPreCommitCmd) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
 	return
 }
 
 func (c *GitPreCommitCmd) Do() (err error) {
+	logx.Debugf("preparing bar commit")
+
 	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return
@@ -70,7 +71,12 @@ func (c *GitPreCommitCmd) Do() (err error) {
 	if err != nil {
 		return
 	}
+
 	dirty, err = c.gitCli.FilterByDiff("bar", dirty...)
+	if err != nil {
+		return
+	}
+
 	if len(dirty) > 0 {
 		err = fmt.Errorf("Dirty BLOBs in working tree. Run following command to add BLOBs:\n\n    git -C %s add %s\n",
 			c.gitCli.Root, strings.Join(dirty, " "))
@@ -86,8 +92,13 @@ func (c *GitPreCommitCmd) Do() (err error) {
 	if err != nil {
 		return
 	}
+	logx.Debug(fromDiff)
 
 	toUpload, err := c.declareTx(fromDiff)
+	if err != nil {
+		return
+	}
+
 	wg := &sync.WaitGroup{}
 	stat := map[string]error{}
 	for _, b := range toUpload {
@@ -103,6 +114,10 @@ func (c *GitPreCommitCmd) Do() (err error) {
 }
 
 func (c *GitPreCommitCmd) declareTx(diff []git.CommitBLOB) (res []git.CommitBLOB, err error) {
+	if len(diff) == 0 {
+		return
+	}
+
 	var reqIDs []string
 	idmap := map[string]git.CommitBLOB{}
 	for _, b := range diff {
@@ -145,7 +160,7 @@ func (c *GitPreCommitCmd) uploadOne(wg *sync.WaitGroup, what git.CommitBLOB, sta
 		return
 	}
 	defer c.trans.Release(t)
-	fmt.Fprintf(c.errOut, "uploading %s", what.Filename)
+	logx.Infof("uploading %s: %d bytes", what.Filename, s.Size)
 	if err = t.Push(filepath.Join(c.gitCli.Root, what.Filename), s); err != nil {
 		stat[what.Filename] = err
 		return

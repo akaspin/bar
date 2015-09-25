@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+"github.com/tamtam-im/logx"
 )
 
 /*
@@ -32,12 +33,12 @@ type GitCleanCommand struct {
 	silent bool
 	fs *flag.FlagSet
 	in io.Reader
-	out, errOut io.Writer
+	out io.Writer
 }
 
-func (c *GitCleanCommand) Bind(fs *flag.FlagSet, in io.Reader, out, errOut io.Writer) (err error) {
+func (c *GitCleanCommand) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	c.fs = fs
-	c.in, c.out, c.errOut = in, out, errOut
+	c.in, c.out = in, out
 
 	fs.BoolVar(&c.id, "id", false, "print only id")
 	fs.BoolVar(&c.silent, "silent", false, "supress warnings")
@@ -54,17 +55,19 @@ func (c *GitCleanCommand) Do() (err error) {
 
 	var s *shadow.Shadow
 	if s, err = shadow.New(c.in, info.Size()); err != nil {
-		c.errOut.Write([]byte(err.Error()))
+		logx.Error(err)
 		return
 	}
 
 	if s.IsFromShadow && c.silent {
-		fmt.Fprintf(c.errOut, "warning %s is already shadow", c.fs.Args())
+		logx.Warning("warning %s is already shadow", c.fs.Args())
 	}
+	logx.Debugf("new shadow for %s %s", c.fs.Args()[0], s.ID)
 	if c.id {
 		fmt.Fprintf(c.out, "%s", s.ID)
 	} else {
 		err = s.Serialize(c.out)
 	}
+
 	return
 }

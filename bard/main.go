@@ -7,7 +7,10 @@ import (
 	"time"
 	"fmt"
 	"github.com/akaspin/bar/bard/server"
+	"github.com/tamtam-im/logx"
 )
+
+var logLevel string
 
 var addr string
 var storageType string
@@ -17,6 +20,8 @@ var storageBlockRoot string
 var storageBlockSplit int
 
 func init() {
+	flag.StringVar(&logLevel, "logging-level", logx.ERROR, "logging level")
+
 	flag.StringVar(&addr, "bind", ":3000", "bind addr")
 	flag.StringVar(&storageType, "storage-type", "block", "storage type")
 	flag.IntVar(&storageWorkers, "storage-workers", 128, "storage workers")
@@ -30,6 +35,8 @@ func init() {
 
 func main() {
 	flags.New(flag.CommandLine).Boot(os.Args)
+	logx.SetLevel(logLevel)
+
 	pool, err := storagePool(storageType)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

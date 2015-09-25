@@ -195,8 +195,8 @@ func (g *Git) ParseDiff(r io.Reader) (res []CommitBLOB, err error) {
 			continue
 		}
 
-		if strings.HasPrefix(line, "-BAR-SHADOW-BLOB ") {
-			id = strings.TrimPrefix(line, "-BAR-SHADOW-BLOB ")
+		if strings.HasPrefix(line, "+BAR-SHADOW-BLOB ") {
+			id = strings.TrimPrefix(line, "+BAR-SHADOW-BLOB ")
 			res = append(res, CommitBLOB{oid, id, filename})
 			continue
 		}

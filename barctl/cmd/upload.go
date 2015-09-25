@@ -3,11 +3,11 @@ import (
 	"flag"
 	"io"
 	"github.com/akaspin/bar/shadow"
-	"fmt"
 	"github.com/akaspin/bar/barctl/transport"
 	"net/url"
 	"sync"
 	"os"
+"github.com/tamtam-im/logx"
 )
 
 // Upload BLOBS to bard server
@@ -24,13 +24,13 @@ type UploadCommand struct {
 
 	fs *flag.FlagSet
 	in io.Reader
-	out, errOut io.Writer
+	out io.Writer
 }
 
-func (c *UploadCommand) Bind(fs *flag.FlagSet, in io.Reader, out, errOut io.Writer) (err error) {
+func (c *UploadCommand) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	c.fs = fs
 	c.in = in
-	c.out, c.errOut = out, errOut
+	c.out = out
 
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
@@ -59,13 +59,13 @@ func (c *UploadCommand) Do() (err error) {
 			defer wg.Done()
 			t, err := c.transportPool.Take()
 			if err != nil {
-				fmt.Fprintln(c.errOut, err)
+				logx.Error(err)
 				return
 			}
 			defer c.transportPool.Release(t)
 			err = t.Push(f, s)
 			if err != nil {
-				fmt.Fprintln(c.errOut, err)
+				logx.Error(err)
 			}
 		}(f, s)
 	}
@@ -119,7 +119,7 @@ func (c *UploadCommand) collectShadows() (
 		go func(entity string) {
 			defer wg.Done()
 			if err1 := c.collectOneShadow(entity, res); err1 != nil {
-				fmt.Fprintln(c.errOut, err1)
+				logx.Error(err1)
 			}
 		}(entity)
 

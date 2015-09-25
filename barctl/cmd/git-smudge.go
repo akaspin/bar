@@ -4,9 +4,13 @@ import (
 	"flag"
 	"github.com/akaspin/bar/shadow"
 	"os"
-"io/ioutil"
 	"path/filepath"
 	"strings"
+	"github.com/akaspin/bar/barctl/transport"
+	"net/url"
+	"time"
+"github.com/tamtam-im/logx"
+	"fmt"
 )
 
 /*
@@ -38,12 +42,15 @@ type GitSmudgeCmd struct {
 
 	fs *flag.FlagSet
 	in io.Reader
-	out, errOut io.Writer
+	out io.Writer
+
+	timestamp time.Time
 }
 
-func (c *GitSmudgeCmd) Bind(fs *flag.FlagSet, in io.Reader, out, errOut io.Writer) (err error) {
+func (c *GitSmudgeCmd) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	c.fs = fs
-	c.in, c.out, c.errOut = in, out, errOut
+	c.in, c.out = in, out
+	c.timestamp = time.Now()
 
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
@@ -55,28 +62,69 @@ func (c *GitSmudgeCmd) Bind(fs *flag.FlagSet, in io.Reader, out, errOut io.Write
 }
 
 func (c *GitSmudgeCmd) Do() (err error) {
+
+
+	// Check target.
+	wtid, tmpName, err := c.getTargetShadow()
+	if err != nil {
+		return
+	}
+
 	// read manifest from STDIN
 	// We don't need size because where are no BLOBs in
 	// staging area.
 	ss, err := shadow.New(c.in, 0)
 	if err != nil {
+		if tmpName != "" {
+			logx.Errorf(
+				"can not parse manifest from staging area: %s. old blob stored in %s",
+				err, c.tmpName())
+		} else {
+			logx.Errorf("can not parse manifest from staging area: %s", err)
+		}
 		return
 	}
 
-	// Check target.
-	tmpName, err := c.getTargetShadow(ss)
-	if err != nil {
-		return
-	}
-
-	if tmpName != "" {
+	if tmpName != "" && wtid == ss.ID {
+		logx.Debugf("BLOB %s not changed")
 		err = c.catFromTmp(tmpName)
+		defer os.Remove(tmpName)
 		return
 	}
+
+	fname := c.fs.Args()[0]
 
 	// OK. We has naked shadow in staging area
-	if c.isNeedToBeBLOB(c.fs.Args()[0]) {
+	if c.isNeedToBeBLOB(fname) {
 		// download from bard
+		logx.Infof("downloading %s (%d bytes, %s)", c.fs.Args()[0], ss.Size, ss.ID)
+
+		u, err := url.Parse(c.endpoint)
+		if err != nil {
+			logx.Error(err)
+			return err
+		}
+		trPool := transport.NewTransportPool(u, 10, time.Minute * 5)
+		if err != nil {
+			logx.Error(err)
+			return err
+		}
+		tr, err := trPool.Take()
+		if err != nil {
+			logx.Error(err)
+			return err
+		}
+		defer trPool.Release(tr)
+
+		err = tr.GetBLOB(ss.ID, ss.Size, c.out)
+		if err != nil {
+			logx.Error(
+				"can not download %s (%s) from bard: %s. old blob stored in %s",
+				fname, ss.ID, err, fname + ".bar-" + ss.ID)
+			return err
+		} else {
+			defer os.Remove(fname + ".bar-" + ss.ID)
+		}
 	} else {
 		err = ss.Serialize(c.out)
 	}
@@ -88,17 +136,12 @@ func (c *GitSmudgeCmd) Do() (err error) {
 // If target is BLOB - also copy it to temporary file
 // Returns empty tmpName if target is shadow or absent or
 // BLOB what differs from in.
-func (c *GitSmudgeCmd) getTargetShadow(in *shadow.Shadow) (tmpName string, err error) {
+func (c *GitSmudgeCmd) getTargetShadow() (id string, tmpName string, err error) {
 	n := c.fs.Args()[0]
 	info, err := os.Stat(n)
 	if err != nil {
 		// No file - no problem
-		return "", nil
-	}
-
-	// Check size to avoid extra ops
-	if info.Size() != in.Size {
-		return "", nil
+		return "", "", nil
 	}
 
 	// Size is match
@@ -113,7 +156,7 @@ func (c *GitSmudgeCmd) getTargetShadow(in *shadow.Shadow) (tmpName string, err e
 	if !isShadow {
 		// blob - need to copy to temporary file
 		var w *os.File
-		w, err = ioutil.TempFile("", "bar")
+		w, err = os.Create(c.tmpName())
 		if err != nil {
 			return
 		}
@@ -124,17 +167,13 @@ func (c *GitSmudgeCmd) getTargetShadow(in *shadow.Shadow) (tmpName string, err e
 		var s *shadow.Shadow
 		s, err = shadow.New(sr, info.Size())
 		if err != nil {
-			defer os.Remove(tmpName)
+			logx.Error(err)
 			return
 		}
 
-		if s.ID != in.ID {
-			defer os.Remove(tmpName)
-			return "", nil
-		}
-		return tmpName, nil
+		return s.ID, tmpName, nil
 	} else {
-		return "", nil
+		return "", "", nil
 	}
 
 	return
@@ -147,7 +186,6 @@ func (c *GitSmudgeCmd) catFromTmp(name string) (err error) {
 		return
 	}
 	defer r.Close()
-	defer os.Remove(name)
 
 	_, err = io.Copy(c.out, r)
 	return
@@ -161,4 +199,8 @@ func (c *GitSmudgeCmd) isNeedToBeBLOB(name string) (res bool) {
 		}
 	}
 	return
+}
+
+func (c *GitSmudgeCmd) tmpName() string {
+	return fmt.Sprintf("%s.bar-%d", c.fs.Args()[0], c.timestamp.UnixNano())
 }

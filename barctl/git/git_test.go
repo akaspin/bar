@@ -64,11 +64,11 @@ func Test_ParseDiff(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []git.CommitBLOB{
 		git.CommitBLOB{
-			"39599d03bfcccc04f209e2bbf74b75b7878b837f",
-			"8d52e76479a51b51135c493c56c2ee32f64866af0d518f97e0c3432bc057b0b7",
-			"fixtures/bb.txt"},
+			OID:"39599d03bfcccc04f209e2bbf74b75b7878b837f",
+			ID:"a554e7d8ecf0c26939167320c04c386f4d19efc74881e905fa5c5934501abeca",
+			Filename:"fixtures/bb.txt"},
 		git.CommitBLOB{
-			"cdf4722b45866f34a35d21a0d16413af617ec863",
-			"d0aeb1f7864a7ad42a6527881583b7ef1eae5551aea59cc61bd8083f4653d28d",
-			"fixtures/egqwert"}}, res)
+			OID:"cdf4722b45866f34a35d21a0d16413af617ec863",
+			ID:"a31f5bb02c2bae1438af99b6bd0cb938872197819c8dcc24cb2fd6d740d7868e",
+			Filename:"fixtures/egqwert"}}, res)
 }

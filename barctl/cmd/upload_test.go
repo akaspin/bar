@@ -19,7 +19,7 @@ func TestUpload1(t *testing.T)  {
 	uploadCmd := &cmd.UploadCommand{}
 
 	subFS := flag.NewFlagSet(root, flag.ExitOnError)
-	assert.NoError(t, uploadCmd.Bind(subFS, os.Stdin, os.Stdout, os.Stderr))
+	assert.NoError(t, uploadCmd.Bind(subFS, os.Stdin, os.Stdout))
 
 	// make some blobs
 	bn1 := fixtures.MakeBLOB(t, 1234)

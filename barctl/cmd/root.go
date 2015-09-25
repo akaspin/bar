@@ -4,12 +4,15 @@ import (
 	"io"
 	"flag"
 	"fmt"
+	"github.com/tamtam-im/logx"
 )
+
+var logLevel string
 
 type SubCommand interface  {
 
 	// Init flagset
-	Bind(fs *flag.FlagSet, in io.Reader, out, errOut io.Writer) (err error)
+	Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error)
 
 	// Handle
 	Do() (err error)
@@ -18,20 +21,26 @@ type SubCommand interface  {
 func route(s string) (res SubCommand, err error) {
 	res, ok := (map[string]SubCommand{
 		"git-clean": &GitCleanCommand{},
+		"git-smudge": &GitSmudgeCmd{},
 		"git-cat": &GitCatCommand{},
 		"git-pre-commit": &GitPreCommitCmd{},
 		"upload": &UploadCommand{},
 	})[s]
 	if !ok {
-		err = fmt.Errorf("%s not found")
+		err = fmt.Errorf("command %s not found", s)
 	}
 
 	return
 }
 
 func Root(args []string, in io.Reader, out, errOut io.Writer) (err error) {
-	f := flags.New(flag.CommandLine).NoEnv()
+	flag.StringVar(&logLevel, "log-level", logx.DEBUG, "logging level")
+
+	f := flags.New(flag.CommandLine)
 	f.Boot(args)
+
+	logx.SetLevel(logLevel)
+	logx.SetOutput(errOut)
 
 	// route subcommand
 	if len(f.FlagSet.Args()) == 0 {
@@ -43,10 +52,12 @@ func Root(args []string, in io.Reader, out, errOut io.Writer) (err error) {
 	}
 
 	subFS := flag.NewFlagSet(f.FlagSet.Args()[0], flag.ExitOnError)
-	if err = sub.Bind(subFS, in, out, errOut); err != nil {
+	if err = sub.Bind(subFS, in, out); err != nil {
 		return
 	}
 
-	flags.New(subFS).NoEnv().Boot(f.FlagSet.Args())
-	return sub.Do()
+	flags.New(subFS).Boot(f.FlagSet.Args())
+	err = sub.Do()
+	logx.OnError(err)
+	return
 }
