@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"bytes"
+	"io"
 )
 
 
@@ -91,6 +92,26 @@ func (t *Transport) Check(ids []string) (res []string, err error) {
 	defer resp.Body.Close()
 
 	err = json.Unmarshal(bodyBuf, &res)
+	return
+}
+
+// Get BLOB from bard
+func (t *Transport) GetBLOB(id string, size int64, w io.Writer) (err error) {
+	resp, err := http.Get(t.apiURL(
+		fmt.Sprintf("/blob/download/%s", id)).String())
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	n, err := io.CopyN(w, resp.Body, size)
+	if err != nil {
+		return
+	}
+	if n != size {
+		err = fmt.Errorf("bad download size for %s: expect %d, got %d",
+			id, size, n)
+	}
 	return
 }
 

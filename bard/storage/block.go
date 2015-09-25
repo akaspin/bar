@@ -81,6 +81,11 @@ func (s *BlockStorage) DestroyBLOB(id string) (err error) {
 	return
 }
 
+func (s *BlockStorage) ReadBLOB(id string) (r io.ReadCloser, err error) {
+	r, err = os.Open(s.blobFileName(id))
+	return
+}
+
 func (s *BlockStorage) Close() (err error) {
 	return
 }

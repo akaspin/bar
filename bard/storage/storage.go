@@ -21,6 +21,9 @@ type StorageDriver interface {
 
 	// Destroy blob
 	DestroyBLOB(id string) (err error)
+
+	// Get BLOB stream
+	ReadBLOB(id string) (r io.ReadCloser, err error)
 }
 
 
