@@ -56,12 +56,20 @@ func (g *Git) Run(sub string, arg ...string) *exec.Cmd {
 		append([]string{"-C", g.Root, "--no-pager", sub}, arg...)...)
 }
 
+// Refresh files in git index (use after squash or blow)
+func (g *Git) Add(what ...string) (err error) {
+	_, err = g.Run("add", what...).Output()
+	return
+}
+
+
 // Get list of non-staged files in working tree
 //
 //    $ git diff-files --name-only
 //
-func (g *Git) DirtyFiles() (res []string, err error) {
-	rawFiles, err := g.Run("diff-files", "--name-only", "-z").Output()
+func (g *Git) DirtyFiles(what ...string) (res []string, err error) {
+	rawFiles, err := g.Run("diff-files",
+		append([]string{"--name-only", "-z"}, what...)...).Output()
 	if err != nil {
 		return
 	}

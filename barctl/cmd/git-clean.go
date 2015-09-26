@@ -59,9 +59,6 @@ func (c *GitCleanCommand) Do() (err error) {
 		return
 	}
 
-	if s.IsFromShadow && c.silent {
-		logx.Warning("warning %s is already shadow", c.fs.Args())
-	}
 	logx.Debugf("new shadow for %s %s", c.fs.Args()[0], s.ID)
 	if c.id {
 		fmt.Fprintf(c.out, "%s", s.ID)

@@ -3,6 +3,8 @@ import (
 	"strings"
 	"os"
 	"path/filepath"
+	"github.com/akaspin/bar/barctl/git"
+	"fmt"
 )
 
 type Globber struct {
@@ -34,9 +36,28 @@ func NewGlobber(root string, in []string) (res *Globber) {
 	return
 }
 
-func (g *Globber) List() (res []string) {
+// List files in globber.
+func (g *Globber) List(repo *git.Git) (res []string, err error) {
 	for p, _ := range g.paths {
 		res = append(res, g.walk(filepath.Join(g.root, p))...)
+	}
+
+	if repo != nil {
+		res, err = repo.FilterByDiff("bar", res...)
+		if err != nil {
+			return
+		}
+		var dirty []string
+		// fail if at least one file is dirty
+		dirty, err = repo.DirtyFiles(res...)
+		if err != nil {
+			return
+		}
+		if len(dirty) > 0 {
+			err = fmt.Errorf(
+				"dirty files in working tree.\n\tgit add %s",
+				strings.Join(dirty, " "))
+		}
 	}
 	return
 }

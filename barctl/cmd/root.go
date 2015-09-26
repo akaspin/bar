@@ -24,7 +24,8 @@ func route(s string) (res SubCommand, err error) {
 		"git-smudge": &GitSmudgeCmd{},
 		"git-cat": &GitCatCommand{},
 		"git-pre-commit": &GitPreCommitCmd{},
-		"upload": &UploadCommand{},
+		"up": &UpCmd{},
+		"down": &DownCmd{},
 	})[s]
 	if !ok {
 		err = fmt.Errorf("command %s not found", s)

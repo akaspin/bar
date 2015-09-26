@@ -63,7 +63,6 @@ func (c *GitSmudgeCmd) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err 
 
 func (c *GitSmudgeCmd) Do() (err error) {
 
-
 	// Check target.
 	wtid, tmpName, err := c.getTargetShadow()
 	if err != nil {
