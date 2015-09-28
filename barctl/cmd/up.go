@@ -10,7 +10,6 @@ import (
 	"time"
 	"github.com/akaspin/bar/shadow"
 	"fmt"
-	"strings"
 	"sync"
 )
 
@@ -225,7 +224,7 @@ func (c *UpCmd) collectOneShadow(name string) (res *shadow.Shadow, err error) {
 	defer f.Close()
 
 	var r io.Reader
-	r, isShadow, err := shadow.Detect(f)
+	r, isShadow, err := shadow.Peek(f)
 	if isShadow {
 		return
 	}

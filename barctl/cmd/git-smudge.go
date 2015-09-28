@@ -150,7 +150,7 @@ func (c *GitSmudgeCmd) getTargetShadow() (id string, tmpName string, err error) 
 	}
 	defer r.Close()
 
-	dr, isShadow, err := shadow.Detect(r)
+	dr, isShadow, err := shadow.Peek(r)
 
 	if !isShadow {
 		// blob - need to copy to temporary file

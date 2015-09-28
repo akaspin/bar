@@ -51,7 +51,7 @@ func (c *GitCatCommand) Do() (err error) {
 	}
 	defer fr.Close()
 
-	r, isShadow, err := shadow.Detect(fr)
+	r, isShadow, err := shadow.Peek(fr)
 	if err != nil {
 		return
 	}

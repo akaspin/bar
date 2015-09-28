@@ -5,7 +5,8 @@ import (
 )
 
 
-func Detect(in io.Reader) (r io.Reader, isShadow bool, err error) {
+// Peek input kind
+func Peek(in io.Reader) (r io.Reader, isShadow bool, err error) {
 	var n int
 	buf := make([]byte, len([]byte(SHADOW_HEADER)))
 

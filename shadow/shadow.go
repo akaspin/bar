@@ -57,7 +57,7 @@ func (s *Shadow) Serialize(out io.Writer) (err error) {
 }
 
 func New(in io.Reader, size int64) (res *Shadow, err error) {
-	r, isShadow, err := Detect(in)
+	r, isShadow, err := Peek(in)
 	if err != nil {
 		return
 	}
