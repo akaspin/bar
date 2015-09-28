@@ -11,6 +11,7 @@ import (
 	"github.com/akaspin/bar/shadow"
 	"fmt"
 	"sync"
+	"github.com/tamtam-im/logx"
 )
 
 
@@ -66,6 +67,8 @@ func (c *UpCmd) Do() (err error) {
 	if err != nil {
 		return
 	}
+
+	logx.Debugf("files to upload %s", feed)
 
 	toSquash, err := c.collectShadows(feed)
 	if err != nil {

@@ -20,7 +20,7 @@ To use with git register bar in git:
 
 	# .git/config
 	[filter "bar"]
-		clean = barctl git-clean -endpoint=http://my.bar.server/v1 %f
+		clean = barc git-clean -endpoint=http://my.bar.server/v1 %f
 
 	# .gitattributes
 	my/blobs    filter=bar
@@ -47,6 +47,8 @@ func (c *GitCleanCommand) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (e
 }
 
 func (c *GitCleanCommand) Do() (err error) {
+	name := c.fs.Args()[0]
+	logx.Debugf("adding %s", name)
 
 	info, err := os.Stat(c.fs.Args()[0])
 	if err != nil {

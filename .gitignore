@@ -1,6 +1,8 @@
-# Created by .ignore support plugin (hsz.mobi)
 /bard/storage/test_storage
 /transport/fix_*
 /dist
 !cmd
-/testdata
+
+# fixtures
+testdata
+test_srv_data*

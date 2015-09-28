@@ -44,6 +44,31 @@ func MakeBLOBPure(size int64) (name string, err error)  {
 	return
 }
 
+func MakeNamedBLOB(name string, size int64) (err error) {
+	f, err := os.Create(name)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	var i int64
+	var j uint8
+	buf := bufio.NewWriter(f)
+
+	for i=0; i < size; i++ {
+		_, err = buf.Write([]byte{j})
+		if err != nil {
+			return
+		}
+		j++
+		if j > 126 {
+			j = 0
+		}
+	}
+	err = buf.Flush()
+	return
+}
+
 func KillBLOB(name string) (err error) {
 	return os.Remove(name)
 }

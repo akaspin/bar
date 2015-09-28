@@ -20,6 +20,7 @@ type SubCommand interface  {
 
 func route(s string) (res SubCommand, err error) {
 	res, ok := (map[string]SubCommand{
+		"git-init": &GitInitCmd{},
 		"git-clean": &GitCleanCommand{},
 		"git-smudge": &GitSmudgeCmd{},
 		"git-cat": &GitCatCommand{},
@@ -59,6 +60,5 @@ func Root(args []string, in io.Reader, out, errOut io.Writer) (err error) {
 
 	flags.New(subFS).Boot(f.FlagSet.Args())
 	err = sub.Do()
-	logx.OnError(err)
 	return
 }

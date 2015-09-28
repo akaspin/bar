@@ -18,6 +18,17 @@ type Transport struct {
 	Endpoint *url.URL
 }
 
+func (t *Transport) Ping() (err error) {
+	resp, err := http.Get(t.apiURL("ping").String())
+	if err != nil {
+		return
+	}
+	if resp.StatusCode != 200 {
+		err = fmt.Errorf("bad pong: %d %s", resp.StatusCode, resp.Status)
+	}
+	return
+}
+
 // Declare commit transaction and get existent ids.
 // This similar to Transport.Check but declares new git commit. See DoneCommit
 func (t *Transport) DeclareCommitTx(txID string, ids []string) (res []string, err error) {

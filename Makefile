@@ -20,7 +20,7 @@ ${INSTALL_DIR}/bard: ${SRC}
 		-a -installsuffix cgo \
 		-ldflags '-s -X main.Version=${V}' ${REPO}/bard
 
-${INSTALL_DIR}/barctl: ${SRC}
+${INSTALL_DIR}/barc: ${SRC}
 	CGO_ENABLED=0 go install \
 		-a -installsuffix cgo \
 		-ldflags '-s -X main.Version=${V}' ${REPO}/barc

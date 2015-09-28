@@ -33,6 +33,7 @@ func NewGlobber(root string, in []string) (res *Globber) {
 	if len(res.paths) == 0 {
 		res.paths[""] = true
 	}
+	res.excludes[".git"] = true
 	return
 }
 
