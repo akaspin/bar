@@ -10,10 +10,10 @@ clean:
 	@rm -rf dist
 	@rm -rf testdata
 
-install: ${INSTALL_DIR}/bard ${INSTALL_DIR}/barctl
+install: ${INSTALL_DIR}/bard ${INSTALL_DIR}/barc
 
 uninstall:
-	rm ${INSTALL_DIR}/bard ${INSTALL_DIR}/barctl
+	rm ${INSTALL_DIR}/bard ${INSTALL_DIR}/barc
 
 ${INSTALL_DIR}/bard: ${SRC}
 	CGO_ENABLED=0 go install \
@@ -23,5 +23,5 @@ ${INSTALL_DIR}/bard: ${SRC}
 ${INSTALL_DIR}/barctl: ${SRC}
 	CGO_ENABLED=0 go install \
 		-a -installsuffix cgo \
-		-ldflags '-s -X main.Version=${V}' ${REPO}/barctl
+		-ldflags '-s -X main.Version=${V}' ${REPO}/barc
 
