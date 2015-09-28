@@ -2,10 +2,10 @@ package cmd
 import (
 	"flag"
 	"io"
-	"github.com/akaspin/bar/barctl/git"
+	"github.com/akaspin/bar/barc/git"
 	"fmt"
 	"strings"
-	"github.com/akaspin/bar/barctl/transport"
+	"github.com/akaspin/bar/barc/transport"
 	"net/url"
 	"github.com/nu7hatch/gouuid"
 	"sync"

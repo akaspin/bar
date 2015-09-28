@@ -1,7 +1,7 @@
 package git_test
 import (
 	"testing"
-	"github.com/akaspin/bar/barctl/git"
+	"github.com/akaspin/bar/barc/git"
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/fixtures"
 )

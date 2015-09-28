@@ -5,7 +5,7 @@ import (
 	"io"
 	"fmt"
 	"os"
-	"github.com/akaspin/bar/barctl/git"
+	"github.com/akaspin/bar/barc/git"
 )
 
 // Cat for commit diff.

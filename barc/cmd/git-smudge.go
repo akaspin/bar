@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"github.com/akaspin/bar/barctl/transport"
+	"github.com/akaspin/bar/barc/transport"
 	"net/url"
 	"time"
 "github.com/tamtam-im/logx"

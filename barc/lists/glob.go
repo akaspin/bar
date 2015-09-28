@@ -3,7 +3,7 @@ import (
 	"strings"
 	"os"
 	"path/filepath"
-	"github.com/akaspin/bar/barctl/git"
+	"github.com/akaspin/bar/barc/git"
 	"fmt"
 )
 

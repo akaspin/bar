@@ -3,7 +3,7 @@ import (
 	"testing"
 	"github.com/akaspin/bar/fixtures"
 	"github.com/stretchr/testify/assert"
-	"github.com/akaspin/bar/barctl/transport"
+	"github.com/akaspin/bar/barc/transport"
 	"os"
 	"bytes"
 	"github.com/akaspin/bar/shadow"

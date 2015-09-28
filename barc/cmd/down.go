@@ -2,10 +2,10 @@ package cmd
 import (
 	"flag"
 	"io"
-	"github.com/akaspin/bar/barctl/git"
-	"github.com/akaspin/bar/barctl/transport"
+	"github.com/akaspin/bar/barc/git"
+	"github.com/akaspin/bar/barc/transport"
 	"github.com/akaspin/bar/shadow"
-	"github.com/akaspin/bar/barctl/lists"
+	"github.com/akaspin/bar/barc/lists"
 	"os"
 	"sync"
 	"fmt"
