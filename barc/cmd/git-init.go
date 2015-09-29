@@ -92,6 +92,8 @@ func (c *GitInitCmd) configVals() map[string]string {
 			"!barc -log-level=%s up -noop -endpoint=%s -git", c.log, c.endpoint),
 		"alias.bar-down": fmt.Sprintf(
 			"!barc -log-level=%s down -endpoint=%s -git", c.log, c.endpoint),
+		"alias.bar-ls": fmt.Sprintf(
+			"!barc -log-level=%s ls -endpoint=%s -git", c.log, c.endpoint),
 	}
 }
 

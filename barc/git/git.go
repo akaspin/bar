@@ -37,6 +37,7 @@ func getGitTop() (res string, err error) {
 }
 
 // Git wrapper
+// TODO: use native git (https://github.com/gogits/git)
 type Git struct {
 	Root string
 }
