@@ -54,29 +54,39 @@ func NewGit(root string) (res *Git, err error) {
 }
 
 // Run git command
-func (g *Git) Run(sub string, arg ...string) *exec.Cmd {
+func (g *Git) Cmd(sub string, arg ...string) *exec.Cmd {
 	// exec.Cmd.Dir has no effect for git.
 	return execCommand("git",
 		append([]string{"-C", g.Root, "--no-pager", sub}, arg...)...)
 }
 
-
+// Run git command
+func (g *Git) Run(sub string, arg ...string) (res string, err error) {
+	c := g.Cmd(sub, arg...)
+	var out, stderr bytes.Buffer
+	c.Stdout = &out
+	c.Stderr = &stderr
+	err = c.Run()
+	if err != nil {
+		err = fmt.Errorf("%s %s", err, stderr.String())
+	}
+	res = out.String()
+	return
+}
 
 // Refresh files in git index (use after squash or blow)
 func (g *Git) UpdateIndex(what ...string) (err error) {
-	_, err = g.Run("update-index", what...).Output()
+	_, err = g.Run("update-index", what...)
 	return
 }
 
 func (g *Git) SetConfig(key, val string) (err error) {
-	c := g.Run("config", "--local", key, val)
-	_, err = c.Output()
+	_, err = g.Run("config", "--local", key, val)
 	return
 }
 
 func (g *Git) UnsetConfig(key string) (err error)  {
-	c := g.Run("config", "--local", "--unset", key)
-	_, err = c.Output()
+	_, err = g.Run("config", "--local", "--unset", key)
 	return
 }
 
@@ -120,12 +130,11 @@ func (g *Git) hookName(name string) (res string) {
 //
 func (g *Git) DirtyFiles(what ...string) (res []string, err error) {
 	rawFiles, err := g.Run("diff-files",
-		append([]string{"--name-only", "-z"}, what...)...).Output()
+		append([]string{"--name-only", "-z"}, what...)...)
 	if err != nil {
-		err = fmt.Errorf("%s %s", err, string(rawFiles))
 		return
 	}
-	for _, f := range strings.Split(string(rawFiles), "\x00") {
+	for _, f := range strings.Split(rawFiles, "\x00") {
 		if f != "" {
 			res = append(res, f)
 		}
@@ -139,13 +148,12 @@ func (g *Git) DirtyFiles(what ...string) (res []string, err error) {
 //
 func (g *Git) FilterByDiff(diff string, filenames ...string) (res []string, err error) {
 	rawAttrs, err := g.Run("check-attr",
-		append([]string{"diff"}, filenames...)...).Output()
+		append([]string{"diff"}, filenames...)...)
 	if err != nil {
-		err = fmt.Errorf("%s %s", err, string(rawAttrs))
 		return
 	}
 
-	attrReader := bufio.NewReader(bytes.NewReader(rawAttrs))
+	attrReader := bufio.NewReader(strings.NewReader(rawAttrs))
 	var data []byte
 	var line string
 	suffix := ": diff: " + diff
@@ -170,14 +178,12 @@ func (g *Git) FilterByDiff(diff string, filenames ...string) (res []string, err 
 //    $ git ls-files --cached -s --full-name <file>
 //
 func (g *Git) OID(filename string) (res string, err error) {
-	c := g.Run("ls-files", "--cached", "-s", "--full-name", "-z", filename)
-	raw, err := c.Output()
+	raw, err := g.Run("ls-files", "--cached", "-s", "--full-name", "-z", filename)
 	if err != nil {
-		err = fmt.Errorf("%s %s", err, string(raw))
 		return
 	}
 	var trash1, trash2 string
-	_, err = fmt.Sscanf(string(raw), "%s %s %s", &trash1, &res, &trash2)
+	_, err = fmt.Sscanf(raw, "%s %s %s", &trash1, &res, &trash2)
 	return
 }
 
@@ -186,13 +192,11 @@ func (g *Git) OID(filename string) (res string, err error) {
 //    $ git cat-file -p <OID>
 //
 func (g *Git) Cat(oid string) (res io.Reader, err error) {
-	c := execCommand("git", "cat-file", "-p", oid)
-	raw, err := c.Output()
+	raw, err := g.Run("cat-file", "-p", oid)
 	if err != nil {
-		err = fmt.Errorf("%s %s", err, string(raw))
 		return
 	}
-	res = bytes.NewReader(raw)
+	res = strings.NewReader(raw)
 	return
 }
 
@@ -201,14 +205,12 @@ func (g *Git) Cat(oid string) (res io.Reader, err error) {
 //    $ git diff --cached --staged --full-index --no-color HEAD
 //
 func (g *Git) Diff() (res io.Reader, err error) {
-	c := g.Run("diff",
+	raw, err := g.Run("diff",
 		"--cached", "--staged", "--full-index", "--no-color")
-	raw, err := c.Output()
 	if err != nil {
-		err = fmt.Errorf("%s %s", err, string(raw))
 		return
 	}
-	res = bytes.NewReader(raw)
+	res = strings.NewReader(raw)
 	return
 }
 
