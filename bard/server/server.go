@@ -3,6 +3,7 @@ import (
 	"github.com/akaspin/bar/bard/storage"
 	"net/http"
 	"github.com/akaspin/bar/bard/handler"
+	"github.com/tamtam-im/logx"
 )
 
 func Serve(addr string, storagePool *storage.StoragePool) (err error) {
@@ -19,6 +20,7 @@ func Serve(addr string, storagePool *storage.StoragePool) (err error) {
 	mux.Handle("/v1/ping", &handler.PingHandler{})
 
 	s := &http.Server{Addr:addr, Handler: mux}
+	logx.Debugf("serving at http://%s/v1", addr)
 	err = s.ListenAndServe()
 	return
 }
