@@ -81,7 +81,7 @@ func (c *DownCmd) Do() (err error) {
 	}
 
 	if c.useGit {
-		err = c.git.Add(feed...)
+		err = c.git.UpdateIndex(feed...)
 	}
 	return
 }

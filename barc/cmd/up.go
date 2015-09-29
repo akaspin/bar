@@ -174,7 +174,7 @@ func (c *UpCmd) squash(what map[string]*shadow.Shadow) (err error) {
 			toReadd = append(toReadd, n)
 		}
 		// TODO: use git update-index
-		err = c.git.Add(toReadd...)
+		err = c.git.UpdateIndex(toReadd...)
 	}
 	return
 }

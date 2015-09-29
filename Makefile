@@ -3,7 +3,7 @@ V=$(shell git describe --always --tags --dirty)
 REPO=github.com/akaspin/bar
 INSTALL_DIR=${GOPATH}/bin
 
-.PHONY: clean uninstall
+.PHONY: clean uninstall test
 
 all: \
 	dist/bar-${V}-windows-amd64.tar.gz \
@@ -38,13 +38,13 @@ dist/%/barc: ${SRC}
 		-a -installsuffix cgo \
 		-ldflags '-s -X main.Version=${V}' -o $@ ${REPO}/$(@F)
 
-
 install: ${INSTALL_DIR}/bard ${INSTALL_DIR}/barc
 
 uninstall:
 	rm ${INSTALL_DIR}/bard ${INSTALL_DIR}/barc
 
 ${INSTALL_DIR}/bard: ${SRC}
+	echo ${PWD}
 	CGO_ENABLED=0 go install \
 		-a -installsuffix cgo \
 		-ldflags '-s -X main.Version=${V}' ${REPO}/bard
@@ -54,3 +54,5 @@ ${INSTALL_DIR}/barc: ${SRC}
 		-a -installsuffix cgo \
 		-ldflags '-s -X main.Version=${V}' ${REPO}/barc
 
+test: install
+	CGO_ENABLED=0 INTEGRATION=yes go test ./...

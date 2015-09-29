@@ -7,7 +7,7 @@ import (
 
 
 type Tree struct {
-	where string
+	CWD string
 }
 
 func NewTree(where string) *Tree {
@@ -19,7 +19,7 @@ func NewTree(where string) *Tree {
 }
 
 func (f *Tree) Populate() (err error) {
-	if err = os.MkdirAll(f.where, 0755); err != nil {
+	if err = os.MkdirAll(f.CWD, 0755); err != nil {
 		return
 	}
 	for _, sub := range []string{"one", "two", "three", ""} {
@@ -37,27 +37,27 @@ func (f *Tree) Populate() (err error) {
 }
 
 func (f *Tree) WriteBLOB(name string, size int64) (err error) {
-	err = os.MkdirAll(filepath.Join(f.where, filepath.Dir(name)), 0755)
+	err = os.MkdirAll(filepath.Join(f.CWD, filepath.Dir(name)), 0755)
 	if err != nil {
 		return
 	}
-	err = MakeNamedBLOB(filepath.Join(f.where, name), size)
+	err = MakeNamedBLOB(filepath.Join(f.CWD, name), size)
 	return
 }
 
 func (f *Tree) KillBLOB(name string) (err error) {
-	err = os.Remove(filepath.Join(f.where, name))
+	err = os.Remove(filepath.Join(f.CWD, name))
 	return
 }
 
 func (f *Tree) Squash() (err error) {
-	err = os.RemoveAll(f.where)
+	err = os.RemoveAll(f.CWD)
 	return
 }
 
 func (f *Tree) Run(name string, arg ...string) (res *exec.Cmd) {
 	res = exec.Command(name, arg...)
-	res.Dir = f.where
+	res.Dir = f.CWD
 	return
 }
 

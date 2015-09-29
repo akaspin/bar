@@ -63,8 +63,8 @@ func (g *Git) Run(sub string, arg ...string) *exec.Cmd {
 
 
 // Refresh files in git index (use after squash or blow)
-func (g *Git) Add(what ...string) (err error) {
-	_, err = g.Run("add", what...).Output()
+func (g *Git) UpdateIndex(what ...string) (err error) {
+	_, err = g.Run("update-index", what...).Output()
 	return
 }
 
