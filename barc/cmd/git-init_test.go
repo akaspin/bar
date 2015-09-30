@@ -15,7 +15,8 @@ func Test_Integration_GitInit_Normal(t *testing.T) {
 	assert.NoError(t, tree.Populate())
 	assert.NoError(t, tree.InitGit())
 
-	endpoint := fixtures.RunServer(t, "test_srv_data_git-init")
+	endpoint, stop := fixtures.RunServer(t, "test_srv_data_git-init")
+	defer stop()
 	defer os.RemoveAll("test_srv_data_git-init")
 
 	_, err := tree.Run("barc", "-log-level=DEBUG", "git-init",
@@ -34,7 +35,8 @@ func Test_Integration_GitInit_Fail(t *testing.T)  {
 	assert.NoError(t, tree.Populate())
 	assert.NoError(t, tree.InitGit())
 
-	endpoint := fixtures.RunServer(t, "test_srv_data_git-init")
+	endpoint, stop := fixtures.RunServer(t, "test_srv_data_git-init")
+	defer stop()
 	defer os.RemoveAll("test_srv_data_git-init")
 
 	_, err := tree.Run("barc", "-log-level=DEBUG", "git-init",
@@ -60,7 +62,8 @@ func Test_Integration_GitInit_Clean(t *testing.T) {
 	assert.NoError(t, tree.Populate())
 	assert.NoError(t, tree.InitGit())
 
-	endpoint := fixtures.RunServer(t, "test_srv_data_git-init")
+	endpoint, stop := fixtures.RunServer(t, "test_srv_data_git-init")
+	defer stop()
 	defer os.RemoveAll("test_srv_data_git-init")
 
 	_, err := tree.Run("barc", "-log-level=DEBUG", "git-init",

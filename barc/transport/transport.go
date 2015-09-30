@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"bytes"
 	"io"
+	"github.com/akaspin/bar/proto"
+	"github.com/tamtam-im/logx"
 )
 
 
@@ -18,14 +20,23 @@ type Transport struct {
 	Endpoint *url.URL
 }
 
-func (t *Transport) Ping() (err error) {
-	resp, err := http.Get(t.apiURL("ping").String())
+func (t *Transport) Ping() (res proto.Info, err error) {
+	api := t.apiURL("ping").String()
+	logx.Debugf("sending ping to %s", api)
+	resp, err := http.Get(api)
 	if err != nil {
 		return
 	}
 	if resp.StatusCode != 200 {
 		err = fmt.Errorf("bad pong: %d %s", resp.StatusCode, resp.Status)
 	}
+	res = proto.Info{}
+	err = json.NewDecoder(resp.Body).Decode(&res)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	logx.Debugf("pong received from %s %v", api, res)
 	return
 }
 

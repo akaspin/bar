@@ -13,6 +13,8 @@ import (
 var logLevel string
 
 var addr string
+var chunkSize int64
+
 var storageType string
 var storageWorkers int
 
@@ -23,6 +25,7 @@ func init() {
 	flag.StringVar(&logLevel, "logging-level", logx.ERROR, "logging level")
 
 	flag.StringVar(&addr, "bind", ":3000", "bind addr")
+	flag.Int64Var(&chunkSize, "chunk", 1024*1024*2, "preferred chunk size")
 	flag.StringVar(&storageType, "storage-type", "block", "storage type")
 	flag.IntVar(&storageWorkers, "storage-workers", 128, "storage workers")
 
@@ -42,7 +45,13 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
-	err = server.Serve(addr, pool)
+	srv := server.NewBardServer(&server.BardServerOptions{
+		addr,
+		chunkSize,
+		pool,
+	})
+
+	err = srv.Start()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}

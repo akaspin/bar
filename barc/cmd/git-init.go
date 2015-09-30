@@ -105,7 +105,7 @@ func (c *GitInitCmd) precheck() (err error) {
 	}
 	defer c.transport.Release(tr)
 
-	if err = tr.Ping(); err != nil {
+	if _, err = tr.Ping(); err != nil {
 		return
 	}
 

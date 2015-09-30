@@ -9,9 +9,23 @@ import (
 	"github.com/akaspin/bar/shadow"
 )
 
+func Test_Ping(t *testing.T) {
+//	logx.SetLevel(logx.DEBUG)
+	root := "fix-up-ping"
+	endpoint, stop := fixtures.RunServer(t, root)
+	defer stop()
+	defer os.RemoveAll(root)
+
+	tr := &transport.Transport{endpoint}
+	res, err := tr.Ping()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1024*1024*2), res.ChunkSize)
+}
+
 func Test_Upload(t *testing.T) {
 	root := "fix-up-local"
-	endpoint := fixtures.RunServer(t, root)
+	endpoint, stop := fixtures.RunServer(t, root)
+	defer stop()
 	defer os.RemoveAll(root)
 
 	bn := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 56)
@@ -30,7 +44,8 @@ func Test_Upload(t *testing.T) {
 
 func Test_Info(t *testing.T) {
 	root := "fix-info-local"
-	endpoint := fixtures.RunServer(t, root)
+	endpoint, stop := fixtures.RunServer(t, root)
+	defer stop()
 	defer os.RemoveAll(root)
 
 	bn := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 56)
@@ -45,7 +60,8 @@ func Test_Info(t *testing.T) {
 
 func Test_Exists(t *testing.T) {
 	root := "fix-exists-local"
-	endpoint := fixtures.RunServer(t, root)
+	endpoint, stop := fixtures.RunServer(t, root)
+	defer stop()
 	defer os.RemoveAll(root)
 
 	bn1 := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 56)
@@ -70,7 +86,8 @@ func Test_Exists(t *testing.T) {
 
 func Test_DeclareCommitTx(t *testing.T) {
 	root := "fix-declare-commit-tx-local"
-	endpoint := fixtures.RunServer(t, root)
+	endpoint, stop := fixtures.RunServer(t, root)
+	defer stop()
 	defer os.RemoveAll(root)
 
 	bn1 := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 56)
@@ -97,7 +114,8 @@ func Test_DeclareCommitTx(t *testing.T) {
 
 func Test_Transport_DownloadBLOB(t *testing.T) {
 	root := "fix-declare-commit-tx-local"
-	endpoint := fixtures.RunServer(t, root)
+	endpoint, stop := fixtures.RunServer(t, root)
+	defer stop()
 	defer os.RemoveAll(root)
 
 	bn1 := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 56)

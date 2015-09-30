@@ -26,6 +26,8 @@ type DownCmd struct {
 	useGit bool
 	maxPool int
 
+	chunkSize int64
+
 	git *git.Git
 	transport *transport.TransportPool
 	hasher *shadow.HasherPool
@@ -40,6 +42,7 @@ func (c *DownCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer)
 		"bard endpoint")
 	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 	fs.IntVar(&c.maxPool, "pool", 16, "pool size")
+	fs.Int64Var(&c.chunkSize, "chunk", 1024*1024*2, "chunk size")
 	return
 }
 
