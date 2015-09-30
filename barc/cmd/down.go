@@ -34,7 +34,7 @@ type DownCmd struct {
 	tmp string
 }
 
-func (c *DownCmd) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
+func (c *DownCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	c.fs = fs
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")

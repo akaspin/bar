@@ -39,7 +39,7 @@ type LsCmd struct {
 	transport *transport.TransportPool
 }
 
-func (c *LsCmd) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
+func (c *LsCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")

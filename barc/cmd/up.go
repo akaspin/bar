@@ -33,7 +33,7 @@ type UpCmd struct {
 	fs *flag.FlagSet
 }
 
-func (c *UpCmd) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
+func (c *UpCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	c.fs = fs
 
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",

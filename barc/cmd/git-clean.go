@@ -36,7 +36,7 @@ type GitCleanCommand struct {
 	out io.Writer
 }
 
-func (c *GitCleanCommand) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
+func (c *GitCleanCommand) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	c.fs = fs
 	c.in, c.out = in, out
 

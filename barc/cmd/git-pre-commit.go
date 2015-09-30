@@ -41,7 +41,7 @@ type GitPreCommitCmd struct {
 	gitCli *git.Git
 }
 
-func (c *GitPreCommitCmd) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
+func (c *GitPreCommitCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
 	return

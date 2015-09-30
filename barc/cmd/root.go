@@ -11,10 +11,10 @@ var logLevel string
 
 type SubCommand interface  {
 
-	// Init flagset
-	Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error)
+	// Bind subcomand to environment
+	Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error)
 
-	// Handle
+	// Do subcommand
 	Do() (err error)
 }
 
@@ -36,7 +36,7 @@ func route(s string) (res SubCommand, err error) {
 	return
 }
 
-func Root(args []string, in io.Reader, out, errOut io.Writer) (err error) {
+func Root(wd string, args []string, in io.Reader, out, errOut io.Writer) (err error) {
 	flag.StringVar(&logLevel, "log-level", logx.DEBUG, "logging level")
 
 	f := flags.New(flag.CommandLine)
@@ -55,7 +55,7 @@ func Root(args []string, in io.Reader, out, errOut io.Writer) (err error) {
 	}
 
 	subFS := flag.NewFlagSet(f.FlagSet.Args()[0], flag.ExitOnError)
-	if err = sub.Bind(subFS, in, out); err != nil {
+	if err = sub.Bind(wd, subFS, in, out); err != nil {
 		return
 	}
 

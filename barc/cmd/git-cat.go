@@ -27,7 +27,7 @@ type GitCatCommand struct {
 	chunkSize int64
 }
 
-func (c *GitCatCommand) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
+func (c *GitCatCommand) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	c.fs = fs
 	c.out = out
 	return

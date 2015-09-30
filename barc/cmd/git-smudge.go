@@ -47,7 +47,7 @@ type GitSmudgeCmd struct {
 	timestamp time.Time
 }
 
-func (c *GitSmudgeCmd) Bind(fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
+func (c *GitSmudgeCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	c.fs = fs
 	c.in, c.out = in, out
 	c.timestamp = time.Now()
