@@ -1,6 +1,5 @@
 package git
 import (
-	"os/exec"
 	"strings"
 	"bufio"
 	"bytes"
@@ -23,46 +22,44 @@ type CommitBLOB struct {
 	Filename string
 }
 
-// Get git top directory
-//
-//    git rev-parse --show-toplevel
-//
-func getGitTop() (res string, err error) {
-	raw, err := execCommand("git", "rev-parse", "--show-toplevel").Output()
-	if err != nil {
-		return
-	}
-	res = strings.TrimSpace(string(raw))
-	return
-}
 
-// Git wrapper
+// Git wrapper.
 // TODO: use native git (https://github.com/gogits/git)
+//
+// This wrapper always run git in repository root
 type Git struct {
+
+	// Given CWD
+	CWD string
+
+	// Repository root
 	Root string
 }
 
-// New git. Panic on error
-func NewGit(root string) (res *Git, err error) {
-	if root == "" {
-		if root, err = getGitTop(); err != nil {
+// New git in given root.
+func NewGit(cwd string) (res *Git, err error) {
+	if cwd == "" {
+		if cwd, err = os.Getwd(); err != nil {
 			return
 		}
 	}
-	res = &Git{root}
-	return
-}
 
-// Run git command
-func (g *Git) Cmd(sub string, arg ...string) *exec.Cmd {
-	// exec.Cmd.Dir has no effect for git.
-	return execCommand("git",
-		append([]string{"-C", g.Root, "--no-pager", sub}, arg...)...)
+	raw, err := execCommand("git", "-C", cwd,
+		"rev-parse", "--show-toplevel").Output()
+	if err != nil {
+		return
+	}
+	root := strings.TrimSpace(string(raw))
+
+	res = &Git{cwd, root}
+	return
 }
 
 // Run git command
 func (g *Git) Run(sub string, arg ...string) (res string, err error) {
-	c := g.Cmd(sub, arg...)
+	c := execCommand("git",
+		append([]string{"-C", g.Root, "--no-pager", sub}, arg...)...)
+
 	var out, stderr bytes.Buffer
 	c.Stdout = &out
 	c.Stderr = &stderr
@@ -80,11 +77,13 @@ func (g *Git) UpdateIndex(what ...string) (err error) {
 	return
 }
 
+// Set config value
 func (g *Git) SetConfig(key, val string) (err error) {
 	_, err = g.Run("config", "--local", key, val)
 	return
 }
 
+// Unset config value
 func (g *Git) UnsetConfig(key string) (err error)  {
 	_, err = g.Run("config", "--local", "--unset", key)
 	return
@@ -127,8 +126,7 @@ func (g *Git) hookName(name string) (res string) {
 // Get list of non-staged files in working tree
 //
 //    $ git diff-files --name-only
-//
-func (g *Git) DirtyFiles(what ...string) (res []string, err error) {
+func (g *Git) DiffFiles(what ...string) (res []string, err error) {
 	rawFiles, err := g.Run("diff-files",
 		append([]string{"--name-only", "-z"}, what...)...)
 	if err != nil {
@@ -145,7 +143,6 @@ func (g *Git) DirtyFiles(what ...string) (res []string, err error) {
 // Filter files by diff attribute
 //
 //    $ git check-attr diff <files> | grep "diff: <diff>"
-//
 func (g *Git) FilterByDiff(diff string, filenames ...string) (res []string, err error) {
 	rawAttrs, err := g.Run("check-attr",
 		append([]string{"diff"}, filenames...)...)

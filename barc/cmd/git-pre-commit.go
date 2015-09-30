@@ -68,7 +68,7 @@ func (c *GitPreCommitCmd) Do() (err error) {
 	logx.Debugf("upload. git root %s", c.gitCli.Root)
 
 	// Check dirty status
-	dirty, err := c.gitCli.DirtyFiles()
+	dirty, err := c.gitCli.DiffFiles()
 	if err != nil {
 		return
 	}

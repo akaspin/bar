@@ -16,12 +16,9 @@ import (
 
 
 /*
-This command upload BLOBs to bard and replaces
-them with shadows.
+This command upload BLOBs to bard and replaces them with shadows.
 
-	$ barctl shadow my/blobs my/blobs/glob*
-
-
+	$ barctl up my/blobs my/blobs/glob*
 */
 type UpCmd struct {
 	useGit bool

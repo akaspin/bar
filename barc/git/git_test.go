@@ -10,7 +10,7 @@ func Test_DirtyFiles(t *testing.T) {
 	g, err := git.NewGit("")
 	assert.NoError(t, err)
 
-	dirty, err := g.DirtyFiles()
+	dirty, err := g.DiffFiles()
 	assert.NoError(t, err)
 	for _, f := range dirty {
 		assert.NotEqual(t, "", f)

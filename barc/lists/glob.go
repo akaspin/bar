@@ -50,7 +50,7 @@ func (g *Globber) List(repo *git.Git) (res []string, err error) {
 		}
 		var dirty []string
 		// fail if at least one file is dirty
-		dirty, err = repo.DirtyFiles(res...)
+		dirty, err = repo.DiffFiles(res...)
 		if err != nil {
 			return
 		}
