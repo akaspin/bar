@@ -48,7 +48,7 @@ func (c *GitCleanCommand) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io
 
 func (c *GitCleanCommand) Do() (err error) {
 	name := c.fs.Args()[0]
-	logx.Debugf("adding %s", name)
+	logx.Debugf("clean: %s", name)
 
 	info, err := os.Stat(c.fs.Args()[0])
 	if err != nil {
@@ -57,7 +57,6 @@ func (c *GitCleanCommand) Do() (err error) {
 
 	var s *shadow.Shadow
 	if s, err = shadow.New(c.in, info.Size()); err != nil {
-		logx.Error(err)
 		return
 	}
 

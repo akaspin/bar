@@ -270,3 +270,4 @@ func (g *Git) ParseDiff(r io.Reader) (res []CommitBLOB, err error) {
 	}
 	return
 }
+

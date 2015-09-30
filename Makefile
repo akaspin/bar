@@ -5,10 +5,13 @@ INSTALL_DIR=${GOPATH}/bin
 
 .PHONY: clean uninstall test
 
-all: \
-	dist/bar-${V}-windows-amd64.tar.gz \
-	dist/bar-${V}-linux-amd64.tar.gz \
-	dist/bar-${V}-darwin-amd64.tar.gz
+dist: dist-win dist-linux dist-darwin
+
+dist-win: dist/bar-${V}-windows-amd64.tar.gz
+
+dist-linux: dist/bar-${V}-linux-amd64.tar.gz
+
+dist-darwin: dist/bar-${V}-darwin-amd64.tar.gz
 
 clean:
 	@rm -rf dist

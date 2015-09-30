@@ -60,6 +60,9 @@ func Root(wd string, args []string, in io.Reader, out, errOut io.Writer) (err er
 	}
 
 	flags.New(subFS).Boot(f.FlagSet.Args())
+
+	logx.Debugf("invoking %s in %s with %s",
+		f.FlagSet.Args()[0], wd, f.FlagSet.Args())
 	err = sub.Do()
 	return
 }
