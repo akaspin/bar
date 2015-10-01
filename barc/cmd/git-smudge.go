@@ -25,10 +25,12 @@ To use with git register bar in git:
 	# .gitattributes
 	my/blobs    filter=bar
 
+By default smudge just parse manifest from stdin and pass to stdout
+
 */
 type GitSmudgeCmd struct {
 	endpoint string
-	shadowChanged bool
+	smart bool
 	chunkSize int64
 	maxConn int
 
@@ -46,86 +48,24 @@ func (c *GitSmudgeCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Wr
 
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
-	fs.BoolVar(&c.shadowChanged, "shadow-changed", false,
-		"replace changed blobs with shadows instead download them from bard")
+	fs.BoolVar(&c.smart, "smart", false,
+		"download changed blobs from bard")
 	fs.Int64Var(&c.chunkSize, "chunk", shadow.CHUNK_SIZE, "preferred chunk size")
 	fs.IntVar(&c.maxConn, "pool", 16, "pool size")
 	return
 }
 
 func (c *GitSmudgeCmd) Do() (err error) {
-	fname := c.fs.Args()[0]
-	var backupShadow, srcShadow *shadow.Shadow
-
-	// Check target.
-	backupShadow, backupName, err := c.backupTarget(fname)
-	if err != nil {
-		return
+	name := c.fs.Args()[0]
+	logx.Debug(os.Getenv("SMART"))
+	if c.smart {
+		logx.Debug("smudge in smart mode")
 	}
 
-	in, isManifest, err := shadow.Peek(c.in)
-	if !isManifest {
-		srcShadow, err = c.copyBLOBWithManifest(in, c.out)
-		logx.Warningf(
-			"%s (id %s) is BLOB in staging area and maybe not exists on %s",
-			fname, srcShadow.ID, c.endpoint,
-		)
-	} else {
-		// ok source is manifest
-		if srcShadow, err = shadow.NewFromManifest(in); err != nil {
-			return
-		}
-		if backupShadow != nil {
-			// target is blob
-			if backupShadow.ID == srcShadow.ID {
-				// just cat tempfile
-				logx.Debugf("source id %s is ok for target BLOB %s",
-					backupShadow.ID, fname)
-
-				var f *os.File
-				f, err = os.Open(backupName)
-				if err != nil {
-					return err
-				}
-				defer f.Close()
-				if _, err = io.Copy(c.out, f); err != nil {
-					return
-				}
-				defer os.Remove(backupName)
-			} else {
-				logx.Infof("source manifest %s differs target blob %s %s",
-					srcShadow.ID, fname, backupShadow.ID)
-				// target differs src
-				if c.shadowChanged {
-					// just cat in to out
-					logx.Warningf(
-						"shadow-changed enabled. storing %s as manifest %s",
-						fname, srcShadow.ID)
-					if err = srcShadow.Serialize(c.out); err != nil {
-						return
-					}
-					defer os.Remove(backupName)
-				} else {
-					// need to download from bard
-					logx.Infof("downloading %s for %s", srcShadow.ID, fname)
-					if err = c.download(srcShadow.ID, srcShadow.Size, c.out); err != nil {
-						return
-					}
-					defer os.Remove(backupName)
-				}
-			}
-		} else {
-			// target is shadow - just cat input
-			logx.Debugf("target is manifest")
-			if srcShadow, err = shadow.NewFromManifest(in); err != nil {
-				return
-			}
-			if err = srcShadow.Serialize(c.out); err != nil {
-				return
-			}
-		}
-
-	}
+	m, err := shadow.NewFromAny(c.in, c.chunkSize)
+	logx.Debugf("smudged manifest for %s (ID: %s from-shadow: %s)",
+		name, m.ID, m.IsFromShadow)
+	err = m.Serialize(c.out)
 	return
 }
 
