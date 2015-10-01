@@ -43,23 +43,24 @@ func (t *Transport) Ping() (res proto.Info, err error) {
 // Declare commit transaction and get existent ids.
 // This similar to Transport.Check but declares new git commit. See DoneCommit
 func (t *Transport) DeclareCommitTx(txID string, ids []string) (res []string, err error) {
-	buf, err := json.Marshal(ids)
+	buf := new(bytes.Buffer)
 
-	resp, err := http.Post(t.apiURL(
-		fmt.Sprintf("/tx/commit/declare/%s", txID),
-	).String(),
-		"application/octet-stream", bytes.NewReader(buf))
+	if err = json.NewEncoder(buf).Encode(proto.DeclareCommitTxRequest{txID, ids}); err != nil {
+		return
+	}
+
+	resp, err := http.Post(t.apiURL("/tx/commit/declare").String(),
+		"application/octet-stream", bytes.NewReader(buf.Bytes()))
 	if err != nil {
 		return
 	}
 
-	bodyBuf, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
+	txResp := proto.DeclareCommitTxResponse{}
+	if err = json.NewDecoder(resp.Body).Decode(&txResp); err != nil {
 		return
 	}
 	defer resp.Body.Close()
-
-	err = json.Unmarshal(bodyBuf, &res)
+	res = txResp.MissingIDs
 	return
 }
 

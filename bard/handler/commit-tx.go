@@ -1,37 +1,44 @@
 package handler
 import (
-"github.com/akaspin/bar/bard/storage"
-"net/http"
-	"io/ioutil"
+	"github.com/akaspin/bar/bard/storage"
+	"net/http"
 	"encoding/json"
+	"github.com/akaspin/bar/proto"
+	"github.com/tamtam-im/logx"
 )
 
-
+// Declare commit takes
 type DeclareCommitTxHandler struct {
 	Storage *storage.StoragePool
-	Prefix string
 }
 
 func (h *DeclareCommitTxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)  {
-	buf, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(500)
-		return
-	}
+	var err error
+
 	s, err := h.Storage.Take()
 	if err != nil {
+		logx.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 	defer h.Storage.Release(s)
 
-	var in, res []string
-	err = json.Unmarshal(buf, &in)
-	for _, id := range in {
-		if ok, _ := s.IsExists(id); ok {
-			res = append(res, id)
+	req := proto.DeclareCommitTxRequest{}
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		logx.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	res := proto.DeclareCommitTxResponse{}
+	for _, id := range req.IDs {
+		if ok, _ := s.IsExists(id); !ok {
+			res.MissingIDs = append(res.MissingIDs, id)
 		}
 	}
-	out, err := json.Marshal(res)
-	w.Write(out)
+	if err = json.NewEncoder(w).Encode(&res); err != nil {
+		logx.Error(err)
+		w.WriteHeader(500)
+		return
+	}
 }

@@ -10,7 +10,8 @@ import (
 	"io/ioutil"
 )
 
-type CommitBLOB struct {
+// Extracted diff entry
+type DiffEntry struct {
 
 	// Git OID to get cached manifest
 	OID string
@@ -230,7 +231,7 @@ func (g *Git) Diff() (res io.Reader, err error) {
 //    <skip>
 //    +BAR-SHADOW-BLOB <ID>             <- Assume as BLOB and extract ID
 //
-func (g *Git) ParseDiff(r io.Reader) (res []CommitBLOB, err error) {
+func (g *Git) ParseDiff(r io.Reader) (res []DiffEntry, err error) {
 	var data []byte
 	var line string
 	buf := bufio.NewReader(r)
@@ -264,7 +265,7 @@ func (g *Git) ParseDiff(r io.Reader) (res []CommitBLOB, err error) {
 
 		if strings.HasPrefix(line, "+BAR-SHADOW-BLOB ") {
 			id = strings.TrimPrefix(line, "+BAR-SHADOW-BLOB ")
-			res = append(res, CommitBLOB{oid, id, filename})
+			res = append(res, DiffEntry{oid, id, filename})
 			continue
 		}
 	}

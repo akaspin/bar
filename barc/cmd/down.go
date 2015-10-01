@@ -42,7 +42,7 @@ func (c *DownCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer)
 		"bard endpoint")
 	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 	fs.IntVar(&c.maxPool, "pool", 16, "pool size")
-	fs.Int64Var(&c.chunkSize, "chunk", 1024*1024*2, "chunk size")
+	fs.Int64Var(&c.chunkSize, "chunk", shadow.CHUNK_SIZE, "chunk size")
 	return
 }
 
@@ -209,7 +209,9 @@ func (c *DownCmd) collectShadows(in []string) (res map[string]*shadow.Shadow, er
 				errs = append(errs, err1)
 				return
 			}
-			res[name] = s
+			if s != nil {
+				res[name] = s
+			}
 		}(n)
 	}
 	wg.Wait()
@@ -221,11 +223,6 @@ func (c *DownCmd) collectShadows(in []string) (res map[string]*shadow.Shadow, er
 
 // Collect one shadow. "res" will be <nil> if file is BLOB.
 func (c *DownCmd) collectOneShadow(what string) (res *shadow.Shadow, err error) {
-	info, err := os.Stat(what)
-	if err != nil {
-		return
-	}
-
 	f, err := os.Open(what)
 	if err != nil {
 		return
@@ -238,7 +235,7 @@ func (c *DownCmd) collectOneShadow(what string) (res *shadow.Shadow, err error) 
 	}
 	if isShadow {
 		// ok it's shadow
-		res, err = shadow.New(r, info.Size())
+		res, err = shadow.NewFromManifest(r)
 	}
 	return
 }

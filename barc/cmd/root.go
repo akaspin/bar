@@ -23,7 +23,7 @@ func route(s string) (res SubCommand, err error) {
 		"git-init": &GitInitCmd{},
 		"git-clean": &GitCleanCommand{},
 		"git-smudge": &GitSmudgeCmd{},
-		"git-cat": &GitCatCommand{},
+		"git-textconv": &GitTextconvCmd{},
 		"git-pre-commit": &GitPreCommitCmd{},
 		"up": &UpCmd{},
 		"down": &DownCmd{},

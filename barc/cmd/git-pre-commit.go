@@ -36,9 +36,11 @@ git pre-commit hook MUST be registered:
 
 type GitPreCommitCmd struct {
 	endpoint string
-	trans *transport.TransportPool
+
+	// commit transaction ID
 	txId string
-	gitCli *git.Git
+	transport *transport.TransportPool
+	git *git.Git
 }
 
 func (c *GitPreCommitCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
@@ -48,57 +50,53 @@ func (c *GitPreCommitCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io
 }
 
 func (c *GitPreCommitCmd) Do() (err error) {
-	logx.Debugf("preparing bar commit")
-
-	u, err := url.Parse(c.endpoint)
-	if err != nil {
-		return
-	}
-	c.trans = transport.NewTransportPool(u, 16, time.Minute * 5)
-
 	txUUID, err := uuid.NewV4()
 	if err != nil {
 		return
 	}
 	c.txId = txUUID.String()
 
-	if c.gitCli, err = git.NewGit(""); err != nil {
-		return
-	}
-	logx.Debugf("upload. git root %s", c.gitCli.Root)
+	logx.Debugf("bar commit %s", c.txId)
 
-	// Check dirty status
-	dirty, err := c.gitCli.DiffFiles()
+	u, err := url.Parse(c.endpoint)
 	if err != nil {
 		return
 	}
-	logx.Debugf("all dirty files %s", dirty)
+	c.transport = transport.NewTransportPool(u, 16, time.Minute * 5)
 
+	if c.git, err = git.NewGit(""); err != nil {
+		return
+	}
 
-	if len(dirty) > 0 {
-		dirty, err = c.gitCli.FilterByDiff("bar", dirty...)
-		if err != nil {
-			return
-		}
-		logx.Debugf("bar dirty files %s", dirty)
+	// Check dirty status
+	dirty, err := c.git.DiffFiles()
+	if err != nil {
+		return
 	}
 
 	if len(dirty) > 0 {
-		err = fmt.Errorf("Dirty BLOBs in working tree. Run following command to add BLOBs:\n\n    git -C %s add %s\n",
-			c.gitCli.Root, strings.Join(dirty, " "))
+		dirty, err = c.git.FilterByDiff("bar", dirty...)
+		if err != nil {
+			return
+		}
+	}
+
+	if len(dirty) > 0 {
+		err = fmt.Errorf(
+			"Dirty BLOBs in working tree. Run following command to add BLOBs:\n\n    git -C %s add %s\n",
+			c.git.Root, strings.Join(dirty, " "))
 		return
 	}
 
 	// Collect BLOBs from diff
-	diffr, err := c.gitCli.Diff()
+	diffr, err := c.git.Diff()
 	if err != nil {
 		return
 	}
-	fromDiff, err := c.gitCli.ParseDiff(diffr)
+	fromDiff, err := c.git.ParseDiff(diffr)
 	if err != nil {
 		return
 	}
-	logx.Debug(fromDiff)
 
 	toUpload, err := c.declareTx(fromDiff)
 	if err != nil {
@@ -106,69 +104,73 @@ func (c *GitPreCommitCmd) Do() (err error) {
 	}
 
 	wg := &sync.WaitGroup{}
-	stat := map[string]error{}
+	errs := []error{}
 	for _, b := range toUpload {
 		wg.Add(1)
-		go c.uploadOne(wg, b, stat)
+		go func(oid string, filename string) {
+			defer wg.Done()
+			if err1 := c.uploadOne(oid, filename); err1 != nil {
+				errs = append(errs, err1)
+			}
+		}(b.OID, b.Filename)
 	}
 	wg.Wait()
 
-	if len(stat) > 0 {
-		err = fmt.Errorf("errors while upload: %v", stat)
+	if len(errs) > 0 {
+		err = fmt.Errorf("errors while upload: %s", errs)
 	}
 	return
 }
 
-func (c *GitPreCommitCmd) declareTx(diff []git.CommitBLOB) (res []git.CommitBLOB, err error) {
+// Declare transaction
+func (c *GitPreCommitCmd) declareTx(diff []git.DiffEntry) (res []git.DiffEntry, err error) {
 	if len(diff) == 0 {
+		logx.Debugf("no files to upload")
 		return
 	}
 
-	var reqIDs []string
-	idmap := map[string]git.CommitBLOB{}
+	// Prepare data for request
+	var reqIDs, resIDs []string
+	idmap := map[string]git.DiffEntry{}
 	for _, b := range diff {
 		reqIDs = append(reqIDs, b.ID)
 		idmap[b.ID] = b
 	}
-	t, err := c.trans.Take()
+
+	t, err := c.transport.Take()
 	if err != nil {
 		return
 	}
-	defer c.trans.Release(t)
-	resIDs, err := t.DeclareCommitTx(c.txId, reqIDs)
-	if err != nil {
+	defer c.transport.Release(t)
+
+	if resIDs, err = t.DeclareCommitTx(c.txId, reqIDs); err != nil {
 		return
 	}
 	for _, id := range resIDs {
-		delete(idmap, id)
-	}
-	for _, cb := range idmap {
-		res = append(res, cb)
+		res = append(res, idmap[id])
 	}
 	return
 }
 
-func (c *GitPreCommitCmd) uploadOne(wg *sync.WaitGroup, what git.CommitBLOB, stat map[string]error) (err error) {
-	defer wg.Done()
+func (c *GitPreCommitCmd) uploadOne(oid string, filename string) (err error) {
 	var s *shadow.Shadow
-	var catR io.Reader
-	if catR, err = c.gitCli.Cat(what.OID); err != nil {
-		stat[what.Filename] = err
-		return
-	}
-	if s, err = shadow.New(catR, 0); err != nil {
-		stat[what.Filename] = err
-		return
-	}
-	t, err := c.trans.Take()
+	t, err := c.transport.Take()
 	if err != nil {
-		stat[what.Filename] = err
 		return
 	}
-	defer c.trans.Release(t)
-	logx.Infof("uploading %s: %d bytes", what.Filename, s.Size)
-	if err = t.Push(filepath.Join(c.gitCli.Root, what.Filename), s); err != nil {
-		stat[what.Filename] = err
+	defer c.transport.Release(t)
+
+	var catR io.Reader
+	if catR, err = c.git.Cat(oid); err != nil {
+		return
+	}
+	if s, err = shadow.NewFromManifest(catR); err != nil {
+		return
+	}
+
+	logx.Infof("uploading %s: %d bytes", filename, s.Size)
+
+	if err = t.Push(filepath.Join(c.git.Root, filename), s); err != nil {
 		return
 	}
 	return

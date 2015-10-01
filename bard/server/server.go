@@ -34,8 +34,8 @@ func (s *BardServer) Start() (err error) {
 		s.StoragePool, "/v1/blob/upload/"})
 	mux.Handle("/v1/blob/check", &handler.CheckHandler{
 		s.StoragePool})
-	mux.Handle("/v1/tx/commit/declare/", &handler.DeclareCommitTxHandler{
-		s.StoragePool, "/v1/tx/commit/declare/"})
+	mux.Handle("/v1/tx/commit/declare", &handler.DeclareCommitTxHandler{
+		s.StoragePool})
 	mux.Handle("/v1/blob/download/", &handler.DownloadHandler{
 		s.StoragePool, "/v1/blob/download/"})
 	mux.Handle("/v1/ping", &handler.PingHandler{s.ChunkSize})

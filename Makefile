@@ -1,4 +1,5 @@
-SRC=$(shell find . -type f -name '*.go')
+SRC=$(shell find . -type f \(  -iname '*.go' ! -iname "*_test.go" \))
+SRC_TEST=$(shell find . -type f -name '*_test.go')
 V=$(shell git describe --always --tags --dirty)
 REPO=github.com/akaspin/bar
 INSTALL_DIR=${GOPATH}/bin
@@ -12,6 +13,10 @@ dist-win: dist/bar-${V}-windows-amd64.tar.gz
 dist-linux: dist/bar-${V}-linux-amd64.tar.gz
 
 dist-darwin: dist/bar-${V}-darwin-amd64.tar.gz
+
+names:
+	@echo ${SRC}
+	@echo ${SRC_TEST}
 
 clean:
 	@rm -rf dist
@@ -57,5 +62,5 @@ ${INSTALL_DIR}/barc: ${SRC}
 		-a -installsuffix cgo \
 		-ldflags '-s -X main.Version=${V}' ${REPO}/barc
 
-test: install
+test: ${SRC} ${SRC_TEST}
 	CGO_ENABLED=0 INTEGRATION=yes go test ./...

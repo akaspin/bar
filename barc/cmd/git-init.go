@@ -8,6 +8,7 @@ import (
 	"time"
 	"fmt"
 	"github.com/tamtam-im/logx"
+	"github.com/akaspin/bar/proto"
 )
 
 const hook  = `#!/bin/sh
@@ -60,7 +61,8 @@ func (c *GitInitCmd) Do() (err error) {
 	}
 	c.transport = transport.NewTransportPool(u, 10, time.Minute)
 
-	if err = c.precheck(); err != nil {
+	var opts proto.Info
+	if opts, err = c.precheck(); err != nil {
 		return
 	}
 
@@ -71,41 +73,48 @@ func (c *GitInitCmd) Do() (err error) {
 	logx.Infof("pre-commit hook installed to %s",
 		c.git.Root + ".git/hooks/pre-commit")
 
-	for k, v := range c.configVals() {
+	for k, v := range c.configVals(opts) {
 		c.git.SetConfig(k, v)
+		logx.Debugf("setting git config %s %s", k, v)
 	}
 
 	return
 }
 
-func (c *GitInitCmd) configVals() map[string]string {
+func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
 	return map[string]string{
 		"diff.bar.textconv": fmt.Sprintf(
-			"barc -log-level=%s git-cat", c.log),
+			"barc -log-level=%s git-textconv", c.log),
 		"filter.bar.clean": fmt.Sprintf(
-			"barc -log-level=%s git-clean %%f", c.log),
-		"filter.bar.smudge": fmt.Sprintf(
-			"barc -log-level=%s git-smudge -endpoint=%s %%f", c.log, c.endpoint),
+			"barc -log-level=%s git-clean -chunk=%d %%f",
+			c.log, info.ChunkSize),
+//		"filter.bar.smudge": fmt.Sprintf(
+//			"barc -log-level=%s git-smudge -endpoint=%s -chunk=%d %%f",
+//			c.log, c.endpoint, info.ChunkSize),
 		"alias.bar-squash": fmt.Sprintf(
-			"!barc -log-level=%s up -endpoint=%s -git", c.log, c.endpoint),
+			"!barc -log-level=%s up -squash -endpoint=%s -chunk=%d -git",
+			c.log, c.endpoint, info.ChunkSize),
 		"alias.bar-up": fmt.Sprintf(
-			"!barc -log-level=%s up -noop -endpoint=%s -git", c.log, c.endpoint),
+			"!barc -log-level=%s up -endpoint=%s -git -chunk=%d",
+			c.log, c.endpoint, info.ChunkSize),
 		"alias.bar-down": fmt.Sprintf(
-			"!barc -log-level=%s down -endpoint=%s -git", c.log, c.endpoint),
+			"!barc -log-level=%s down -endpoint=%s -git -chunk=%d",
+			c.log, c.endpoint, info.ChunkSize),
 		"alias.bar-ls": fmt.Sprintf(
-			"!barc -log-level=%s ls -endpoint=%s -git", c.log, c.endpoint),
+			"!barc -log-level=%s ls -endpoint=%s -git",
+			c.log, c.endpoint),
 	}
 }
 
 // Prepare to install. Check endpoint, pre-commit hook
-func (c *GitInitCmd) precheck() (err error) {
+func (c *GitInitCmd) precheck() (res proto.Info, err error) {
 	tr, err := c.transport.Take()
 	if err != nil {
 		return
 	}
 	defer c.transport.Release(tr)
 
-	if _, err = tr.Ping(); err != nil {
+	if res, err = tr.Ping(); err != nil {
 		return
 	}
 
@@ -119,7 +128,7 @@ func (c *GitInitCmd) precheck() (err error) {
 
 func (c *GitInitCmd) uninstall() (err error) {
 	c.git.CleanHook("pre-commit")
-	for k, _ := range c.configVals() {
+	for k, _ := range c.configVals(proto.Info{}) {
 		c.git.UnsetConfig(k)
 	}
 

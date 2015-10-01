@@ -11,15 +11,12 @@ import (
 )
 
 const (
-	CHUNK_SIZE = 1024 * 1024   // 1M
 	SHADOW_HEADER = "BAR:SHADOW"
 	VERSION = "0.1.0"
 )
 
-
-
 type Shadow struct {
-	IsFromShadow bool
+	IsFromShadow bool   `json:"-"`
 	Version string
 	ID string
 	Size int64
@@ -62,12 +59,39 @@ func New(in io.Reader, size int64) (res *Shadow, err error) {
 		return
 	}
 
-	res = &Shadow{}
 	if isShadow {
-		err = res.parseManifest(r)
+		res, err = NewFromManifest(r)
 	} else {
-		err = res.parseBlob(r, GuessChunkSize(size))
+		res, err = NewFromBLOB(r, GuessChunkSize(size))
 	}
+	return
+}
+
+func NewFromAny(in io.Reader, chunkSize int64) (res *Shadow, err error) {
+	r, isShadow, err := Peek(in)
+	if err != nil {
+		return
+	}
+
+	if isShadow {
+		res, err = NewFromManifest(r)
+	} else {
+		res, err = NewFromBLOB(r, chunkSize)
+	}
+	return
+}
+
+// Make shadow from manifest
+func NewFromManifest(in io.Reader) (res *Shadow, err error) {
+	res = &Shadow{}
+	err = res.parseManifest(in)
+	return
+}
+
+// Make shadow from BLOB
+func NewFromBLOB(in io.Reader, chunkSize int64) (res *Shadow, err error) {
+	res = &Shadow{}
+	err = res.parseBlob(in, chunkSize)
 	return
 }
 

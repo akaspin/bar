@@ -24,7 +24,8 @@ type UpCmd struct {
 	useGit bool
 	endpoint string
 	poolSize int
-	noop bool
+	squash bool
+	chunkSize int64
 
 	git *git.Git
 	tr *transport.TransportPool
@@ -39,9 +40,10 @@ func (c *UpCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
 	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
-	fs.BoolVar(&c.noop, "noop", false,
-		"do not replace local BLOBs with shadows after upload")
+	fs.BoolVar(&c.squash, "squash", false,
+		"replace local BLOBs with shadows after upload")
 	fs.IntVar(&c.poolSize, "pool", 16, "pool size")
+	fs.Int64Var(&c.chunkSize, "chunk", shadow.CHUNK_SIZE, "preferred chunk size")
 	return
 }
 
@@ -82,8 +84,8 @@ func (c *UpCmd) Do() (err error) {
 		return
 	}
 
-	if !c.noop {
-		err = c.squash(toSquash)
+	if c.squash {
+		err = c.squashBLOBs(toSquash)
 	}
 
 	return
@@ -146,7 +148,7 @@ func (c *UpCmd) upload(what map[string]*shadow.Shadow) (err error) {
 	return
 }
 
-func (c *UpCmd) squash(what map[string]*shadow.Shadow) (err error) {
+func (c *UpCmd) squashBLOBs(what map[string]*shadow.Shadow) (err error) {
 	wg := sync.WaitGroup{}
 	errs := map[string]error{}
 	for name, sh := range what {

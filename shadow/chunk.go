@@ -1,6 +1,8 @@
 package shadow
 import "fmt"
 
+const CHUNK_SIZE = 1024 * 1024 * 2
+
 type Chunk struct  {
 	ID string
 	Size int64

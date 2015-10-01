@@ -4,8 +4,7 @@ import (
 	"github.com/akaspin/bar/shadow"
 	"flag"
 	"fmt"
-	"os"
-"github.com/tamtam-im/logx"
+	"github.com/tamtam-im/logx"
 )
 
 /*
@@ -25,12 +24,13 @@ To use with git register bar in git:
 	# .gitattributes
 	my/blobs    filter=bar
 
-STDIN is cat of file in working tree. Git will place STDOUT to
-stage area.
+STDIN is cat of file in working tree. Git will place STDOUT to stage area.
+Optional filename is always relative to git root.
 */
 type GitCleanCommand struct {
 	id bool
-	silent bool
+	chunkSize int64
+
 	fs *flag.FlagSet
 	in io.Reader
 	out io.Writer
@@ -41,26 +41,29 @@ func (c *GitCleanCommand) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io
 	c.in, c.out = in, out
 
 	fs.BoolVar(&c.id, "id", false, "print only id")
-	fs.BoolVar(&c.silent, "silent", false, "supress warnings")
-
+	fs.Int64Var(&c.chunkSize, "chunk", shadow.CHUNK_SIZE, "preferred chunk size")
 	return
 }
 
 func (c *GitCleanCommand) Do() (err error) {
-	name := c.fs.Args()[0]
-	logx.Debugf("clean: %s", name)
-
-	info, err := os.Stat(c.fs.Args()[0])
-	if err != nil {
-		return
+	var name string
+	if len(c.fs.Args()) > 0 {
+		name = c.fs.Args()[0]
 	}
+
+	logx.Debugf("git-clean: %s", name)
 
 	var s *shadow.Shadow
-	if s, err = shadow.New(c.in, info.Size()); err != nil {
+	if s, err = shadow.NewFromAny(c.in, c.chunkSize); err != nil {
 		return
 	}
 
-	logx.Debugf("new shadow for %s %s", c.fs.Args()[0], s.ID)
+	from := "BLOB"
+	if s.IsFromShadow {
+		from = "manifest"
+	}
+	logx.Debugf("shadow created from %s for %s %s", from, name, s.ID)
+
 	if c.id {
 		fmt.Fprintf(c.out, "%s", s.ID)
 	} else {

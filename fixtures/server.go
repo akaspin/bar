@@ -23,7 +23,7 @@ func RunServer(t *testing.T, root string) (endpoint *url.URL, stop func() error)
 	})
 
 	go srv.Start()
-	time.Sleep(time.Millisecond * 300)
+	time.Sleep(time.Millisecond * 200)
 	endpoint, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d/v1", port))
 	assert.NoError(t, err)
 	stop = srv.Stop

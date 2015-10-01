@@ -4,8 +4,6 @@ import (
 	"flag"
 	"github.com/akaspin/bar/shadow"
 	"os"
-	"path/filepath"
-	"strings"
 	"github.com/akaspin/bar/barc/transport"
 	"net/url"
 	"time"
@@ -16,10 +14,7 @@ import (
 /*
 Git smudge. Used at `git checkout ...`. Equivalent of:
 
-	$ cat staged/shadow | barctl git-smudge my/file
-
-This command takes cat of shadow manifest as STDIN and FILE and
-writes file contents to STDOUT.
+	$ cat staged/shadow-or-BLOB | barctl git-smudge my/file
 
 To use with git register bar in git:
 
@@ -30,15 +25,12 @@ To use with git register bar in git:
 	# .gitattributes
 	my/blobs    filter=bar
 
-STDIN is cat of file in git stage area. Git will place STDOUT to
-working tree. If FILE is BLOB. git-smudge will check it ID and download
-correct revision from bard. To disable this behaviour and replace changed
-BLOBs with shadows use -shadow-changed option.
 */
 type GitSmudgeCmd struct {
 	endpoint string
 	shadowChanged bool
-	strict string
+	chunkSize int64
+	maxConn int
 
 	fs *flag.FlagSet
 	in io.Reader
@@ -56,78 +48,101 @@ func (c *GitSmudgeCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Wr
 		"bard endpoint")
 	fs.BoolVar(&c.shadowChanged, "shadow-changed", false,
 		"replace changed blobs with shadows instead download them from bard")
-	fs.StringVar(&c.strict, "strict", "",
-		"globs to strictly download changed blobs from bard separated by comma")
+	fs.Int64Var(&c.chunkSize, "chunk", shadow.CHUNK_SIZE, "preferred chunk size")
+	fs.IntVar(&c.maxConn, "pool", 16, "pool size")
 	return
 }
 
 func (c *GitSmudgeCmd) Do() (err error) {
+	fname := c.fs.Args()[0]
+	var backupShadow, srcShadow *shadow.Shadow
 
 	// Check target.
-	wtid, tmpName, err := c.getTargetShadow()
+	backupShadow, backupName, err := c.backupTarget(fname)
 	if err != nil {
 		return
 	}
 
-	// read manifest from STDIN
-	// We don't need size because where are no BLOBs in
-	// staging area.
-	ss, err := shadow.New(c.in, 0)
-	if err != nil {
-		if tmpName != "" {
-			logx.Errorf(
-				"can not parse manifest from staging area: %s. old blob stored in %s",
-				err, c.tmpName())
-		} else {
-			logx.Errorf("can not parse manifest from staging area: %s", err)
-		}
-		return
-	}
-
-	if tmpName != "" && wtid == ss.ID {
-		logx.Debugf("BLOB %s not changed")
-		err = c.catFromTmp(tmpName)
-		defer os.Remove(tmpName)
-		return
-	}
-
-	fname := c.fs.Args()[0]
-
-	// OK. We has naked shadow in staging area
-	if c.isNeedToBeBLOB(fname) {
-		// download from bard
-		logx.Infof("downloading %s (%d bytes, %s)", c.fs.Args()[0], ss.Size, ss.ID)
-
-		u, err := url.Parse(c.endpoint)
-		if err != nil {
-			logx.Error(err)
-			return err
-		}
-		trPool := transport.NewTransportPool(u, 10, time.Minute * 5)
-		if err != nil {
-			logx.Error(err)
-			return err
-		}
-		tr, err := trPool.Take()
-		if err != nil {
-			logx.Error(err)
-			return err
-		}
-		defer trPool.Release(tr)
-
-		err = tr.GetBLOB(ss.ID, ss.Size, c.out)
-		if err != nil {
-			logx.Error(
-				"can not download %s (%s) from bard: %s. old blob stored in %s",
-				fname, ss.ID, err, fname + ".bar-" + ss.ID)
-			return err
-		} else {
-			defer os.Remove(fname + ".bar-" + ss.ID)
-		}
+	in, isManifest, err := shadow.Peek(c.in)
+	if !isManifest {
+		srcShadow, err = c.copyBLOBWithManifest(in, c.out)
+		logx.Warningf(
+			"%s (id %s) is BLOB in staging area and maybe not exists on %s",
+			fname, srcShadow.ID, c.endpoint,
+		)
 	} else {
-		err = ss.Serialize(c.out)
-	}
+		// ok source is manifest
+		if srcShadow, err = shadow.NewFromManifest(in); err != nil {
+			return
+		}
+		if backupShadow != nil {
+			// target is blob
+			if backupShadow.ID == srcShadow.ID {
+				// just cat tempfile
+				logx.Debugf("source id %s is ok for target BLOB %s",
+					backupShadow.ID, fname)
 
+				var f *os.File
+				f, err = os.Open(backupName)
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+				if _, err = io.Copy(c.out, f); err != nil {
+					return
+				}
+				defer os.Remove(backupName)
+			} else {
+				logx.Infof("source manifest %s differs target blob %s %s",
+					srcShadow.ID, fname, backupShadow.ID)
+				// target differs src
+				if c.shadowChanged {
+					// just cat in to out
+					logx.Warningf(
+						"shadow-changed enabled. storing %s as manifest %s",
+						fname, srcShadow.ID)
+					if err = srcShadow.Serialize(c.out); err != nil {
+						return
+					}
+					defer os.Remove(backupName)
+				} else {
+					// need to download from bard
+					logx.Infof("downloading %s for %s", srcShadow.ID, fname)
+					if err = c.download(srcShadow.ID, srcShadow.Size, c.out); err != nil {
+						return
+					}
+					defer os.Remove(backupName)
+				}
+			}
+		} else {
+			// target is shadow - just cat input
+			logx.Debugf("target is manifest")
+			if srcShadow, err = shadow.NewFromManifest(in); err != nil {
+				return
+			}
+			if err = srcShadow.Serialize(c.out); err != nil {
+				return
+			}
+		}
+
+	}
+	return
+}
+
+// download from bard
+func (c *GitSmudgeCmd) download(id string, size int64, w io.Writer) (err error) {
+	u, err := url.Parse(c.endpoint)
+	if err != nil {
+		return
+	}
+	tpool := transport.NewTransportPool(u, c.maxConn, time.Minute)
+	t, err := tpool.Take()
+	if err != nil {
+		return
+	}
+	defer tpool.Release(t)
+
+	err = t.GetBLOB(id, size, w)
 	return
 }
 
@@ -135,71 +150,33 @@ func (c *GitSmudgeCmd) Do() (err error) {
 // If target is BLOB - also copy it to temporary file
 // Returns empty tmpName if target is shadow or absent or
 // BLOB what differs from in.
-func (c *GitSmudgeCmd) getTargetShadow() (id string, tmpName string, err error) {
-	n := c.fs.Args()[0]
-	info, err := os.Stat(n)
+func (c *GitSmudgeCmd) backupTarget(name string) (res *shadow.Shadow, tmpName string, err error) {
+	f, err := os.Open(name)
 	if err != nil {
-		// No file - no problem
-		return "", "", nil
+		return nil, "", nil
+	}
+	defer f.Close()
+
+	dr, isShadow, err := shadow.Peek(f)
+	if isShadow {
+		// shadow - no problem.
+		return nil, "", nil
 	}
 
-	// Size is match
-	r, err := os.Open(n)
-	if err != nil {
+	tmpName = fmt.Sprintf("%s.bar-%d", name, c.timestamp.UnixNano())
+
+	var w *os.File
+	if w, err = os.Create(tmpName); err != nil {
 		return
 	}
-	defer r.Close()
-
-	dr, isShadow, err := shadow.Peek(r)
-
-	if !isShadow {
-		// blob - need to copy to temporary file
-		var w *os.File
-		w, err = os.Create(c.tmpName())
-		if err != nil {
-			return
-		}
-		defer w.Close()
-		tmpName = w.Name()
-
-		sr := io.TeeReader(dr, w)
-		var s *shadow.Shadow
-		s, err = shadow.New(sr, info.Size())
-		if err != nil {
-			logx.Error(err)
-			return
-		}
-
-		return s.ID, tmpName, nil
-	} else {
-		return "", "", nil
-	}
-
+	defer w.Close()
+	res, err = c.copyBLOBWithManifest(dr, w)
 	return
 }
 
-// Cat file to given writer and remove it
-func (c *GitSmudgeCmd) catFromTmp(name string) (err error) {
-	r, err := os.Open(name)
-	if err != nil {
-		return
-	}
-	defer r.Close()
-
-	_, err = io.Copy(c.out, r)
+// copy in to out and return manifest
+func (c *GitSmudgeCmd) copyBLOBWithManifest(in io.Reader, out io.Writer) (res *shadow.Shadow, err error) {
+	inr := io.TeeReader(in, out)
+	res, err = shadow.NewFromAny(inr, c.chunkSize)
 	return
-}
-
-// Check target filename by globs in strict
-func (c *GitSmudgeCmd) isNeedToBeBLOB(name string) (res bool) {
-	for _, g := range strings.Split(c.strict, ",") {
-		if res, _ = filepath.Match(g, name); res {
-			return
-		}
-	}
-	return
-}
-
-func (c *GitSmudgeCmd) tmpName() string {
-	return fmt.Sprintf("%s.bar-%d", c.fs.Args()[0], c.timestamp.UnixNano())
 }

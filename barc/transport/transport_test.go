@@ -109,7 +109,7 @@ func Test_DeclareCommitTx(t *testing.T) {
 		m1.ID, m2.ID,
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, r1[0], m1.ID)
+	assert.Equal(t, r1[0], m2.ID)
 }
 
 func Test_Transport_DownloadBLOB(t *testing.T) {
