@@ -10,7 +10,7 @@ import (
 )
 
 /*
-Cat for commit diff.
+Git diff command.
 
 	$ git diff --cached --staged
     ...

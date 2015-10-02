@@ -83,14 +83,16 @@ func (c *GitInitCmd) Do() (err error) {
 
 func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
 	return map[string]string{
-		"diff.bar.textconv": fmt.Sprintf(
-			"barc -log-level=%s git-textconv", c.log),
+		"diff.bar.command": fmt.Sprintf(
+			"barc -log-level=%s git-diff", c.log),
+//		"diff.bar.textconv": fmt.Sprintf(
+//			"barc -log-level=%s git-textconv", c.log),
 		"filter.bar.clean": fmt.Sprintf(
 			"barc -log-level=%s git-clean -chunk=%d %%f",
 			c.log, info.ChunkSize),
-//		"filter.bar.smudge": fmt.Sprintf(
-//			"barc -log-level=%s git-smudge -endpoint=%s -chunk=%d %%f",
-//			c.log, c.endpoint, info.ChunkSize),
+		"filter.bar.smudge": fmt.Sprintf(
+			"barc -log-level=%s git-smudge -endpoint=%s -chunk=%d %%f",
+			c.log, c.endpoint, info.ChunkSize),
 		"alias.bar-squash": fmt.Sprintf(
 			"!barc -log-level=%s up -squash -endpoint=%s -chunk=%d -git",
 			c.log, c.endpoint, info.ChunkSize),
@@ -127,8 +129,10 @@ func (c *GitInitCmd) precheck() (res proto.Info, err error) {
 }
 
 func (c *GitInitCmd) uninstall() (err error) {
+	logx.Debug("removing pre-commit hook")
 	c.git.CleanHook("pre-commit")
 	for k, _ := range c.configVals(proto.Info{}) {
+		logx.Debugf("removing %s from git config", k)
 		c.git.UnsetConfig(k)
 	}
 

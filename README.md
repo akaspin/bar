@@ -75,7 +75,7 @@ shadows in index.
 To upload BLOBs without squashing them use `git bar-up`
     
 Also on checkout all non-existent BLOBs will be become stored as shadows. To 
-transform shadows to BLOBs use `git bar-down`.
+get them back use `git bar-down`.
 
     $ git bar-down my/blobs/test.txt
     ...    

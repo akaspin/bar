@@ -3,7 +3,7 @@ import (
 	"io"
 	"bytes"
 	"fmt"
-	"gopkg.in/bufio.v1"
+	"bufio"
 	"golang.org/x/crypto/sha3"
 	"hash"
 	"strings"

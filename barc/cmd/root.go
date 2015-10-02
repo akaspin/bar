@@ -28,6 +28,7 @@ func route(s string) (res SubCommand, err error) {
 		"up": &UpCmd{},
 		"down": &DownCmd{},
 		"ls": &LsCmd{},
+		"git-diff": &GitDiffCmd{},
 	})[s]
 	if !ok {
 		err = fmt.Errorf("command %s not found", s)
