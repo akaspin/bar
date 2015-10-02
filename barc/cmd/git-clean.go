@@ -53,6 +53,8 @@ func (c *GitCleanCommand) Do() (err error) {
 
 	logx.Debugf("git-clean: %s", name)
 
+	
+
 	var s *shadow.Shadow
 	if s, err = shadow.NewFromAny(c.in, c.chunkSize); err != nil {
 		return

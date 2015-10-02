@@ -2,6 +2,9 @@ package cmd
 import (
 	"flag"
 	"io"
+	"fmt"
+	"github.com/akaspin/bar/barc/git"
+	"github.com/akaspin/bar/shadow"
 	"github.com/tamtam-im/logx"
 )
 
@@ -70,15 +73,100 @@ or
 	+BAR:BLOB ...
 */
 type GitDiffCmd struct {
+	chunkSize int64
+
+	wd string
 	fs *flag.FlagSet
+	out io.Writer
+
+	git *git.Git
 }
 
 func (c *GitDiffCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
+	c.wd = wd
 	c.fs = fs
+	c.out = out
+
+	fs.Int64Var(&c.chunkSize, "chunk", shadow.CHUNK_SIZE, "preferred chunk size")
 	return
 }
 
-func (c GitDiffCmd) Do() (err error) {
-	logx.Debug("diff-cmd", c.fs.Args())
+func (c *GitDiffCmd) Do() (err error) {
+	if c.git, err = git.NewGit(c.wd); err != nil {
+		return
+	}
+
+	wtName := c.fs.Arg(0)
+
+//	lName := c.fs.Arg(1)
+	lOID := c.fs.Arg(2)
+	lMode := c.fs.Arg(3)
+
+//	rName := c.fs.Arg(4)
+	rOID := c.fs.Arg(5)
+	rMode := c.fs.Arg(6)
+
+	var isNew, isDeleted bool
+	if rOID == "." {
+		isDeleted = true
+	}
+	if lOID == "." {
+		isNew = true
+	}
+
+	fmt.Fprintf(c.out, "diff --git a/%s b/%s\n", wtName, wtName)
+
+	if isDeleted {
+		fmt.Fprintf(c.out, "deleted file mode %s\n", lMode)
+	} else if isNew {
+		fmt.Fprintf(c.out, "new file mode %s\n", rMode)
+	}
+
+	fmt.Fprintf(c.out, "index %s..%s\n", lOID, rOID)
+
+	if isNew {
+		fmt.Fprintf(c.out, "--- /dev/null\n")
+	} else {
+		fmt.Fprintf(c.out, "--- a/%s\n", wtName)
+	}
+
+	if isDeleted {
+		fmt.Fprintf(c.out, "+++ /dev/null\n")
+	} else {
+		fmt.Fprintf(c.out, "+++ b/%s\n", wtName)
+	}
+
+	if isNew {
+		fmt.Fprintln(c.out, "@@ -0,0 +1 @@")
+	} else if isDeleted {
+		fmt.Fprintln(c.out, "@@ -1 +0,0 @@")
+	} else {
+		fmt.Fprintln(c.out, "@@ -1 +1 @@")
+	}
+
+	var r io.Reader
+	var m *shadow.Shadow
+	if !isNew {
+		if r, err = c.git.Cat(lOID); err != nil {
+			return
+		}
+		if m, err = shadow.NewFromAny(r, c.chunkSize); err != nil {
+			return
+		}
+		logx.Debugf("manifest from %s (source is manifest: %t)", lOID, m.IsFromShadow)
+		fmt.Fprintf(c.out, "-BAR-SHADOW-BLOB %s\n", m.ID)
+	}
+
+	if !isDeleted {
+		if r, err = c.git.Cat(rOID); err != nil {
+			return
+		}
+		if m, err = shadow.NewFromAny(r, c.chunkSize); err != nil {
+			return
+		}
+		logx.Debugf("manifest from %s (source is manifest: %t)", rOID, m.IsFromShadow)
+		fmt.Fprintf(c.out, "+BAR-SHADOW-BLOB %s\n", m.ID)
+	}
+
 	return
 }

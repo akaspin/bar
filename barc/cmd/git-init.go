@@ -15,7 +15,7 @@ const hook  = `#!/bin/sh
 # bar pre-commit hook
 set -e
 
-barc -log-level=%s git-pre-commit -endpoint=%s
+barc -log-level=%s git-pre-commit -endpoint=%s -chunk=%d -pool=%d
 `
 
 /*
@@ -67,7 +67,8 @@ func (c *GitInitCmd) Do() (err error) {
 	}
 
 	if err = c.git.SetHook("pre-commit",
-		fmt.Sprintf(hook, c.log, c.endpoint)); err != nil {
+		fmt.Sprintf(hook,
+			c.log, c.endpoint, opts.ChunkSize, opts.MaxConn)); err != nil {
 		return
 	}
 	logx.Infof("pre-commit hook installed to %s",
@@ -84,27 +85,25 @@ func (c *GitInitCmd) Do() (err error) {
 func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
 	return map[string]string{
 		"diff.bar.command": fmt.Sprintf(
-			"barc -log-level=%s git-diff", c.log),
-//		"diff.bar.textconv": fmt.Sprintf(
-//			"barc -log-level=%s git-textconv", c.log),
+			"barc -log-level=%s git-diff -chunk=%d", c.log, info.ChunkSize),
 		"filter.bar.clean": fmt.Sprintf(
 			"barc -log-level=%s git-clean -chunk=%d %%f",
 			c.log, info.ChunkSize),
 		"filter.bar.smudge": fmt.Sprintf(
-			"barc -log-level=%s git-smudge -endpoint=%s -chunk=%d %%f",
-			c.log, c.endpoint, info.ChunkSize),
+			"barc -log-level=%s git-smudge -endpoint=%s -chunk=%d -pool=%d %%f",
+			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
 		"alias.bar-squash": fmt.Sprintf(
-			"!barc -log-level=%s up -squash -endpoint=%s -chunk=%d -git",
-			c.log, c.endpoint, info.ChunkSize),
+			"!barc -log-level=%s up -squash -endpoint=%s -chunk=%d -pool=%d -git",
+			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
 		"alias.bar-up": fmt.Sprintf(
-			"!barc -log-level=%s up -endpoint=%s -git -chunk=%d",
-			c.log, c.endpoint, info.ChunkSize),
+			"!barc -log-level=%s up -endpoint=%s -git -chunk=%d -pool=%d",
+			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
 		"alias.bar-down": fmt.Sprintf(
-			"!barc -log-level=%s down -endpoint=%s -git -chunk=%d",
-			c.log, c.endpoint, info.ChunkSize),
+			"!barc -log-level=%s down -endpoint=%s -git -chunk=%d -pool=%d",
+			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
 		"alias.bar-ls": fmt.Sprintf(
-			"!barc -log-level=%s ls -endpoint=%s -git",
-			c.log, c.endpoint),
+			"!barc -log-level=%s ls -endpoint=%s -git -pool=%d",
+			c.log, c.endpoint, info.MaxConn),
 	}
 }
 

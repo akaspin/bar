@@ -36,6 +36,8 @@ git pre-commit hook MUST be registered:
 
 type GitPreCommitCmd struct {
 	endpoint string
+	chunkSize int64
+	pool int
 
 	// commit transaction ID
 	txId string
@@ -46,6 +48,8 @@ type GitPreCommitCmd struct {
 func (c *GitPreCommitCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
+	fs.Int64Var(&c.chunkSize, "chunk", shadow.CHUNK_SIZE, "preferred chunk size")
+	fs.IntVar(&c.pool, "pool", 16, "pool size")
 	return
 }
 

@@ -64,5 +64,8 @@ ${INSTALL_DIR}/barc: ${SRC}
 		-a -installsuffix cgo \
 		-ldflags '-s -X main.Version=${V}' ${REPO}/barc
 
+bard-server: install
+	bard -logging-level=DEBUG -storage-block-root=testdata
+
 test: install ${SRC_TEST}
 	CGO_ENABLED=0 INTEGRATION=yes go test ./...

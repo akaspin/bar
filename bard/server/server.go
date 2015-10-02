@@ -10,6 +10,7 @@ import (
 type BardServerOptions struct  {
 	Addr string
 	ChunkSize int64
+	ClientConns int
 	StoragePool *storage.StoragePool
 }
 
@@ -38,7 +39,8 @@ func (s *BardServer) Start() (err error) {
 		s.StoragePool})
 	mux.Handle("/v1/blob/download/", &handler.DownloadHandler{
 		s.StoragePool, "/v1/blob/download/"})
-	mux.Handle("/v1/ping", &handler.PingHandler{s.ChunkSize})
+	mux.Handle("/v1/ping", &handler.PingHandler{
+		s.ChunkSize, s.ClientConns})
 
 	logx.Debugf("bard serving at http://%s/v1", s.Addr)
 	srv := &http.Server{Handler:mux}

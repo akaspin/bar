@@ -3,17 +3,17 @@ import (
 	"net/http"
 	"encoding/json"
 	"github.com/tamtam-im/logx"
+	"github.com/akaspin/bar/proto"
 )
 
 //
 type PingHandler struct {
 	ChunkSize int64
+	ClientConns int
 }
 
 func (h *PingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	data := struct{
-		ChunkSize int64
-	}{h.ChunkSize}
+	data := proto.Info{h.ChunkSize, h.ClientConns}
 	resp, err := json.Marshal(&data)
 	if err != nil {
 		logx.Error(err)

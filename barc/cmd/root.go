@@ -1,15 +1,16 @@
 package cmd
+
 import (
-	"github.com/tamtam-im/flags"
-	"io"
 	"flag"
 	"fmt"
+	"github.com/tamtam-im/flags"
 	"github.com/tamtam-im/logx"
+	"io"
 )
 
 var logLevel string
 
-type SubCommand interface  {
+type SubCommand interface {
 
 	// Bind subcomand to environment
 	Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error)
@@ -20,15 +21,14 @@ type SubCommand interface  {
 
 func route(s string) (res SubCommand, err error) {
 	res, ok := (map[string]SubCommand{
-		"git-init": &GitInitCmd{},
-		"git-clean": &GitCleanCommand{},
-		"git-smudge": &GitSmudgeCmd{},
-		"git-textconv": &GitTextconvCmd{},
+		"git-init":       &GitInitCmd{},
+		"git-clean":      &GitCleanCommand{},
+		"git-smudge":     &GitSmudgeCmd{},
 		"git-pre-commit": &GitPreCommitCmd{},
-		"up": &UpCmd{},
-		"down": &DownCmd{},
-		"ls": &LsCmd{},
-		"git-diff": &GitDiffCmd{},
+		"up":             &UpCmd{},
+		"down":           &DownCmd{},
+		"ls":             &LsCmd{},
+		"git-diff":       &GitDiffCmd{},
 	})[s]
 	if !ok {
 		err = fmt.Errorf("command %s not found", s)
