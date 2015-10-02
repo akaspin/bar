@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/tamtam-im/logx"
+	"github.com/akaspin/bar/barc/git"
 )
 
 /*
@@ -34,11 +35,13 @@ type GitCleanCommand struct {
 	fs *flag.FlagSet
 	in io.Reader
 	out io.Writer
+	wd string
 }
 
 func (c *GitCleanCommand) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	c.fs = fs
 	c.in, c.out = in, out
+	c.wd = wd
 
 	fs.BoolVar(&c.id, "id", false, "print only id")
 	fs.Int64Var(&c.chunkSize, "chunk", shadow.CHUNK_SIZE, "preferred chunk size")
@@ -53,18 +56,33 @@ func (c *GitCleanCommand) Do() (err error) {
 
 	logx.Debugf("git-clean: %s", name)
 
-	
-
 	var s *shadow.Shadow
-	if s, err = shadow.NewFromAny(c.in, c.chunkSize); err != nil {
-		return
-	}
 
-	from := "BLOB"
-	if s.IsFromShadow {
-		from = "manifest"
+	// check input type
+	r, isManifest, err := shadow.Peek(c.in)
+	var r2 io.Reader
+	if isManifest {
+		if s, err = shadow.NewFromManifest(r); err != nil {
+			return
+		}
+		logx.Debugf("%s for %s source is manifest", name)
+	} else {
+		// blob. Try to check git state
+		r2, err = c.getCleanReader(name)
+		if err == nil && r2 != nil {
+			if s, err = shadow.NewFromManifest(r2); err != nil {
+				return
+			}
+			logx.Debugf("manifest %s for %s created from git cache", s.ID, name)
+		} else {
+			logx.Debugf("can not get git reader (%s)", err)
+			err = nil
+			if s, err = shadow.NewFromBLOB(r, c.chunkSize); err != nil {
+				return
+			}
+			logx.Debugf("manifest %s for %s created from BLOB", s.ID, name)
+		}
 	}
-	logx.Debugf("shadow created from %s for %s %s", from, name, s.ID)
 
 	if c.id {
 		fmt.Fprintf(c.out, "%s", s.ID)
@@ -72,5 +90,31 @@ func (c *GitCleanCommand) Do() (err error) {
 		err = s.Serialize(c.out)
 	}
 
+	return
+}
+
+func (c *GitCleanCommand) getCleanReader(name string) (res io.Reader, err error) {
+	g, err := git.NewGit(c.wd)
+	if err != nil {
+		return
+	}
+	dirty, err := g.DiffFiles(name)
+	if err != nil {
+		logx.Debugf("error while getting diff %s", err)
+		err = nil
+		return
+	}
+	if len(dirty) != 0 {
+		// dirty file
+		return
+	}
+	// clean file - read manifest
+	oid, err := g.OID(name)
+	if err != nil {
+		logx.Debugf("error while getting OID for %s", err)
+		err = nil
+		return
+	}
+	res, err = g.Cat(oid)
 	return
 }
