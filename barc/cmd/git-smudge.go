@@ -1,8 +1,6 @@
 package cmd
 import (
-	"io"
-	"flag"
-	"github.com/akaspin/bar/shadow"
+	"github.com/akaspin/bar/proto/manifest"
 	"github.com/tamtam-im/logx"
 )
 
@@ -24,37 +22,31 @@ By default smudge just parse manifest from STDIN and pass to STDOUT. If STDIN
 is BLOB - it will be uploaded to bard.
 */
 type GitSmudgeCmd struct {
+	*BaseSubCommand
+
 	endpoint string
 	chunkSize int64
 	maxConn int
-
-	fs *flag.FlagSet
-	in io.Reader
-	out io.Writer
-
 }
 
-func (c *GitSmudgeCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
-	c.fs = fs
-	c.in, c.out = in, out
-
-	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
+func NewGitSmudgeCmd(s *BaseSubCommand) SubCommand {
+	c := &GitSmudgeCmd{BaseSubCommand: s}
+	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
-	fs.Int64Var(&c.chunkSize, "chunk", shadow.CHUNK_SIZE, "preferred chunk size")
-	fs.IntVar(&c.maxConn, "pool", 16, "pool size")
-	return
+	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
+	c.FS.IntVar(&c.maxConn, "pool", 16, "pool size")
+	return c
 }
 
 func (c *GitSmudgeCmd) Do() (err error) {
-	name := c.fs.Args()[0]
+	name := c.FS.Args()[0]
 //	r, isManifest, err := shadow.Peek(c.in)
 //	if isManifest {
 //
 //	}
 
-	m, err := shadow.NewFromAny(c.in, c.chunkSize)
-	logx.Debugf("smudge manifest for %s (ID: %s from-shadow: %t)",
-		name, m.ID, m.IsFromShadow)
-	err = m.Serialize(c.out)
+	m, err := manifest.NewFromAny(c.Stdin, c.chunkSize)
+	logx.Debugf("smudge manifest for %s", name, m.ID)
+	err = m.Serialize(c.Stdout)
 	return
 }

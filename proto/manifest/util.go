@@ -1,4 +1,4 @@
-package shadow
+package manifest
 import (
 	"io"
 	"bytes"
@@ -8,7 +8,7 @@ import (
 // Peek input kind
 func Peek(in io.Reader) (r io.Reader, isShadow bool, err error) {
 	var n int
-	buf := make([]byte, len([]byte(SHADOW_HEADER)))
+	buf := make([]byte, len([]byte(MANIFEST_HEADER)))
 
 	// check header signature
 	if n, err = in.Read(buf); err != nil {
@@ -16,7 +16,7 @@ func Peek(in io.Reader) (r io.Reader, isShadow bool, err error) {
 	}
 
 	r = io.MultiReader(bytes.NewBuffer(buf[:n]), in)
-	if string(buf) == SHADOW_HEADER {
+	if string(buf) == MANIFEST_HEADER {
 		isShadow = true
 	}
 	return

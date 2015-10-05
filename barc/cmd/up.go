@@ -1,6 +1,5 @@
 package cmd
 import (
-	"flag"
 	"io"
 	"os"
 	"github.com/akaspin/bar/barc/lists"
@@ -8,7 +7,7 @@ import (
 	"github.com/akaspin/bar/barc/transport"
 	"net/url"
 	"time"
-	"github.com/akaspin/bar/shadow"
+	"github.com/akaspin/bar/proto/manifest"
 	"fmt"
 	"sync"
 	"github.com/tamtam-im/logx"
@@ -21,6 +20,8 @@ This command upload BLOBs to bard and replaces them with shadows.
 	$ barctl up my/blobs my/blobs/glob*
 */
 type UpCmd struct {
+	*BaseSubCommand
+
 	useGit bool
 	endpoint string
 	poolSize int
@@ -29,24 +30,19 @@ type UpCmd struct {
 
 	git *git.Git
 	tr *transport.TransportPool
-	hasher *shadow.HasherPool
-
-	fs *flag.FlagSet
-	wd string
+	hasher *manifest.HasherPool
 }
 
-func (c *UpCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
-	c.fs = fs
-	c.wd = wd
-
-	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
+func NewUpCmd(s *BaseSubCommand) SubCommand {
+	c := &UpCmd{BaseSubCommand: s}
+	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
-	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
-	fs.BoolVar(&c.squash, "squash", false,
+	c.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
+	c.FS.BoolVar(&c.squash, "squash", false,
 		"replace local BLOBs with shadows after upload")
-	fs.IntVar(&c.poolSize, "pool", 16, "pool size")
-	fs.Int64Var(&c.chunkSize, "chunk", shadow.CHUNK_SIZE, "preferred chunk size")
-	return
+	c.FS.IntVar(&c.poolSize, "pool", 16, "pool size")
+	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
+	return c
 }
 
 func (c *UpCmd) Do() (err error) {
@@ -62,11 +58,11 @@ func (c *UpCmd) Do() (err error) {
 	}
 
 	c.tr = transport.NewTransportPool(u, c.poolSize, time.Minute)
-	c.hasher = shadow.NewHasherPool(c.poolSize, time.Minute)
+	c.hasher = manifest.NewHasherPool(c.chunkSize, c.poolSize, time.Minute)
 
-	feed := lists.NewFileList(c.fs.Args()...).ListDir(c.wd)
+	feed := lists.NewFileList(c.FS.Args()...).ListDir(c.WD)
 	if c.git != nil {
-		dirty, err := c.git.DiffFilesWithFilter(feed...)
+		dirty, err := c.git.DiffFilesWithAttr(feed...)
 		if err != nil {
 			return err
 		}
@@ -100,7 +96,7 @@ func (c *UpCmd) Do() (err error) {
 }
 
 // request bard for existing blobs
-func (c *UpCmd) precheck(what map[string]*shadow.Shadow) (res map[string]*shadow.Shadow, err error) {
+func (c *UpCmd) precheck(what map[string]*manifest.Manifest) (res map[string]*manifest.Manifest, err error) {
 	idmap := map[string]string{}
 	req := []string{}
 	for name, sh := range what {
@@ -122,19 +118,19 @@ func (c *UpCmd) precheck(what map[string]*shadow.Shadow) (res map[string]*shadow
 		delete(idmap, id)
 	}
 
-	res = map[string]*shadow.Shadow{}
+	res = map[string]*manifest.Manifest{}
 	for _, name := range idmap {
 		res[name] = what[name]
 	}
 	return
 }
 
-func (c *UpCmd) upload(what map[string]*shadow.Shadow) (err error) {
+func (c *UpCmd) upload(what map[string]*manifest.Manifest) (err error) {
 	wg := &sync.WaitGroup{}
 	errs := map[string]error{}
 	for name, sh := range what {
 		wg.Add(1)
-		go func(n string, s *shadow.Shadow) {
+		go func(n string, s *manifest.Manifest) {
 			defer wg.Done()
 			tr, err1 := c.tr.Take()
 			if err1 != nil {
@@ -156,12 +152,12 @@ func (c *UpCmd) upload(what map[string]*shadow.Shadow) (err error) {
 	return
 }
 
-func (c *UpCmd) squashBLOBs(what map[string]*shadow.Shadow) (err error) {
+func (c *UpCmd) squashBLOBs(what map[string]*manifest.Manifest) (err error) {
 	wg := sync.WaitGroup{}
 	errs := map[string]error{}
 	for name, sh := range what {
 		wg.Add(1)
-		go func(n string, s *shadow.Shadow) {
+		go func(n string, s *manifest.Manifest) {
 			defer wg.Done()
 			err1 := c.squashOne(n, s)
 			if err1 != nil {
@@ -186,7 +182,7 @@ func (c *UpCmd) squashBLOBs(what map[string]*shadow.Shadow) (err error) {
 	return
 }
 
-func (c *UpCmd) squashOne(name string, sh *shadow.Shadow) (err error) {
+func (c *UpCmd) squashOne(name string, sh *manifest.Manifest) (err error) {
 	f, err := os.Create(name)
 	if err != nil {
 		return
@@ -196,8 +192,8 @@ func (c *UpCmd) squashOne(name string, sh *shadow.Shadow) (err error) {
 	return
 }
 
-func (c *UpCmd) collectShadows(in []string) (res map[string]*shadow.Shadow, err error) {
-	res = map[string]*shadow.Shadow{}
+func (c *UpCmd) collectShadows(in []string) (res map[string]*manifest.Manifest, err error) {
+	res = map[string]*manifest.Manifest{}
 	errs := map[string]error{}
 	wg := &sync.WaitGroup{}
 	for _, n := range in {
@@ -221,7 +217,7 @@ func (c *UpCmd) collectShadows(in []string) (res map[string]*shadow.Shadow, err 
 
 // Collect shadow by filename
 // Returns nil if file is already shadow
-func (c *UpCmd) collectOneShadow(name string) (res *shadow.Shadow, err error) {
+func (c *UpCmd) collectOneShadow(name string) (res *manifest.Manifest, err error) {
 	info, err := os.Stat(name)
 	if err != nil {
 		return
@@ -234,14 +230,14 @@ func (c *UpCmd) collectOneShadow(name string) (res *shadow.Shadow, err error) {
 	defer f.Close()
 
 	var r io.Reader
-	r, isShadow, err := shadow.Peek(f)
+	r, isShadow, err := manifest.Peek(f)
 	if isShadow {
 		return
 	}
 
 	if c.useGit {
 		var oid string
-		oid, err = c.git.OID(name)
+		oid, err = c.git.GetOID(name)
 		if err != nil {
 			return
 		}
@@ -251,7 +247,7 @@ func (c *UpCmd) collectOneShadow(name string) (res *shadow.Shadow, err error) {
 		}
 		// using cached manifest - size doesn't matter
 	}
-	res, err = c.hasher.MakeOne(r, info.Size())
+	res, err = c.hasher.Make(r, info.Size())
 
 	return
 }

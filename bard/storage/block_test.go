@@ -5,7 +5,7 @@ import (
 	"github.com/akaspin/bar/fixtures"
 	"github.com/stretchr/testify/assert"
 	"os"
-	"github.com/akaspin/bar/shadow"
+	"github.com/akaspin/bar/proto/manifest"
 )
 
 const sPath  = "test_storage"
@@ -94,7 +94,7 @@ func Test_BlockDriver_ReadBLOB(t *testing.T) {
 	assert.NoError(t, err)
 	defer sr.Close()
 
-	m2, err := shadow.New(sr, m.Size)
+	m2, err := manifest.NewFromAny(sr, manifest.CHUNK_SIZE)
 	assert.NoError(t, err)
 	assert.Equal(t, m.ID, m2.ID)
 }

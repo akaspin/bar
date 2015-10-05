@@ -1,6 +1,6 @@
 package transport
 import (
-	"github.com/akaspin/bar/shadow"
+	"github.com/akaspin/bar/proto/manifest"
 	"fmt"
 	"net/url"
 	"path"
@@ -45,7 +45,7 @@ func (t *Transport) Ping() (res proto.Info, err error) {
 func (t *Transport) DeclareCommitTx(txID string, ids []string) (res []string, err error) {
 	buf := new(bytes.Buffer)
 
-	if err = json.NewEncoder(buf).Encode(proto.DeclareCommitTxRequest{txID, ids}); err != nil {
+	if err = json.NewEncoder(buf).Encode(proto.DeclareUploadTxRequest{txID, ids}); err != nil {
 		return
 	}
 
@@ -55,7 +55,7 @@ func (t *Transport) DeclareCommitTx(txID string, ids []string) (res []string, er
 		return
 	}
 
-	txResp := proto.DeclareCommitTxResponse{}
+	txResp := proto.DeclareUploadTxResponse{}
 	if err = json.NewDecoder(resp.Body).Decode(&txResp); err != nil {
 		return
 	}
@@ -76,7 +76,7 @@ func (t *Transport) AbortCommitTx(txID string) (err error) {
 }
 
 // Push BLOB regardless of index state. Filename MUST be relative
-func (t *Transport) Push(filename string, manifest *shadow.Shadow) (err error) {
+func (t *Transport) Push(filename string, manifest *manifest.Manifest) (err error) {
 	r, err := os.Open(filename)
 	if err != nil {
 		return

@@ -6,9 +6,9 @@ import (
 	"io"
 	"bytes"
 	"strings"
-	"github.com/akaspin/bar/shadow"
 	"testing"
 	"github.com/stretchr/testify/assert"
+	"github.com/akaspin/bar/proto/manifest"
 )
 
 // Make temporary BLOB
@@ -74,7 +74,7 @@ func KillBLOB(name string) (err error) {
 }
 
 // Clean input and return new reader
-func CleanInput(in string) (out io.Reader, size int64) {
+func CleanInput(in string) (out io.Reader) {
 	r := bufio.NewReader(bytes.NewReader([]byte(in)))
 	o := new(bytes.Buffer)
 	var buf []byte
@@ -90,28 +90,23 @@ func CleanInput(in string) (out io.Reader, size int64) {
 		_, err = o.Write([]byte(strings.TrimSpace(string(buf)) + "\n"))
 	}
 	out = bytes.NewReader(o.Bytes())
-	size = int64(len(o.Bytes()))
 	return
 }
 
 func FixStream(in string) (res string) {
-	r, _ := CleanInput(in)
+	r := CleanInput(in)
 	data, _ := ioutil.ReadAll(r)
 	res = string(data)
 	return
 }
 
-func NewShadowFromFile(filename string) (res *shadow.Shadow, err error) {
-	info, err := os.Stat(filename)
-	if err != nil {
-		return
-	}
+func NewShadowFromFile(filename string) (res *manifest.Manifest, err error) {
 
 	r, err := os.Open(filename)
 	if err != nil {
 		return
 	}
 	defer r.Close()
-	res, err = shadow.New(r, info.Size())
+	res, err = manifest.NewFromAny(r, manifest.CHUNK_SIZE)
 	return
 }

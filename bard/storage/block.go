@@ -91,5 +91,9 @@ func (s *BlockStorage) Close() (err error) {
 }
 
 func (s *BlockStorage) blobFileName(id string) string {
-	return filepath.Join(s.root, id[:s.split], id)
+	return filepath.Join(s.root, "blobs", id[:s.split], id)
+}
+
+func (s *BlockStorage) specFileName(id string) string {
+	return filepath.Join(s.root, "specs", id[:s.split], id)
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/akaspin/bar/barc/transport"
 	"os"
 	"bytes"
-	"github.com/akaspin/bar/shadow"
+	"github.com/akaspin/bar/proto/manifest"
 )
 
 func Test_Ping(t *testing.T) {
@@ -136,7 +136,7 @@ func Test_Transport_DownloadBLOB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Make shadow
-	m2, err := shadow.New(bytes.NewReader(w.Bytes()), m1.Size)
+	m2, err := manifest.NewFromAny(bytes.NewReader(w.Bytes()), manifest.CHUNK_SIZE)
 	assert.NoError(t, err)
 
 	assert.Equal(t, m1.ID, m2.ID)

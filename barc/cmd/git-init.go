@@ -1,8 +1,6 @@
 package cmd
 import (
 	"github.com/akaspin/bar/barc/git"
-	"flag"
-	"io"
 	"github.com/akaspin/bar/barc/transport"
 	"net/url"
 	"time"
@@ -31,6 +29,7 @@ This command installs git infrastructure to use with bar:
 4. Adds git aliases for `barc up`, `barc down` and `barc ls`
 */
 type GitInitCmd struct {
+	*BaseSubCommand
 	endpoint string
 	log string
 	clean bool
@@ -39,16 +38,17 @@ type GitInitCmd struct {
 	transport *transport.TransportPool
 }
 
-func (c *GitInitCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
-	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
+func NewGitInitCmd(s *BaseSubCommand) SubCommand {
+	c := &GitInitCmd{BaseSubCommand: s}
+	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
-	fs.StringVar(&c.log, "log", "WARNING", "barc logging level")
-	fs.BoolVar(&c.clean, "clean", false, "uninstall bar")
-	c.git, err = git.NewGit("")
-	return
+	c.FS.StringVar(&c.log, "log", "WARNING", "barc logging level")
+	c.FS.BoolVar(&c.clean, "clean", false, "uninstall bar")
+	return c
 }
 
 func (c *GitInitCmd) Do() (err error) {
+	c.git, err = git.NewGit(c.WD)
 	if c.clean {
 		err = c.uninstall()
 		return

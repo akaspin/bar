@@ -4,6 +4,8 @@ import (
 	"github.com/akaspin/bar/barc/git"
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/fixtures"
+	"os"
+	"path/filepath"
 )
 
 func Test_DirtyFiles(t *testing.T) {
@@ -18,22 +20,25 @@ func Test_DirtyFiles(t *testing.T) {
 }
 
 func Test_FilterByDiff(t *testing.T) {
-	g, err := git.NewGit("")
+	wd, _ := os.Getwd()
+	cm := filepath.Clean(filepath.Join(wd, "../../barc"))
+
+	g, err := git.NewGit(cm)
 	assert.NoError(t, err)
 
-	res, err := g.FilterByFilter("unspecified", []string{
-		"barctl/cmd/git-cat.go",
-		"barctl/cmd/git-clean.go",
+	res, err := g.FilterByAttr("unspecified", []string{
+		"cmd/git-cat.go",
+		"cmd/git-clean.go",
 	}...)
 	assert.NoError(t, err)
 	assert.Equal(t, []string{
-		"barctl/cmd/git-cat.go",
-		"barctl/cmd/git-clean.go",
+		"cmd/git-cat.go",
+		"cmd/git-clean.go",
 	}, res)
 }
 
 func Test_ParseDiff(t *testing.T) {
-	in, _ := fixtures.CleanInput(`
+	in := fixtures.CleanInput(`
 	$ git diff --cached --staged --full-index HEAD
 	diff --git a/fixtures/bb.txt b/fixtures/bb.txt
 	index 1b28d39c1a2600a86355cd90b25d32e273e91f57..39599d03bfcccc04f209e2bbf74b75b7878b837f 100644

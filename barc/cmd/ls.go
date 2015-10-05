@@ -1,11 +1,9 @@
 package cmd
 import (
-	"flag"
-	"io"
 	"github.com/akaspin/bar/barc/git"
 	"os"
 	"github.com/akaspin/bar/barc/lists"
-	"github.com/akaspin/bar/shadow"
+	"github.com/akaspin/bar/proto/manifest"
 	"sync"
 	"fmt"
 	"text/tabwriter"
@@ -26,33 +24,28 @@ List bar blobs
 
 */
 type LsCmd struct {
+	*BaseSubCommand
+
 	useGit bool
 	endpoint string
 	noHeader bool
 	fullID bool
 	noRemote bool
 
-	out io.Writer
-	fs *flag.FlagSet
-	wd string
-
 	git *git.Git
 	transport *transport.TransportPool
 }
 
-func (c *LsCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
-	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
-	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
+func NewLsCmd(s *BaseSubCommand) SubCommand {
+	c := &LsCmd{BaseSubCommand: s}
+	c.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
+	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
-	fs.BoolVar(&c.noHeader, "no-header", false, "do not show header")
-	fs.BoolVar(&c.fullID, "full-id", false, "do not trim BLOB IDs")
-	fs.BoolVar(&c.noRemote, "no-remote", false,
+	c.FS.BoolVar(&c.noHeader, "no-header", false, "do not show header")
+	c.FS.BoolVar(&c.fullID, "full-id", false, "do not trim BLOB IDs")
+	c.FS.BoolVar(&c.noRemote, "no-remote", false,
 		"do not request bard for BLOBs states")
-
-	c.fs = fs
-	c.out = out
-	c.wd = wd
-	return
+	return c
 }
 
 func (c *LsCmd) Do() (err error) {
@@ -64,9 +57,9 @@ func (c *LsCmd) Do() (err error) {
 	}
 
 	// Collect filenames
-	feed := lists.NewFileList(c.fs.Args()...).ListDir(c.wd)
+	feed := lists.NewFileList(c.FS.Args()...).ListDir(c.WD)
 	if c.git != nil {
-		dirty, err := c.git.DiffFilesWithFilter(feed...)
+		dirty, err := c.git.DiffFilesWithAttr(feed...)
 		if err != nil {
 			return err
 		}
@@ -89,7 +82,7 @@ func (c *LsCmd) Do() (err error) {
 
 	// print this stuff
 	w := new(tabwriter.Writer)
-	w.Init(c.out, 0, 8, 0, '\t', 0)
+	w.Init(c.Stdout, 0, 8, 0, '\t', 0)
 
 	if !c.noHeader {
 		fmt.Fprint(w, "NAME\tBLOB\t")
@@ -129,13 +122,13 @@ func (c *LsCmd) Do() (err error) {
 // Collect all shadows for feed
 func (c *LsCmd) collectShadows(feed []string) (
 	res map[string]struct{
-		Shadow *shadow.Shadow
+		Shadow *manifest.Manifest
 		IsShadow bool},
 	err error,
 ) {
 	wg := &sync.WaitGroup{}
 	res = map[string]struct{
-		Shadow *shadow.Shadow
+		Shadow *manifest.Manifest
 		IsShadow bool
 	}{}
 	errs := []error{}
@@ -149,7 +142,7 @@ func (c *LsCmd) collectShadows(feed []string) (
 				return
 			}
 			res[n] = struct{
-				Shadow *shadow.Shadow
+				Shadow *manifest.Manifest
 				IsShadow bool
 			}{res1, isSh}
 		}(name)
@@ -161,11 +154,7 @@ func (c *LsCmd) collectShadows(feed []string) (
 }
 
 // Collect shadow for name
-func (c *LsCmd) collectOneShadow(name string) (res *shadow.Shadow, isShadow bool, err error) {
-	info, err := os.Stat(name)
-	if err != nil {
-		return
-	}
+func (c *LsCmd) collectOneShadow(name string) (res *manifest.Manifest, isShadow bool, err error) {
 
 	f, err := os.Open(name)
 	if err != nil {
@@ -173,19 +162,19 @@ func (c *LsCmd) collectOneShadow(name string) (res *shadow.Shadow, isShadow bool
 	}
 	defer f.Close()
 
-	r, isShadow, err := shadow.Peek(f)
+	r, isShadow, err := manifest.Peek(f)
 	if c.git == nil {
 		// No git. Parse as usual
 	} else {
 		// If git is present - get manifest from index
 		var oid string
-		oid, err = c.git.OID(name)
+		oid, err = c.git.GetOID(name)
 		if err != nil {
 			return
 		}
 		r, err = c.git.Cat(oid)
 	}
-	res, err = shadow.New(r, info.Size())
+	res, err = manifest.NewFromAny(r, manifest.CHUNK_SIZE)
 	return
 }
 

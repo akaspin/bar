@@ -1,6 +1,5 @@
 package cmd
 import (
-	"flag"
 	"io"
 	"github.com/akaspin/bar/barc/git"
 	"fmt"
@@ -9,7 +8,7 @@ import (
 	"net/url"
 	"github.com/nu7hatch/gouuid"
 	"sync"
-	"github.com/akaspin/bar/shadow"
+	"github.com/akaspin/bar/proto/manifest"
 	"path/filepath"
 	"time"
 	"github.com/tamtam-im/logx"
@@ -35,6 +34,8 @@ git pre-commit hook MUST be registered:
 */
 
 type GitPreCommitCmd struct {
+	*BaseSubCommand
+
 	endpoint string
 	chunkSize int64
 	pool int
@@ -45,12 +46,13 @@ type GitPreCommitCmd struct {
 	git *git.Git
 }
 
-func (c *GitPreCommitCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
-	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
+func NewGitPreCommitCmd(s *BaseSubCommand) SubCommand {
+	c := &GitPreCommitCmd{BaseSubCommand: s}
+	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
-	fs.Int64Var(&c.chunkSize, "chunk", shadow.CHUNK_SIZE, "preferred chunk size")
-	fs.IntVar(&c.pool, "pool", 16, "pool size")
-	return
+	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
+	c.FS.IntVar(&c.pool, "pool", 16, "pool size")
+	return c
 }
 
 func (c *GitPreCommitCmd) Do() (err error) {
@@ -66,23 +68,21 @@ func (c *GitPreCommitCmd) Do() (err error) {
 	if err != nil {
 		return
 	}
-	c.transport = transport.NewTransportPool(u, 16, time.Minute * 5)
+	c.transport = transport.NewTransportPool(u, c.pool, time.Minute * 5)
 
-	if c.git, err = git.NewGit(""); err != nil {
+	if c.git, err = git.NewGit(c.WD); err != nil {
+		return
+	}
+	if c.git.CWD != c.git.Root {
+		err = fmt.Errorf("pre-commit must run from git root %s != %s",
+			c.git.CWD, c.git.Root)
 		return
 	}
 
 	// Check dirty status
-	dirty, err := c.git.DiffFiles()
+	dirty, err := c.git.DiffFilesWithAttr()
 	if err != nil {
 		return
-	}
-
-	if len(dirty) > 0 {
-		dirty, err = c.git.FilterByFilter("bar", dirty...)
-		if err != nil {
-			return
-		}
 	}
 
 	if len(dirty) > 0 {
@@ -157,7 +157,7 @@ func (c *GitPreCommitCmd) declareTx(diff []git.DiffEntry) (res []git.DiffEntry, 
 }
 
 func (c *GitPreCommitCmd) uploadOne(oid string, filename string) (err error) {
-	var s *shadow.Shadow
+	var s *manifest.Manifest
 	t, err := c.transport.Take()
 	if err != nil {
 		return
@@ -168,7 +168,7 @@ func (c *GitPreCommitCmd) uploadOne(oid string, filename string) (err error) {
 	if catR, err = c.git.Cat(oid); err != nil {
 		return
 	}
-	if s, err = shadow.NewFromManifest(catR); err != nil {
+	if s, err = manifest.NewFromManifest(catR); err != nil {
 		return
 	}
 

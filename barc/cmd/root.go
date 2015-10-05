@@ -12,29 +12,37 @@ var logLevel string
 
 type SubCommand interface {
 
-	// Bind subcomand to environment
-	Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error)
-
 	// Do subcommand
 	Do() (err error)
 }
 
-func route(s string) (res SubCommand, err error) {
-	res, ok := (map[string]SubCommand{
-		"git-init":       &GitInitCmd{},
-		"git-clean":      &GitCleanCommand{},
-		"git-smudge":     &GitSmudgeCmd{},
-		"git-pre-commit": &GitPreCommitCmd{},
-		"up":             &UpCmd{},
-		"down":           &DownCmd{},
-		"ls":             &LsCmd{},
-		"git-diff":       &GitDiffCmd{},
+type SubCommandFactory func(*BaseSubCommand) SubCommand
+
+// Subcommand environment
+type BaseSubCommand struct {
+	WD string
+	FS *flag.FlagSet
+	Stdin io.Reader
+	Stdout io.Writer
+	StdErr io.Writer
+}
+
+func route(s string, base *BaseSubCommand) (res SubCommand, err error) {
+	factory, ok := (map[string]SubCommandFactory{
+		"git-init":       NewGitInitCmd,
+		"git-clean":      NewGitCleanCommand,
+		"git-smudge":     NewGitSmudgeCmd,
+		"git-pre-commit": NewGitPreCommitCmd,
+		"up":             NewUpCmd,
+		"down":           NewDownCmd,
+		"ls":             NewLsCmd,
+		"git-diff":       NewGitDiffCmd,
 	})[s]
 	if !ok {
 		err = fmt.Errorf("command %s not found", s)
 	}
 
-	return
+	return factory(base), nil
 }
 
 func Root(wd string, args []string, in io.Reader, out, errOut io.Writer) (err error) {
@@ -50,13 +58,12 @@ func Root(wd string, args []string, in io.Reader, out, errOut io.Writer) (err er
 	if len(f.FlagSet.Args()) == 0 {
 		f.Usage()
 	}
-	sub, err := route(f.FlagSet.Args()[0])
-	if err != nil {
-		return
-	}
-
 	subFS := flag.NewFlagSet(f.FlagSet.Args()[0], flag.ExitOnError)
-	if err = sub.Bind(wd, subFS, in, out); err != nil {
+
+	sub, err := route(f.FlagSet.Args()[0], &BaseSubCommand{
+		wd, subFS, in, out, errOut,
+	})
+	if err != nil {
 		return
 	}
 

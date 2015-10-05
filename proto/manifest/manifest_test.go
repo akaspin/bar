@@ -1,7 +1,7 @@
-package shadow_test
+package manifest_test
 import (
 	"testing"
-	"github.com/akaspin/bar/shadow"
+	"github.com/akaspin/bar/proto/manifest"
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/fixtures"
 	"golang.org/x/crypto/sha3"
@@ -22,9 +22,8 @@ func Test_SHA3(t *testing.T) {
 
 func Test_Shadow_ToStringFull(t *testing.T) {
 	id := "ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c"
-	expect := fixtures.FixStream(`BAR:SHADOW
+	expect := fixtures.FixStream(`BAR:MANIFEST
 
-		version 0.1.0
 		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c
 		size 1234
 
@@ -34,13 +33,11 @@ func Test_Shadow_ToStringFull(t *testing.T) {
 		offset 0
 		`)
 
-	sh := &shadow.Shadow{
-		false,
-		"0.0.1",
+	sh := &manifest.Manifest{
 		id,
 		1234,
-		[]shadow.Chunk{
-			shadow.Chunk{id, 1234, 0},
+		[]manifest.Chunk{
+			manifest.Chunk{id, 1234, 0},
 		},
 	}
 
@@ -48,9 +45,8 @@ func Test_Shadow_ToStringFull(t *testing.T) {
 }
 
 func Test_Shadow_New1(t *testing.T) {
-	in := `BAR:SHADOW
+	in := `BAR:MANIFEST
 
-		version 0.1.0
 		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c
 		size 1234
 
@@ -59,7 +55,7 @@ func Test_Shadow_New1(t *testing.T) {
 		size 1234
 		offset 0
 		`
-	m, err := shadow.New(fixtures.CleanInput(in))
+	m, err := manifest.NewFromManifest(fixtures.CleanInput(in))
 	assert.NoError(t, err)
 	assert.Equal(t, fixtures.FixStream(in), (*m).String())
 }
@@ -70,9 +66,8 @@ func Test_Shadow_NewFromBLOB_20M(t *testing.T)  {
 
 	m, err := fixtures.NewShadowFromFile(bn)
 	assert.NoError(t, err)
-	assert.Equal(t, fixtures.FixStream(`BAR:SHADOW
+	assert.Equal(t, fixtures.FixStream(`BAR:MANIFEST
 
-	version 0.1.0
 	id 9e39ad7cf632a038a5a2e0f9144f6ea4aff04ff11803c169cb24f60e56444f08
 	size 20971525
 
@@ -129,9 +124,8 @@ func Test_Shadow_NewFromBLOB_2M(t *testing.T)  {
 
 	m, err := fixtures.NewShadowFromFile(bn)
 	assert.NoError(t, err)
-	assert.Equal(t, fixtures.FixStream(`BAR:SHADOW
+	assert.Equal(t, fixtures.FixStream(`BAR:MANIFEST
 
-	version 0.1.0
 	id fd76eb2f9866a12c6c3a2f884d5350b38319bc510106a7ba78789cc5507158b8
 	size 2097619
 
@@ -152,9 +146,8 @@ func Test_Shadow_NewFromBLOB_2K(t *testing.T)  {
 
 	m, err := fixtures.NewShadowFromFile(bn)
 	assert.NoError(t, err)
-	assert.Equal(t, fixtures.FixStream(`BAR:SHADOW
+	assert.Equal(t, fixtures.FixStream(`BAR:MANIFEST
 
-		version 0.1.0
 		id be4215176932949d887fa82241bbe0b03a44dc16ee2d23eedbc973e511ae8bb2
 		size 2048
 
@@ -171,9 +164,8 @@ func Test_Shadow_NewFromBLOB_3b(t *testing.T)  {
 
 	m, err := fixtures.NewShadowFromFile(bn)
 	assert.NoError(t, err)
-	assert.Equal(t, fixtures.FixStream(`BAR:SHADOW
+	assert.Equal(t, fixtures.FixStream(`BAR:MANIFEST
 
-		version 0.1.0
 		id 1186d49a4ad620618f760f29da2c593b2ec2cc2ced69dc16817390d861e62253
 		size 3
 

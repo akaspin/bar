@@ -1,4 +1,4 @@
-package shadow
+package manifest
 import (
 	"io"
 	"bytes"
@@ -11,19 +11,16 @@ import (
 )
 
 const (
-	SHADOW_HEADER = "BAR:SHADOW"
-	VERSION = "0.1.0"
+	MANIFEST_HEADER = "BAR:MANIFEST"
 )
 
-type Shadow struct {
-	IsFromShadow bool   `json:"-"`
-	Version string
+type Manifest struct {
 	ID string
 	Size int64
 	Chunks []Chunk
 }
 
-func (s Shadow) String() (res string) {
+func (s Manifest) String() (res string) {
 	data := []byte{}
 	buf := bytes.NewBuffer(data)
 	(&s).Serialize(buf)
@@ -32,12 +29,11 @@ func (s Shadow) String() (res string) {
 }
 
 // write initialized manifest to specific stream
-func (s *Shadow) Serialize(out io.Writer) (err error) {
-	if _, err = out.Write([]byte(SHADOW_HEADER)); err != nil {
+func (s *Manifest) Serialize(out io.Writer) (err error) {
+	if _, err = out.Write([]byte(MANIFEST_HEADER)); err != nil {
 		return
 	}
-	body := fmt.Sprintf("\n\nversion %s\nid %s\nsize %d\n\n",
-		VERSION, s.ID, s.Size)
+	body := fmt.Sprintf("\n\nid %s\nsize %d\n\n", s.ID, s.Size)
 	if _, err = out.Write([]byte(body)); err != nil {
 		return
 	}
@@ -53,21 +49,7 @@ func (s *Shadow) Serialize(out io.Writer) (err error) {
 	return
 }
 
-func New(in io.Reader, size int64) (res *Shadow, err error) {
-	r, isShadow, err := Peek(in)
-	if err != nil {
-		return
-	}
-
-	if isShadow {
-		res, err = NewFromManifest(r)
-	} else {
-		res, err = NewFromBLOB(r, GuessChunkSize(size))
-	}
-	return
-}
-
-func NewFromAny(in io.Reader, chunkSize int64) (res *Shadow, err error) {
+func NewFromAny(in io.Reader, chunkSize int64) (res *Manifest, err error) {
 	r, isShadow, err := Peek(in)
 	if err != nil {
 		return
@@ -82,23 +64,21 @@ func NewFromAny(in io.Reader, chunkSize int64) (res *Shadow, err error) {
 }
 
 // Make shadow from manifest
-func NewFromManifest(in io.Reader) (res *Shadow, err error) {
-	res = &Shadow{}
+func NewFromManifest(in io.Reader) (res *Manifest, err error) {
+	res = &Manifest{}
 	err = res.parseManifest(in)
 	return
 }
 
 // Make shadow from BLOB
-func NewFromBLOB(in io.Reader, chunkSize int64) (res *Shadow, err error) {
-	res = &Shadow{}
+func NewFromBLOB(in io.Reader, chunkSize int64) (res *Manifest, err error) {
+	res = &Manifest{}
 	err = res.parseBlob(in, chunkSize)
 	return
 }
 
 // Parse manifest
-func (s *Shadow) parseManifest(in io.Reader) (err error) {
-	s.IsFromShadow = true
-
+func (s *Manifest) parseManifest(in io.Reader) (err error) {
 	var buf []byte
 	var data string
 
@@ -108,8 +88,8 @@ func (s *Shadow) parseManifest(in io.Reader) (err error) {
 	if data, err = s.nextLine(br, buf); err != nil {
 		return
 	}
-	if data != SHADOW_HEADER {
-		err = fmt.Errorf("bad shadow header %s", data)
+	if data != MANIFEST_HEADER {
+		err = fmt.Errorf("bad manifest header %s", data)
 		return
 	}
 	// check delimiter
@@ -118,14 +98,6 @@ func (s *Shadow) parseManifest(in io.Reader) (err error) {
 	}
 	if len(buf) > 0 {
 		err = fmt.Errorf("bad delimiter %s", data)
-	}
-
-	// Read version
-	if data, err = s.nextLine(br, buf); err != nil {
-		return
-	}
-	if _, err = fmt.Sscanf(data, "version %s", &s.Version); err != nil {
-		return
 	}
 
 	// Read id
@@ -208,7 +180,7 @@ func (s *Shadow) parseManifest(in io.Reader) (err error) {
 }
 
 // Initialize manifest from BLOB
-func (s *Shadow) parseBlob(in io.Reader, chunkSize int64) (err error) {
+func (s *Manifest) parseBlob(in io.Reader, chunkSize int64) (err error) {
 	var chunkHasher hash.Hash
 	var w io.Writer
 	var chunk Chunk
@@ -235,11 +207,10 @@ func (s *Shadow) parseBlob(in io.Reader, chunkSize int64) (err error) {
 		}
 	}
 	s.ID = hex.EncodeToString(hasher.Sum(nil))
-	s.Version = VERSION
 	return
 }
 
-func (s *Shadow) nextLine(in *bufio.Reader, buf []byte) (res string, err error) {
+func (s *Manifest) nextLine(in *bufio.Reader, buf []byte) (res string, err error) {
 	buf, _, err = in.ReadLine()
 	if err != nil {
 		return

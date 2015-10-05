@@ -23,14 +23,14 @@ func (h *DeclareCommitTxHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 	defer h.Storage.Release(s)
 
-	req := proto.DeclareCommitTxRequest{}
+	req := proto.DeclareUploadTxRequest{}
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logx.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	res := proto.DeclareCommitTxResponse{}
+	res := proto.DeclareUploadTxResponse{}
 	for _, id := range req.IDs {
 		if ok, _ := s.IsExists(id); !ok {
 			res.MissingIDs = append(res.MissingIDs, id)

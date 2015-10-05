@@ -124,12 +124,8 @@ func (g *Git) hookName(name string) (res string) {
 }
 
 // Returns dirty files with filter=bar
-func (g *Git) DiffFilesWithFilter(arg ...string) (res []string, err error) {
-	rooted, err := g.ToRoot(arg...)
-	if err != nil {
-		return
-	}
-	delta, err := g.DiffFiles(rooted...)
+func (g *Git) DiffFilesWithAttr(arg ...string) (res []string, err error) {
+	delta, err := g.DiffFiles(arg...)
 	if err != nil {
 		return
 	}
@@ -137,7 +133,7 @@ func (g *Git) DiffFilesWithFilter(arg ...string) (res []string, err error) {
 		return
 	}
 
-	res, err = g.FilterByFilter("bar", delta...)
+	res, err = g.FilterByAttr("bar", delta...)
 	if err != nil {
 		return
 	}
@@ -149,7 +145,12 @@ func (g *Git) DiffFilesWithFilter(arg ...string) (res []string, err error) {
 //
 //    $ git diff-files --name-only
 //
+// This command always takes filenames relative to CWD
 func (g *Git) DiffFiles(what ...string) (res []string, err error) {
+	if what, err = g.ToRoot(what...); err != nil {
+		return
+	}
+
 	rawFiles, err := g.Run("diff-files",
 		append([]string{"--name-only", "-z"}, what...)...)
 	if err != nil {
@@ -160,6 +161,7 @@ func (g *Git) DiffFiles(what ...string) (res []string, err error) {
 			res = append(res, f)
 		}
 	}
+	res, err = g.ToRoot(res...)
 	return
 }
 
@@ -168,7 +170,11 @@ func (g *Git) DiffFiles(what ...string) (res []string, err error) {
 //    $ git check-attr diff <files> | grep "diff: <diff>"
 //
 // This command takes and returns filenames relative to CWD
-func (g *Git) FilterByFilter(diff string, filenames ...string) (res []string, err error) {
+func (g *Git) FilterByAttr(diff string, filenames ...string) (res []string, err error) {
+	if filenames, err = g.ToRoot(filenames...); err != nil {
+		return
+	}
+
 	rawAttrs, err := g.Run("check-attr",
 		append([]string{"filter"}, filenames...)...)
 	if err != nil {
@@ -192,6 +198,7 @@ func (g *Git) FilterByFilter(diff string, filenames ...string) (res []string, er
 			res = append(res, strings.TrimSuffix(line, suffix))
 		}
 	}
+	res, err = g.FromRoot(res...)
 	return
 }
 
@@ -199,8 +206,13 @@ func (g *Git) FilterByFilter(diff string, filenames ...string) (res []string, er
 //
 //    $ git ls-files --cached -s --full-name <file>
 //
-func (g *Git) OID(filename string) (res string, err error) {
-	raw, err := g.Run("ls-files", "--cached", "-s", "--full-name", "-z", filename)
+
+func (g *Git) GetOID(filename string) (res string, err error) {
+	rooted, err := g.ToRoot()
+	if err != nil {
+		return
+	}
+	raw, err := g.Run("ls-files", "--cached", "-s", "--full-name", "-z", rooted[0])
 	if err != nil {
 		return
 	}

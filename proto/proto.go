@@ -1,5 +1,5 @@
-// bard proto stubs
 package proto
+import "github.com/akaspin/bar/proto/manifest"
 
 // Server info
 type Info struct {
@@ -12,7 +12,7 @@ type Info struct {
 }
 
 // Declare commit transaction request
-type DeclareCommitTxRequest struct {
+type DeclareUploadTxRequest struct {
 
 	// Commit id
 	CommitID string
@@ -21,6 +21,46 @@ type DeclareCommitTxRequest struct {
 	IDs []string
 }
 
-type DeclareCommitTxResponse struct {
+// Response for upload request
+type DeclareUploadTxResponse struct {
+
+	// Endpoints to upload
+	Endpoints []string
+
+	// Missing blob IDs
 	MissingIDs []string
+}
+
+// Commit upload (not implemented yet)
+type CommitUploadTxRequest struct {
+	UploadID string
+	BindToId string
+}
+
+// Download request
+type DownloadRequest struct {
+	IDs []string
+}
+
+// Response to download request
+type DownloadResponse struct {
+
+	// Manifests for BLOBs on bard
+	BLOBs []manifest.Manifest
+
+	// Mappings between IDs and endpoints
+	//
+	//    <endpoint>: {id, id ...}
+	//
+	Endpoints map[string][]string
+}
+
+// Tree spec for git-less usage
+type Spec struct {
+
+	// Spec url.
+	URL string
+
+	//
+	BLOBs map[string]manifest.Manifest
 }

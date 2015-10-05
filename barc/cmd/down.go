@@ -1,10 +1,9 @@
 package cmd
 import (
-	"flag"
 	"io"
 	"github.com/akaspin/bar/barc/git"
 	"github.com/akaspin/bar/barc/transport"
-	"github.com/akaspin/bar/shadow"
+	"github.com/akaspin/bar/proto/manifest"
 	"github.com/akaspin/bar/barc/lists"
 	"os"
 	"sync"
@@ -21,8 +20,7 @@ Replace local shadows with downloaded BLOBs.
 
  */
 type DownCmd struct {
-	fs *flag.FlagSet
-	wd string
+	*BaseSubCommand
 
 	endpoint string
 	useGit bool
@@ -31,21 +29,24 @@ type DownCmd struct {
 
 	git *git.Git
 	transport *transport.TransportPool
-	hasher *shadow.HasherPool
+	hasher *manifest.HasherPool
 
 	// Temporary dir
 	tmp string
 }
 
-func (c *DownCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
-	c.fs = fs
-	c.wd = wd
-
-	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
+func NewDownCmd(s *BaseSubCommand) SubCommand {
+	c := &DownCmd{BaseSubCommand: s}
+	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
-	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
-	fs.IntVar(&c.maxPool, "pool", 16, "pool size")
-	fs.Int64Var(&c.chunkSize, "chunk", shadow.CHUNK_SIZE, "chunk size")
+	c.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
+	c.FS.IntVar(&c.maxPool, "pool", 16, "pool size")
+	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "chunk size")
+
+	return c
+}
+
+func (c *DownCmd) Init() (err error) {
 	return
 }
 
@@ -57,7 +58,7 @@ func (c *DownCmd) Do() (err error) {
 	defer os.RemoveAll(c.tmp)
 
 	if c.useGit {
-		if c.git, err = git.NewGit(c.wd); err != nil {
+		if c.git, err = git.NewGit(c.WD); err != nil {
 			return
 		}
 	}
@@ -69,9 +70,9 @@ func (c *DownCmd) Do() (err error) {
 	c.transport = transport.NewTransportPool(u, c.maxPool, time.Minute)
 
 	// Collect filenames
-	feed := lists.NewFileList(c.fs.Args()...).ListDir(c.wd)
+	feed := lists.NewFileList(c.FS.Args()...).ListDir(c.WD)
 	if c.git != nil {
-		dirty, err := c.git.DiffFilesWithFilter(feed...)
+		dirty, err := c.git.DiffFilesWithAttr(feed...)
 		if err != nil {
 			return err
 		}
@@ -95,7 +96,7 @@ func (c *DownCmd) Do() (err error) {
 }
 
 // maps BLOB-id to filenames
-func (c *DownCmd) download(in map[string]*shadow.Shadow) (err error) {
+func (c *DownCmd) download(in map[string]*manifest.Manifest) (err error) {
 	res := map[string][]string{}
 	errs := []error{}
 	for n, s := range in {
@@ -105,7 +106,7 @@ func (c *DownCmd) download(in map[string]*shadow.Shadow) (err error) {
 	for _, names := range res {
 		wg.Add(1)
 		sh := in[names[0]]
-		go func(s *shadow.Shadow, targets []string) {
+		go func(s *manifest.Manifest, targets []string) {
 			defer wg.Done()
 			tmp, err1 := c.downloadOne(s)
 			if err1 != nil {
@@ -127,7 +128,7 @@ func (c *DownCmd) download(in map[string]*shadow.Shadow) (err error) {
 }
 
 // Download one file and return temporary file name
-func (c *DownCmd) downloadOne(sh *shadow.Shadow) (res string, err error) {
+func (c *DownCmd) downloadOne(sh *manifest.Manifest) (res string, err error) {
 	f, err := ioutil.TempFile(c.tmp, "")
 	if err != nil {
 		return
@@ -200,8 +201,8 @@ func (c *DownCmd) populateOne(src, dst string, move bool) (res string, err error
 }
 
 // Collect shadows
-func (c *DownCmd) collectShadows(in []string) (res map[string]*shadow.Shadow, err error) {
-	res = map[string]*shadow.Shadow{}
+func (c *DownCmd) collectShadows(in []string) (res map[string]*manifest.Manifest, err error) {
+	res = map[string]*manifest.Manifest{}
 	errs := []error{}
 
 	wg := &sync.WaitGroup{}
@@ -227,20 +228,20 @@ func (c *DownCmd) collectShadows(in []string) (res map[string]*shadow.Shadow, er
 }
 
 // Collect one shadow. "res" will be <nil> if file is BLOB.
-func (c *DownCmd) collectOneShadow(what string) (res *shadow.Shadow, err error) {
+func (c *DownCmd) collectOneShadow(what string) (res *manifest.Manifest, err error) {
 	f, err := os.Open(what)
 	if err != nil {
 		return
 	}
 	defer f.Close()
 
-	r, isShadow, err := shadow.Peek(f)
+	r, isShadow, err := manifest.Peek(f)
 	if err != nil {
 		return
 	}
 	if isShadow {
 		// ok it's shadow
-		res, err = shadow.NewFromManifest(r)
+		res, err = manifest.NewFromManifest(r)
 	}
 	return
 }

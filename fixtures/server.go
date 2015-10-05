@@ -31,5 +31,5 @@ func RunServer(t *testing.T, root string) (endpoint *url.URL, stop func() error)
 }
 
 func ServerStoredName(root string, id string) string {
-	return filepath.Join(root, id[:2], id)
+	return filepath.Join(root, "blobs", id[:2], id)
 }
