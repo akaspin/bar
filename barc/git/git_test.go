@@ -21,7 +21,7 @@ func Test_FilterByDiff(t *testing.T) {
 	g, err := git.NewGit("")
 	assert.NoError(t, err)
 
-	res, err := g.FilterByDiff("unspecified", []string{
+	res, err := g.FilterByFilter("unspecified", []string{
 		"barctl/cmd/git-cat.go",
 		"barctl/cmd/git-clean.go",
 	}...)

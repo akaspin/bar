@@ -27,6 +27,7 @@ func (f *Tree) Populate() (err error) {
 			"file-one.bin": 3,
 			"file-two.bin": 1024 * 1024 * 2 + 45,
 			"file-three.bin": 1024 + 45,
+			"file-four with spaces.bin": 1024 + 45,
 		} {
 			if err = f.WriteBLOB(filepath.Join(sub, n), s); err != nil {
 				return

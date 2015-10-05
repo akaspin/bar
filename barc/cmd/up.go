@@ -32,10 +32,12 @@ type UpCmd struct {
 	hasher *shadow.HasherPool
 
 	fs *flag.FlagSet
+	wd string
 }
 
 func (c *UpCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	c.fs = fs
+	c.wd = wd
 
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
@@ -62,9 +64,15 @@ func (c *UpCmd) Do() (err error) {
 	c.tr = transport.NewTransportPool(u, c.poolSize, time.Minute)
 	c.hasher = shadow.NewHasherPool(c.poolSize, time.Minute)
 
-	feed, err := c.getFeed()
-	if err != nil {
-		return
+	feed := lists.NewFileList(c.fs.Args()...).ListDir(c.wd)
+	if c.git != nil {
+		dirty, err := c.git.DiffFilesWithFilter(feed...)
+		if err != nil {
+			return err
+		}
+		if len(dirty) > 0 {
+			return fmt.Errorf("dirty files in tree %s", dirty)
+		}
 	}
 
 	logx.Debugf("files to upload %s", feed)
@@ -248,12 +256,3 @@ func (c *UpCmd) collectOneShadow(name string) (res *shadow.Shadow, err error) {
 	return
 }
 
-func (c *UpCmd) getFeed() (res []string, err error) {
-	root, err := os.Getwd()
-	if err != nil {
-		return
-	}
-
-	res, err = lists.NewGlobber(root, c.fs.Args()).List(c.git)
-	return
-}

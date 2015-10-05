@@ -33,8 +33,9 @@ type LsCmd struct {
 	noRemote bool
 
 	out io.Writer
-
 	fs *flag.FlagSet
+	wd string
+
 	git *git.Git
 	transport *transport.TransportPool
 }
@@ -50,6 +51,7 @@ func (c *LsCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (
 
 	c.fs = fs
 	c.out = out
+	c.wd = wd
 	return
 }
 
@@ -62,13 +64,15 @@ func (c *LsCmd) Do() (err error) {
 	}
 
 	// Collect filenames
-	cwd, err := os.Getwd()
-	if err != nil {
-		return
-	}
-	feed, err := lists.NewGlobber(cwd, c.fs.Args()).List(c.git)
-	if err != nil {
-		return
+	feed := lists.NewFileList(c.fs.Args()...).ListDir(c.wd)
+	if c.git != nil {
+		dirty, err := c.git.DiffFilesWithFilter(feed...)
+		if err != nil {
+			return err
+		}
+		if len(dirty) > 0 {
+			return fmt.Errorf("dirty files in tree %s", dirty)
+		}
 	}
 	shadows, err := c.collectShadows(feed)
 

@@ -19,6 +19,7 @@ func Test_StartStopBard(t *testing.T) {
 	s := server.NewBardServer(&server.BardServerOptions{
 		fmt.Sprintf(":%d", port),
 		1024,
+		16,
 		p,
 	})
 

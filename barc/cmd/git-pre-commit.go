@@ -79,7 +79,7 @@ func (c *GitPreCommitCmd) Do() (err error) {
 	}
 
 	if len(dirty) > 0 {
-		dirty, err = c.git.FilterByDiff("bar", dirty...)
+		dirty, err = c.git.FilterByFilter("bar", dirty...)
 		if err != nil {
 			return
 		}

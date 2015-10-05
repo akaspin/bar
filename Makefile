@@ -54,7 +54,6 @@ uninstall:
 	rm ${INSTALL_DIR}/bard ${INSTALL_DIR}/barc
 
 ${INSTALL_DIR}/bard: ${SRC}
-	echo ${PWD}
 	CGO_ENABLED=0 go install \
 		-a -installsuffix cgo \
 		-ldflags '-s -X main.Version=${V}' ${REPO}/bard

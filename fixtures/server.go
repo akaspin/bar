@@ -19,7 +19,7 @@ func RunServer(t *testing.T, root string) (endpoint *url.URL, stop func() error)
 	assert.NoError(t, err)
 
 	srv := server.NewBardServer(&server.BardServerOptions{
-		fmt.Sprintf(":%d", port), 1024*1024*2, p,
+		fmt.Sprintf(":%d", port), 1024*1024*2, 16, p,
 	})
 
 	go srv.Start()

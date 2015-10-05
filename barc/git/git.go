@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"io/ioutil"
+	"github.com/akaspin/bar/barc/lists"
 )
 
 // Extracted diff entry
@@ -30,11 +31,7 @@ type DiffEntry struct {
 // This wrapper always run git in repository root
 type Git struct {
 
-	// Given CWD
-	CWD string
-
-	// Repository root
-	Root string
+	*lists.Mapper
 }
 
 // New git in given root.
@@ -52,7 +49,9 @@ func NewGit(cwd string) (res *Git, err error) {
 	}
 	root := strings.TrimSpace(string(raw))
 
-	res = &Git{cwd, root}
+
+
+	res = &Git{lists.NewMapper(cwd, root)}
 	return
 }
 
@@ -124,9 +123,32 @@ func (g *Git) hookName(name string) (res string) {
 	return filepath.Join(g.Root, ".git", "hooks", name)
 }
 
+// Returns dirty files with filter=bar
+func (g *Git) DiffFilesWithFilter(arg ...string) (res []string, err error) {
+	rooted, err := g.ToRoot(arg...)
+	if err != nil {
+		return
+	}
+	delta, err := g.DiffFiles(rooted...)
+	if err != nil {
+		return
+	}
+	if len(delta) == 0 {
+		return
+	}
+
+	res, err = g.FilterByFilter("bar", delta...)
+	if err != nil {
+		return
+	}
+	res, err = g.FromRoot(res...)
+	return
+}
+
 // Get list of non-staged files in working tree
 //
 //    $ git diff-files --name-only
+//
 func (g *Git) DiffFiles(what ...string) (res []string, err error) {
 	rawFiles, err := g.Run("diff-files",
 		append([]string{"--name-only", "-z"}, what...)...)
@@ -144,9 +166,11 @@ func (g *Git) DiffFiles(what ...string) (res []string, err error) {
 // Filter files by diff attribute
 //
 //    $ git check-attr diff <files> | grep "diff: <diff>"
-func (g *Git) FilterByDiff(diff string, filenames ...string) (res []string, err error) {
+//
+// This command takes and returns filenames relative to CWD
+func (g *Git) FilterByFilter(diff string, filenames ...string) (res []string, err error) {
 	rawAttrs, err := g.Run("check-attr",
-		append([]string{"diff"}, filenames...)...)
+		append([]string{"filter"}, filenames...)...)
 	if err != nil {
 		return
 	}
@@ -154,7 +178,7 @@ func (g *Git) FilterByDiff(diff string, filenames ...string) (res []string, err 
 	attrReader := bufio.NewReader(strings.NewReader(rawAttrs))
 	var data []byte
 	var line string
-	suffix := ": diff: " + diff
+	suffix := ": filter: " + diff
 	for {
 		data, _, err = attrReader.ReadLine()
 		if err == io.EOF {

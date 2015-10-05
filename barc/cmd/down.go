@@ -22,10 +22,11 @@ Replace local shadows with downloaded BLOBs.
  */
 type DownCmd struct {
 	fs *flag.FlagSet
+	wd string
+
 	endpoint string
 	useGit bool
 	maxPool int
-
 	chunkSize int64
 
 	git *git.Git
@@ -38,6 +39,8 @@ type DownCmd struct {
 
 func (c *DownCmd) Bind(wd string, fs *flag.FlagSet, in io.Reader, out io.Writer) (err error) {
 	c.fs = fs
+	c.wd = wd
+
 	fs.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
 	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
@@ -54,7 +57,7 @@ func (c *DownCmd) Do() (err error) {
 	defer os.RemoveAll(c.tmp)
 
 	if c.useGit {
-		if c.git, err = git.NewGit(""); err != nil {
+		if c.git, err = git.NewGit(c.wd); err != nil {
 			return
 		}
 	}
@@ -66,13 +69,15 @@ func (c *DownCmd) Do() (err error) {
 	c.transport = transport.NewTransportPool(u, c.maxPool, time.Minute)
 
 	// Collect filenames
-	cwd, err := os.Getwd()
-	if err != nil {
-		return
-	}
-	feed, err := lists.NewGlobber(cwd, c.fs.Args()).List(c.git)
-	if err != nil {
-		return
+	feed := lists.NewFileList(c.fs.Args()...).ListDir(c.wd)
+	if c.git != nil {
+		dirty, err := c.git.DiffFilesWithFilter(feed...)
+		if err != nil {
+			return err
+		}
+		if len(dirty) > 0 {
+			return fmt.Errorf("dirty files in tree %s", dirty)
+		}
 	}
 
 	// Collect shadows of needed files
