@@ -23,7 +23,8 @@ func NewFileList(arg ...string) (res *FileList) {
 		}
 	}
 	// add dotfiles to excludes
-	res.excludes = append(res.excludes, "^.*\\..*$")
+	res.excludes = append(res.excludes, "^\\..*$")
+	res.excludes = append(res.excludes, "^.*/\\..*$")
 	return
 }
 
@@ -62,7 +63,6 @@ func (l *FileList) isOK(what string) (res bool) {
 			return
 		}
 	}
-
 	if len(l.includes) == 0 {
 		res = true
 		return

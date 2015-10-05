@@ -29,7 +29,7 @@ type DownCmd struct {
 
 	git *git.Git
 	transport *transport.TransportPool
-	hasher *manifest.HasherPool
+	hasher *manifest.Hasher
 
 	// Temporary dir
 	tmp string

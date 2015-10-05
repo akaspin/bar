@@ -59,7 +59,7 @@ type DownloadResponse struct {
 type Spec struct {
 
 	// Spec url.
-	URL string
+	ID string
 
 	//
 	BLOBs map[string]manifest.Manifest

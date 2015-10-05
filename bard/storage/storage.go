@@ -11,6 +11,8 @@ type StorageFactory interface {
 type StorageDriver interface {
 	io.Closer
 
+//	StoreSpec() (err error)
+
 	IsExists(id string) (ok bool, err error)
 
 	// Get BLOB shadow in full form

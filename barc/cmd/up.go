@@ -30,7 +30,7 @@ type UpCmd struct {
 
 	git *git.Git
 	tr *transport.TransportPool
-	hasher *manifest.HasherPool
+	hasher *manifest.Hasher
 }
 
 func NewUpCmd(s *BaseSubCommand) SubCommand {
@@ -218,11 +218,6 @@ func (c *UpCmd) collectShadows(in []string) (res map[string]*manifest.Manifest, 
 // Collect shadow by filename
 // Returns nil if file is already shadow
 func (c *UpCmd) collectOneShadow(name string) (res *manifest.Manifest, err error) {
-	info, err := os.Stat(name)
-	if err != nil {
-		return
-	}
-
 	f, err := os.Open(name)
 	if err != nil {
 		return
@@ -247,7 +242,7 @@ func (c *UpCmd) collectOneShadow(name string) (res *manifest.Manifest, err error
 		}
 		// using cached manifest - size doesn't matter
 	}
-	res, err = c.hasher.Make(r, info.Size())
+	res, err = c.hasher.Make(r)
 
 	return
 }

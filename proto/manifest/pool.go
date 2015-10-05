@@ -19,19 +19,19 @@ func (h *hasher) Close() {}
 
 
 // Concurrent hashing
-type HasherPool struct {
+type Hasher struct {
 	pool *pools.ResourcePool
 }
 
-func NewHasherPool(chunkSize int64, n int, timeout time.Duration) *HasherPool {
+func NewHasherPool(chunkSize int64, n int, timeout time.Duration) *Hasher {
 	newFn := func() (pools.Resource, error) {
 		return &hasher{chunkSize}, nil
 	}
-	return &HasherPool{pools.NewResourcePool(newFn, n, n, timeout)}
+	return &Hasher{pools.NewResourcePool(newFn, n, n, timeout)}
 }
 
 // Make one shadow from reader
-func (p *HasherPool) Make(in io.Reader, size int64) (res *Manifest, err error)  {
+func (p *Hasher) Make(in io.Reader) (res *Manifest, err error)  {
 	r, err := p.pool.TryGet()
 	if err != nil {
 		return
