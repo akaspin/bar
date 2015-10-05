@@ -208,7 +208,7 @@ func (g *Git) FilterByAttr(diff string, filenames ...string) (res []string, err 
 //
 
 func (g *Git) GetOID(filename string) (res string, err error) {
-	rooted, err := g.ToRoot()
+	rooted, err := g.ToRoot(filename)
 	if err != nil {
 		return
 	}

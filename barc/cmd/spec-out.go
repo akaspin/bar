@@ -103,6 +103,7 @@ func (c *SpecOutCmd) collectOne(name string) (res *manifest.Manifest, err error)
 			if r1 != nil {
 				r = r1
 			}
+			logx.Debugf("got reader from git for %s", name)
 		}
 	}
 	res, err = c.hasher.Make(r)
