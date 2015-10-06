@@ -79,6 +79,7 @@ func (l *FileList) isOK(what string) (res bool) {
 
 // replaces ** with .+ and * with [^/]+
 func normalizePattern(in string) (out string) {
+	out = strings.Replace(in, ".", "\\.", -1)
 	out = strings.Replace(in, "**", ".+", -1)
 	out = strings.Replace(out, "*", "[^/]+", -1)
 	out = "^" + out + "$"

@@ -10,8 +10,12 @@ type hasher struct {
 }
 
 func (h *hasher) Make(in io.Reader) (res *Manifest, err error) {
-	res = &Manifest{}
 	res, err = NewFromAny(in, h.chunkSize)
+	return
+}
+
+func (h *hasher) MakeFromManifest(in io.Reader) (res *Manifest, err error) {
+	res, err = NewFromManifest(in)
 	return
 }
 
@@ -30,14 +34,16 @@ func NewHasherPool(chunkSize int64, n int, timeout time.Duration) *Hasher {
 	return &Hasher{pools.NewResourcePool(newFn, n, n, timeout)}
 }
 
-// Make one shadow from reader
+// Make from reader
 func (p *Hasher) Make(in io.Reader) (res *Manifest, err error)  {
-	r, err := p.pool.TryGet()
+	h1, err := p.pool.TryGet()
 	if err != nil {
 		return
 	}
-	defer p.pool.Put(r)
-	h := r.(*hasher)
+	defer p.pool.Put(h1)
+	h := h1.(*hasher)
+
 	res, err = h.Make(in)
 	return
 }
+
