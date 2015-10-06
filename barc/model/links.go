@@ -1,5 +1,7 @@
 package model
-import "github.com/akaspin/bar/proto/manifest"
+import (
+	"github.com/akaspin/bar/proto/manifest"
+)
 
 type IDMap map[string]string
 
@@ -10,7 +12,7 @@ func (i IDMap) IDs() (res []string) {
 	return
 }
 
-type Links map[string]*manifest.Manifest
+type Links map[string]manifest.Manifest
 
 func (l Links) IDMap() (res IDMap) {
 	res = IDMap{}

@@ -54,9 +54,8 @@ func (m *Model) CollectManifests(blobs, manifests bool, names ...string) (res Li
 		wg.Add(1)
 		go func(n string) {
 			defer wg.Done()
-
 			var err1 error
-			f, err1 := os.Open(filepath.Join(m.WD, n))
+			f, err1 := os.Open(n)
 			if err1 != nil {
 				errs = append(errs, err1)
 				return
@@ -78,8 +77,8 @@ func (m *Model) CollectManifests(blobs, manifests bool, names ...string) (res Li
 				errs = append(errs, err1)
 				return
 			}
-			res[n] = m1
-		}(name)
+			res[n] = *m1
+		}(filepath.Join(m.WD, name))
 	}
 	wg.Wait()
 

@@ -5,6 +5,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/barc/transport"
 	"os"
+	"path/filepath"
+	"github.com/akaspin/bar/barc/model"
+	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/barc/lists"
 )
 
 func Test_Ping(t *testing.T) {
@@ -22,57 +26,59 @@ func Test_Ping(t *testing.T) {
 	assert.Equal(t, int64(1024*1024*2), res.ChunkSize)
 }
 
-//func Test_DeclareUpload(t *testing.T) {
-//	root := "fix-up-ping"
-//	endpoint, stop := fixtures.RunServer(t, root)
-//	defer stop()
-//	defer os.RemoveAll(root)
-//
-//	tr := transport.NewTransport(endpoint.String(), 16)
-//	defer tr.Close()
-//
-//	wd, _ := os.Getwd()
-//
-//	tree := fixtures.NewTree(wd)
-//
-//}
+func Test_DeclareUpload(t *testing.T) {
+	root := "fix-up-ping"
+	endpoint, stop := fixtures.RunServer(t, root)
+	defer stop()
+	defer os.RemoveAll(root)
 
-//func Test_Upload(t *testing.T) {
-//	root := "fix-up-local"
-//	endpoint, stop := fixtures.RunServer(t, root)
-//	defer stop()
-//	defer os.RemoveAll(root)
-//
-//	bn := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 56)
-//	defer fixtures.KillBLOB(bn)
-//
-//	m, err := fixtures.NewShadowFromFile(bn)
-//
-//	tr := &transport.Transport{endpoint}
-//	err = tr.Push(bn, m)
-//	assert.NoError(t, err)
-//
-//	m2, err := fixtures.NewShadowFromFile(
-//		fixtures.ServerStoredName(root, m.ID))
-//	assert.Equal(t, m.String(), m2.String())
-//}
-//
-//func Test_Info(t *testing.T) {
-//	root := "fix-info-local"
-//	endpoint, stop := fixtures.RunServer(t, root)
-//	defer stop()
-//	defer os.RemoveAll(root)
-//
-//	bn := fixtures.MakeBLOB(t, 1024 * 1024 *2 + 56)
-//	defer fixtures.KillBLOB(bn)
-//
-//	m, err := fixtures.NewShadowFromFile(bn)
-//	tr := &transport.Transport{endpoint}
-//
-//	err = tr.Info(m.ID)
-//	assert.NoError(t, err)
-//}
-//
+	tr := transport.NewTransport(endpoint.String(), 16)
+	defer tr.Close()
+
+	wd, _ := os.Getwd()
+	wd = filepath.Join(wd, "testdata")
+	tree := fixtures.NewTree(wd)
+	defer tree.Squash()
+	assert.NoError(t, tree.Populate())
+
+	ml, err := model.New(wd, false, manifest.CHUNK_SIZE, 16)
+	assert.NoError(t, err)
+
+	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(wd)...)
+	assert.NoError(t, err)
+
+	toUp, err := tr.NewUpload(mx)
+	assert.NoError(t, err)
+
+	assert.Len(t, toUp, 3)
+}
+
+func Test_Upload(t *testing.T) {
+	root := "fix-up-ping"
+	endpoint, stop := fixtures.RunServer(t, root)
+	defer stop()
+	defer os.RemoveAll(root)
+
+	tr := transport.NewTransport(endpoint.String(), 16)
+	defer tr.Close()
+
+	wd, _ := os.Getwd()
+	wd = filepath.Join(wd, "testdata")
+	tree := fixtures.NewTree(wd)
+	defer tree.Squash()
+	assert.NoError(t, tree.Populate())
+
+	ml, err := model.New(wd, false, manifest.CHUNK_SIZE, 16)
+	assert.NoError(t, err)
+
+	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(wd)...)
+	assert.NoError(t, err)
+
+	err = tr.Upload(mx)
+	assert.NoError(t, err)
+}
+
+
 //func Test_Exists(t *testing.T) {
 //	root := "fix-exists-local"
 //	endpoint, stop := fixtures.RunServer(t, root)
