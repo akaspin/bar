@@ -74,7 +74,7 @@ func (s *BlockStorage) ReadSpec(id string) (res proto.Spec, err error) {
 		return
 	}
 	defer r.Close()
-	res = manifest.Manifest{}
+	res = proto.Spec{}
 	err = json.NewDecoder(r).Decode(&res)
 	return
 }

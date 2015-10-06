@@ -14,7 +14,7 @@ endif
 
 dist: dist-win dist-linux dist-darwin
 
-dist-win: dist/bar-${V}-windows-amd64.tar.gz
+dist-win: dist/bar-${V}-windows-amd64.zip
 
 dist-linux: dist/bar-${V}-linux-amd64.tar.gz
 
@@ -23,6 +23,9 @@ dist-darwin: dist/bar-${V}-darwin-amd64.tar.gz
 clean:
 	@rm -rf dist
 	@rm -rf testdata
+
+dist/bar-${V}-windows-amd64.zip: dist/windows/barc.exe dist/windows/bard.exe
+	zip -r -j -D $@ ${<D}
 
 dist/bar-${V}-windows-amd64.tar.gz: dist/windows/barc.exe dist/windows/bard.exe
 	tar -czf $@ -C ${<D} .
