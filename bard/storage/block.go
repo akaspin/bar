@@ -5,9 +5,18 @@ import (
 	"os"
 	"fmt"
 	"golang.org/x/crypto/sha3"
-	"encoding/hex"
 	"github.com/akaspin/go-contentaddressable"
+	"github.com/akaspin/bar/proto/manifest"
+	"encoding/json"
+	"github.com/akaspin/bar/proto"
 )
+
+const (
+	blob_ns = "blobs"
+	spec_ns = "specs"
+	manifests_ns = "manifests"
+)
+
 
 type BlockStorageFactory struct  {
 	root string
@@ -24,8 +33,12 @@ func (f *BlockStorageFactory) GetStorage() (StorageDriver, error)  {
 
 // Simple block device storage
 type BlockStorage struct {
-	root string
-	split int
+
+	// Storage root
+	Root string
+
+	// Split factor
+	Split int
 }
 
 func NewBlockStorage(root string, split int) *BlockStorage {
@@ -33,7 +46,7 @@ func NewBlockStorage(root string, split int) *BlockStorage {
 }
 
 func (s *BlockStorage) IsExists(id string) (ok bool, err error) {
-	_, err = os.Stat(s.blobFileName(id))
+	_, err = os.Stat(s.filePath(blob_ns, id))
 	if os.IsNotExist(err) {
 		return false, nil
 	}
@@ -42,24 +55,62 @@ func (s *BlockStorage) IsExists(id string) (ok bool, err error) {
 	}
 	ok = true
 	return
-
 }
 
-func (s *BlockStorage) StoreBLOB(id string, size int64, in io.Reader) (err error) {
+func (s *BlockStorage) WriteSpec(in proto.Spec) (err error) {
+	w, err := os.OpenFile(s.filePath(spec_ns, in.ID),
+		os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		return
+	}
+	defer w.Close()
+	err = json.NewEncoder(w).Encode(&in)
+	return
+}
+
+func (s *BlockStorage) ReadSpec(id string) (res proto.Spec, err error) {
+	r, err := os.Open(s.filePath(spec_ns, id))
+	if err != nil {
+		return
+	}
+	defer r.Close()
+	res = manifest.Manifest{}
+	err = json.NewDecoder(r).Decode(&res)
+	return
+}
+
+func (s *BlockStorage) WriteManifest(m manifest.Manifest) (err error) {
+	w, err := os.OpenFile(s.filePath(manifests_ns, m.ID),
+		os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		return
+	}
+	defer w.Close()
+	err = json.NewEncoder(w).Encode(&m)
+	return
+}
+
+func (s *BlockStorage) ReadManifest(id string) (res manifest.Manifest, err error) {
+	r, err := os.Open(s.filePath(manifests_ns, id))
+	if err != nil {
+		return
+	}
+	defer r.Close()
+	res = manifest.Manifest{}
+	err = json.NewDecoder(r).Decode(&res)
+	return
+}
+
+func (s *BlockStorage) WriteBLOB(id string, size int64, in io.Reader) (err error) {
 	caOpts := contentaddressable.DefaultOptions()
 	caOpts.Hasher = sha3.New256()
-	w, err := contentaddressable.NewFileWithOptions(s.blobFileName(id), caOpts)
+	w, err := contentaddressable.NewFileWithOptions(s.filePath(blob_ns, id), caOpts)
 	if err != nil {
 		return
 	}
 	defer w.Close()
 
-	// TODO: squash internal hasher
-	hasher := sha3.New256()
-
-	mw := io.MultiWriter(w, hasher)
-
-	written, err := io.Copy(mw, in)
+	written, err := io.Copy(w, in)
 	if err != nil {
 		return
 	}
@@ -68,21 +119,17 @@ func (s *BlockStorage) StoreBLOB(id string, size int64, in io.Reader) (err error
 		err = fmt.Errorf("bad size for %s: actual %d != expected %d", id, written, size)
 		return
 	}
-	if hex.EncodeToString(hasher.Sum(nil)) != id {
-		err = fmt.Errorf("bad hash for %s not equal actual %s", id, hex.EncodeToString(hasher.Sum(nil)))
-		return
-	}
 	err = w.Accept()
 	return
 }
 
 func (s *BlockStorage) DestroyBLOB(id string) (err error) {
-	err = os.Remove(s.blobFileName(id))
+	err = os.Remove(s.filePath(blob_ns, id))
 	return
 }
 
 func (s *BlockStorage) ReadBLOB(id string) (r io.ReadCloser, err error) {
-	r, err = os.Open(s.blobFileName(id))
+	r, err = os.Open(s.filePath(blob_ns, id))
 	return
 }
 
@@ -90,10 +137,7 @@ func (s *BlockStorage) Close() (err error) {
 	return
 }
 
-func (s *BlockStorage) blobFileName(id string) string {
-	return filepath.Join(s.root, "blobs", id[:s.split], id)
-}
-
-func (s *BlockStorage) specFileName(id string) string {
-	return filepath.Join(s.root, "specs", id[:s.split], id)
+// Make filename
+func (s *BlockStorage) filePath(what, id string) string {
+	return filepath.Join(s.Root, what, id[:s.Split], id)
 }

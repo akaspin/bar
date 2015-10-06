@@ -9,6 +9,8 @@ import (
 	"io"
 	"fmt"
 	"github.com/tamtam-im/logx"
+	"github.com/akaspin/bar/proto"
+	"encoding/json"
 )
 
 /*
@@ -52,17 +54,33 @@ func (c *SpecOutCmd) Do() (err error) {
 	c.hasher = manifest.NewHasherPool(c.chunkSize, c.pool, time.Minute)
 
 	specmap, err := c.collect()
-	logx.Debug(specmap)
+	if err != nil {
+		return
+	}
+	spec, err := proto.NewSpec(specmap)
+	if err != nil {
+		return
+	}
+
+	if !c.upload {
+		err = json.NewEncoder(c.Stdout).Encode(spec)
+		if err != nil {
+			return
+		}
+		return
+	}
+
+
 
 	return
 }
 
-func (c *SpecOutCmd) collect() (res map[string]manifest.Manifest, err error) {
+func (c *SpecOutCmd) collect() (res map[string]string, err error) {
 	names := lists.NewFileList(c.FS.Args()...).ListDir(c.WD)
 
 	logx.Debug(c.WD, names)
 
-	res = map[string]manifest.Manifest{}
+	res = map[string]string{}
 	errs := []error{}
 	wg := sync.WaitGroup{}
 	for _, name := range names {
@@ -74,7 +92,7 @@ func (c *SpecOutCmd) collect() (res map[string]manifest.Manifest, err error) {
 				errs = append(errs, err1)
 				return
 			}
-			res[n] = *m
+			res[n] = m.ID
 		}(name)
 	}
 	wg.Wait()

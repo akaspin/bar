@@ -10,7 +10,7 @@ import (
 
 const sPath  = "test_storage"
 
-func Test_BlockDriver_StoreBLOB(t *testing.T) {
+func Test_BlockDriver_WriteBLOB(t *testing.T) {
 	bn := fixtures.MakeBLOB(t, 10)
 	defer fixtures.KillBLOB(bn)
 
@@ -25,7 +25,7 @@ func Test_BlockDriver_StoreBLOB(t *testing.T) {
 
 	s := storage.NewBlockStorage(sPath, 2)
 
-	err = s.StoreBLOB(m.ID, m.Size, r)
+	err = s.WriteBLOB(m.ID, m.Size, r)
 	assert.NoError(t, err)
 	defer cleanup()
 
@@ -51,7 +51,7 @@ func Test_BlockDriver_Exists(t *testing.T) {
 
 	s := storage.NewBlockStorage(sPath, 2)
 
-	err = s.StoreBLOB(m.ID, m.Size, r)
+	err = s.WriteBLOB(m.ID, m.Size, r)
 	assert.NoError(t, err)
 	defer cleanup()
 
@@ -86,7 +86,7 @@ func Test_BlockDriver_ReadBLOB(t *testing.T) {
 
 	s := storage.NewBlockStorage(sPath, 2)
 
-	err = s.StoreBLOB(m.ID, m.Size, r)
+	err = s.WriteBLOB(m.ID, m.Size, r)
 	assert.NoError(t, err)
 	defer cleanup()
 

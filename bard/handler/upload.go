@@ -34,7 +34,7 @@ func (h *SimpleUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(500)
 		return
 	}
-	err = s.StoreBLOB(id, size, r.Body)
+	err = s.WriteBLOB(id, size, r.Body)
 	if err != nil {
 		logx.Error(err)
 		w.WriteHeader(500)

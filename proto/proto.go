@@ -1,5 +1,10 @@
 package proto
-import "github.com/akaspin/bar/proto/manifest"
+import (
+	"github.com/akaspin/bar/proto/manifest"
+	"golang.org/x/crypto/sha3"
+	"sort"
+	"encoding/hex"
+)
 
 // Server info
 type Info struct {
@@ -55,12 +60,37 @@ type DownloadResponse struct {
 	Endpoints map[string][]string
 }
 
-// Tree spec for git-less usage
+// Tree spec
 type Spec struct {
 
-	// Spec url.
+	// Spec ID is SHA3-256 hash of sorted filepath:manifest-id
 	ID string
 
-	//
-	BLOBs map[string]manifest.Manifest
+	// File mapping
+	BLOBs map[string]string
+}
+
+func NewSpec(in map[string]string) (res Spec, err error) {
+	hasher := sha3.New256()
+	var idBuf []byte
+
+	var names sort.StringSlice
+	for n, _ := range in {
+		names = append(names, n)
+	}
+	sort.Sort(names)
+
+	for _, n := range names {
+		if _, err = hasher.Write([]byte(n)); err != nil {
+			return
+		}
+		if idBuf, err = hex.DecodeString(in[n]); err != nil {
+			return
+		}
+		if _, err = hasher.Write(idBuf); err != nil {
+			return
+		}
+	}
+	res = Spec{hex.EncodeToString(hasher.Sum(nil)), in}
+	return
 }

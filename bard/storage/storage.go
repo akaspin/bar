@@ -1,6 +1,8 @@
 package storage
 import (
 	"io"
+	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/proto"
 )
 
 type StorageFactory interface {
@@ -11,15 +13,22 @@ type StorageFactory interface {
 type StorageDriver interface {
 	io.Closer
 
-//	StoreSpec() (err error)
-
 	IsExists(id string) (ok bool, err error)
 
-	// Get BLOB shadow in full form
-//	Describe(id string, out io.Writer) (err error)
+	// Write spec
+	WriteSpec(s proto.Spec) (err error)
 
-	// Store BLOB from reader
-	StoreBLOB(id string, size int64, in io.Reader) (err error)
+	// Read spec
+	ReadSpec(id string) (res proto.Spec, err error)
+
+	// Write manifest
+	WriteManifest(m manifest.Manifest) (err error)
+
+	// Read manifest
+	ReadManifest(id string) (res manifest.Manifest, err error)
+
+	// Store BLOB from given reader
+	WriteBLOB(id string, size int64, in io.Reader) (err error)
 
 	// Destroy blob
 	DestroyBLOB(id string) (err error)
