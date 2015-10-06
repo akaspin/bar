@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"github.com/tamtam-im/logx"
+	"github.com/akaspin/bar/proto"
 )
 
 func RunServer(t *testing.T, root string) (endpoint *url.URL, stop func() error)  {
@@ -18,13 +19,14 @@ func RunServer(t *testing.T, root string) (endpoint *url.URL, stop func() error)
 	port, err := GetOpenPort()
 	assert.NoError(t, err)
 
+	endpoint, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d/v1", port))
 	srv := server.NewBardServer(&server.BardServerOptions{
-		fmt.Sprintf(":%d", port), 1024*1024*2, 16, p,
+		fmt.Sprintf(":%d", port),
+		&proto.Info{endpoint.String(), 1024 * 1024 * 2, 16}, p,
 	})
 
 	go srv.Start()
 	time.Sleep(time.Millisecond * 200)
-	endpoint, err = url.Parse(fmt.Sprintf("http://127.0.0.1:%d/v1", port))
 	assert.NoError(t, err)
 	stop = srv.Stop
 	return

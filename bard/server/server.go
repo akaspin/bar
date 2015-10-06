@@ -2,15 +2,16 @@ package server
 import (
 	"github.com/akaspin/bar/bard/storage"
 	"net/http"
-	"github.com/akaspin/bar/bard/handler"
 	"github.com/tamtam-im/logx"
 	"net"
+	"github.com/akaspin/bar/bard/service"
+	"net/rpc"
+	"github.com/akaspin/bar/proto"
 )
 
 type BardServerOptions struct  {
 	Addr string
-	ChunkSize int64
-	ClientConns int
+	Info *proto.Info
 	StoragePool *storage.StoragePool
 }
 
@@ -29,18 +30,24 @@ func (s *BardServer) Start() (err error) {
 		return
 	}
 
-	mux := http.NewServeMux()
 
-	mux.Handle("/v1/blob/upload/", &handler.SimpleUploadHandler{
-		s.StoragePool, "/v1/blob/upload/"})
-	mux.Handle("/v1/blob/check", &handler.CheckHandler{
-		s.StoragePool})
-	mux.Handle("/v1/tx/commit/declare", &handler.DeclareCommitTxHandler{
-		s.StoragePool})
-	mux.Handle("/v1/blob/download/", &handler.DownloadHandler{
-		s.StoragePool, "/v1/blob/download/"})
-	mux.Handle("/v1/ping", &handler.PingHandler{
-		s.ChunkSize, s.ClientConns})
+//	mux.Handle("/v1/blob/upload/", &handler.SimpleUploadHandler{
+//		s.StoragePool, "/v1/blob/upload/"})
+//	mux.Handle("/v1/blob/check", &handler.CheckHandler{
+//		s.StoragePool})
+//	mux.Handle("/v1/tx/commit/declare", &handler.DeclareCommitTxHandler{
+//		s.StoragePool})
+//	mux.Handle("/v1/blob/download/", &handler.DownloadHandler{
+//		s.StoragePool, "/v1/blob/download/"})
+
+	rpcSvr := rpc.NewServer()
+	rpcService := &service.Service{s.Info, s.StoragePool}
+	if err = rpcSvr.Register(rpcService); err != nil {
+		return
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/v1/rpc", rpcSvr)
 
 	logx.Debugf("bard serving at http://%s/v1", s.Addr)
 	srv := &http.Server{Handler:mux}

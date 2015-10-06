@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/akaspin/bar/bard/server"
 	"github.com/tamtam-im/logx"
+	"github.com/akaspin/bar/proto"
 )
 
 var logLevel string
@@ -15,6 +16,7 @@ var logLevel string
 var addr string
 var chunkSize int64
 var clientConns int
+var endpoint string
 
 var storageType string
 var storageWorkers int
@@ -29,6 +31,7 @@ func init() {
 	flag.Int64Var(&chunkSize, "chunk", 1024*1024*2, "preferred chunk size")
 	flag.IntVar(&clientConns, "conns", 16,
 		"preferred conns from one client")
+	flag.StringVar(&endpoint, "endpoint", "http://localhost:3000/v1", "endpoint")
 
 	flag.StringVar(&storageType, "storage-type", "block", "storage type")
 	flag.IntVar(&storageWorkers, "storage-workers", 128, "storage workers")
@@ -51,8 +54,7 @@ func main() {
 	}
 	srv := server.NewBardServer(&server.BardServerOptions{
 		addr,
-		chunkSize,
-		clientConns,
+		&proto.Info{endpoint, chunkSize, clientConns},
 		pool,
 	})
 

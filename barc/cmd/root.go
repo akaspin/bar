@@ -29,15 +29,15 @@ type BaseSubCommand struct {
 
 func route(s string, base *BaseSubCommand) (res SubCommand, err error) {
 	factory, ok := (map[string]SubCommandFactory{
-		"git-init":       NewGitInitCmd,
+//		"git-init":       NewGitInitCmd,
 		"git-clean":      NewGitCleanCommand,
 		"git-smudge":     NewGitSmudgeCmd,
-		"git-pre-commit": NewGitPreCommitCmd,
-		"up":             NewUpCmd,
-		"down":           NewDownCmd,
-		"ls":             NewLsCmd,
+//		"git-pre-commit": NewGitPreCommitCmd,
+//		"up":             NewUpCmd,
+//		"down":           NewDownCmd,
+//		"ls":             NewLsCmd,
 		"git-diff":       NewGitDiffCmd,
-		"spec-out":       NewSpecOutCmd,
+//		"spec-out":       NewSpecOutCmd,
 	})[s]
 	if !ok {
 		err = fmt.Errorf("command %s not found", s)

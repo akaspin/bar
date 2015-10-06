@@ -21,14 +21,17 @@ type StorageDriver interface {
 	// Read spec
 	ReadSpec(id string) (res proto.Spec, err error)
 
-	// Write manifest
-	WriteManifest(m manifest.Manifest) (err error)
-
 	// Read manifest
 	ReadManifest(id string) (res manifest.Manifest, err error)
 
-	// Store BLOB from given reader
-	WriteBLOB(id string, size int64, in io.Reader) (err error)
+	// Declare new upload
+	DeclareUpload(m manifest.Manifest) (err error)
+
+	// Write chunk for declared blob
+	WriteChunk(blobID, chunkID string, size int64, r io.Reader) (err error)
+
+	// Finish upload
+	FinishUpload(id string) (err error)
 
 	// Destroy blob
 	DestroyBLOB(id string) (err error)

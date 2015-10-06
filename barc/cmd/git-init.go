@@ -2,8 +2,6 @@ package cmd
 import (
 	"github.com/akaspin/bar/barc/git"
 	"github.com/akaspin/bar/barc/transport"
-	"net/url"
-	"time"
 	"fmt"
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/proto"
@@ -35,7 +33,7 @@ type GitInitCmd struct {
 	clean bool
 
 	git *git.Git
-	transport *transport.TransportPool
+	transport *transport.Transport
 }
 
 func NewGitInitCmd(s *BaseSubCommand) SubCommand {
@@ -54,12 +52,8 @@ func (c *GitInitCmd) Do() (err error) {
 		return
 	}
 
-	// init transport
-	u, err := url.Parse(c.endpoint)
-	if err != nil {
-		return
-	}
-	c.transport = transport.NewTransportPool(u, 10, time.Minute)
+	c.transport = transport.NewTransport(c.endpoint, 10)
+	defer c.transport.Close()
 
 	var opts proto.Info
 	if opts, err = c.precheck(); err != nil {
@@ -87,35 +81,29 @@ func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
 		"diff.bar.command": fmt.Sprintf(
 			"barc -log-level=%s git-diff -chunk=%d", c.log, info.ChunkSize),
 		"filter.bar.clean": fmt.Sprintf(
-			"barc -log-level=%s git-clean -chunk=%d %%f",
-			c.log, info.ChunkSize),
+			"barc -log-level=%s git-clean -chunk=%d -pool=%s %%f",
+			c.log, info.ChunkSize, info.MaxConn),
 		"filter.bar.smudge": fmt.Sprintf(
 			"barc -log-level=%s git-smudge -endpoint=%s -chunk=%d -pool=%d %%f",
 			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
-		"alias.bar-squash": fmt.Sprintf(
-			"!barc -log-level=%s up -squash -endpoint=%s -chunk=%d -pool=%d -git",
-			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
-		"alias.bar-up": fmt.Sprintf(
-			"!barc -log-level=%s up -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
-		"alias.bar-down": fmt.Sprintf(
-			"!barc -log-level=%s down -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
-		"alias.bar-ls": fmt.Sprintf(
-			"!barc -log-level=%s ls -endpoint=%s -git -pool=%d",
-			c.log, c.endpoint, info.MaxConn),
+//		"alias.bar-squash": fmt.Sprintf(
+//			"!barc -log-level=%s up -squash -endpoint=%s -chunk=%d -pool=%d -git",
+//			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
+//		"alias.bar-up": fmt.Sprintf(
+//			"!barc -log-level=%s up -endpoint=%s -git -chunk=%d -pool=%d",
+//			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
+//		"alias.bar-down": fmt.Sprintf(
+//			"!barc -log-level=%s down -endpoint=%s -git -chunk=%d -pool=%d",
+//			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
+//		"alias.bar-ls": fmt.Sprintf(
+//			"!barc -log-level=%s ls -endpoint=%s -git -pool=%d",
+//			c.log, c.endpoint, info.MaxConn),
 	}
 }
 
 // Prepare to install. Check endpoint, pre-commit hook
 func (c *GitInitCmd) precheck() (res proto.Info, err error) {
-	tr, err := c.transport.Take()
-	if err != nil {
-		return
-	}
-	defer c.transport.Release(tr)
-
-	if res, err = tr.Ping(); err != nil {
+	if res, err = c.transport.Ping(); err != nil {
 		return
 	}
 

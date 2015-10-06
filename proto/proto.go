@@ -9,11 +9,21 @@ import (
 // Server info
 type Info struct {
 
+	// Preferred endpoint
+	Endpoint string
+
 	// Preferred chunk size
 	ChunkSize int64
 
 	// Preferred number of connections from client
 	MaxConn int
+}
+
+type BLOBChunk struct {
+	BlobID string
+	ChunkID string
+	Size int64
+	Data []byte
 }
 
 // Declare commit transaction request

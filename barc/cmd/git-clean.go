@@ -58,12 +58,13 @@ func (c *GitCleanCommand) Do() (err error) {
 		return
 	}
 
+	logx.Debugf("%s %s", name, s.ID)
+
 	if c.id {
 		fmt.Fprintf(c.Stdout, "%s", s.ID)
 	} else {
 		err = s.Serialize(c.Stdout)
 	}
 
-	logx.Debugf("git-clean: %s", name)
 	return
 }
