@@ -52,7 +52,7 @@ func (c *GitInitCmd) Do() (err error) {
 		return
 	}
 
-	c.transport = transport.NewTransport(c.endpoint, 10)
+	c.transport = transport.NewTransport(c.WD, c.endpoint, 10)
 	defer c.transport.Close()
 
 	var opts proto.Info

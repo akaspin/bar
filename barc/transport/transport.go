@@ -8,10 +8,13 @@ import (
 	"sync"
 	"github.com/tamtam-im/logx"
 	"fmt"
+	"path/filepath"
 )
 
 // Common transport with pooled connections
 type Transport struct {
+	WD string
+
 	// base endpoint. http://example.com/v1
 	DefaultEndpoint string
 
@@ -19,8 +22,12 @@ type Transport struct {
 }
 
 // New RPC pool with default endpoint
-func NewTransport(endpoint string, n int) (res *Transport) {
-	res = &Transport{DefaultEndpoint: endpoint, rpcPool: NewRPCPool(n, time.Minute)}
+func NewTransport(wd string, endpoint string, n int) (res *Transport) {
+	res = &Transport{
+		WD: wd,
+		DefaultEndpoint: endpoint,
+		rpcPool: NewRPCPool(n, time.Minute),
+	}
 	return
 }
 
@@ -152,7 +159,7 @@ func (t *Transport) UploadChunk(name string, blobID string, chunkInfo manifest.C
 	defer cli.Release()
 
 	// read chunk
-	f, err := os.Open(name)
+	f, err := os.Open(filepath.Join(t.WD, name))
 	if err != nil {
 		return
 	}

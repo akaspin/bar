@@ -18,7 +18,7 @@ func Test_Ping(t *testing.T) {
 	defer stop()
 	defer os.RemoveAll(root)
 
-	tr := transport.NewTransport(endpoint.String(), 16)
+	tr := transport.NewTransport("", endpoint.String(), 16)
 	defer tr.Close()
 
 	res, err := tr.Ping()
@@ -31,12 +31,12 @@ func Test_DeclareUpload(t *testing.T) {
 	endpoint, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
-
-	tr := transport.NewTransport(endpoint.String(), 16)
-	defer tr.Close()
-
 	wd, _ := os.Getwd()
 	wd = filepath.Join(wd, "testdata")
+
+	tr := transport.NewTransport(wd, endpoint.String(), 16)
+	defer tr.Close()
+
 	tree := fixtures.NewTree(wd)
 	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
@@ -59,14 +59,15 @@ func Test_Upload(t *testing.T) {
 	defer stop()
 	defer os.RemoveAll(root)
 
-	tr := transport.NewTransport(endpoint.String(), 16)
-	defer tr.Close()
-
 	wd, _ := os.Getwd()
 	wd = filepath.Join(wd, "testdata")
 	tree := fixtures.NewTree(wd)
 	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
+
+	tr := transport.NewTransport(wd, endpoint.String(), 16)
+	defer tr.Close()
+
 
 	ml, err := model.New(wd, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
