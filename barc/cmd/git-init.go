@@ -86,18 +86,18 @@ func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
 		"filter.bar.smudge": fmt.Sprintf(
 			"barc -log-level=%s git-smudge -endpoint=%s -chunk=%d -pool=%d %%f",
 			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
-//		"alias.bar-squash": fmt.Sprintf(
-//			"!barc -log-level=%s up -squash -endpoint=%s -chunk=%d -pool=%d -git",
-//			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
+		"alias.bar-squash": fmt.Sprintf(
+			"!barc -log-level=%s up -squash -endpoint=%s -chunk=%d -pool=%d -git",
+			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
 		"alias.bar-up": fmt.Sprintf(
 			"!barc -log-level=%s up -endpoint=%s -git -chunk=%d -pool=%d",
 			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
-//		"alias.bar-down": fmt.Sprintf(
-//			"!barc -log-level=%s down -endpoint=%s -git -chunk=%d -pool=%d",
-//			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
-//		"alias.bar-ls": fmt.Sprintf(
-//			"!barc -log-level=%s ls -endpoint=%s -git -pool=%d",
-//			c.log, c.endpoint, info.MaxConn),
+		"alias.bar-down": fmt.Sprintf(
+			"!barc -log-level=%s down -endpoint=%s -git -chunk=%d -pool=%d",
+			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
+		"alias.bar-ls": fmt.Sprintf(
+			"!barc -log-level=%s ls -endpoint=%s -git -pool=%d",
+			c.log, c.endpoint, info.MaxConn),
 	}
 }
 

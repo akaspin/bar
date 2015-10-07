@@ -29,7 +29,7 @@ type BaseSubCommand struct {
 
 func route(s string, base *BaseSubCommand) (res SubCommand, err error) {
 	factory, ok := (map[string]SubCommandFactory{
-//		"git-init":       NewGitInitCmd,
+		"git-init":       NewGitInitCmd,
 		"git-clean":      NewGitCleanCommand,
 		"git-smudge":     NewGitSmudgeCmd,
 		"git-pre-commit": NewGitPreCommitCmd,
