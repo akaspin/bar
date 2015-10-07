@@ -27,17 +27,19 @@ type StorageDriver interface {
 	// Declare new upload
 	DeclareUpload(m manifest.Manifest) (err error)
 
-	// Write chunk for declared blob
+	// Write chunk for declared blob from given reader
 	WriteChunk(blobID, chunkID string, size int64, r io.Reader) (err error)
 
 	// Finish upload
 	FinishUpload(id string) (err error)
 
+	// Read chunk from storage to given writer
+	ReadChunk(chunk proto.ChunkInfo, w io.Writer) (err error)
+
 	// Destroy blob
 	DestroyBLOB(id string) (err error)
 
-	// Get BLOB stream
-	ReadBLOB(id string) (r io.ReadCloser, err error)
+
 }
 
 

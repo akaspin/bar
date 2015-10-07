@@ -11,6 +11,8 @@ type Chunk struct  {
 
 	// Chunk Size
 	Size int64
+
+	// Offset
 	Offset int64
 }
 

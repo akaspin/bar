@@ -54,7 +54,7 @@ func main() {
 	}
 	srv := server.NewBardServer(&server.BardServerOptions{
 		addr,
-		&proto.Info{endpoint, chunkSize, clientConns},
+		&proto.Info{[]string{endpoint}, chunkSize, clientConns},
 		pool,
 	})
 

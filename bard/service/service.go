@@ -61,22 +61,55 @@ func (s *Service) CommitUpload(id *string, res *struct{}) (err error) {
 }
 
 // Store chunk for declared blob
-func (s *Service) UploadChunk(chunk *proto.BLOBChunk, res *struct{}) (err error) {
+func (s *Service) UploadChunk(chunk *proto.ChunkData, res *struct{}) (err error) {
 	store, err := s.Storage.Take()
 	if err != nil {
 		return
 	}
 	defer s.Storage.Release(store)
 
-	err = store.WriteChunk(chunk.BlobID, chunk.ChunkID, chunk.Size,
+	err = store.WriteChunk(chunk.BlobID, chunk.Chunk.ID, chunk.Size,
 		bytes.NewReader(chunk.Data))
 	if err != nil {
 		return
 	}
 	logx.Debugf("chunk stored %s:%s %d bytes",
-		chunk.BlobID, chunk.ChunkID, chunk.Size)
+		chunk.BlobID, chunk.Chunk.ID, chunk.Size)
 	return
 }
 
+// Get manifests for download blobs
+func (s *Service) GetFetch(req *[]string, res *[]manifest.Manifest) (err error) {
+	var feed []manifest.Manifest
+	store, err := s.Storage.Take()
+	if err != nil {
+		return
+	}
+	defer s.Storage.Release(store)
 
+	for _, id := range *req {
+		m1, err := store.ReadManifest(id)
+		if err != nil {
+			return err
+		}
+		feed = append(feed, m1)
+	}
+	*res = *(&feed)
+	return
+}
 
+func (s *Service) FetchChunk(req *proto.ChunkInfo, res *proto.ChunkData) (err error) {
+	store, err := s.Storage.Take()
+	if err != nil {
+		return
+	}
+	defer s.Storage.Release(store)
+
+	buf := new(bytes.Buffer)
+	err = store.ReadChunk(*req, buf)
+
+	readed := &proto.ChunkData{*req, buf.Bytes()}
+	*res = *readed
+
+	return
+}

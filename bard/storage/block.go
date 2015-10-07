@@ -19,7 +19,7 @@ const (
 )
 
 
-type BlockStorageFactory struct  {
+type BlockStorageFactory struct {
 	root string
 	split int
 }
@@ -77,17 +77,6 @@ func (s *BlockStorage) ReadSpec(id string) (res proto.Spec, err error) {
 	defer r.Close()
 	res = proto.Spec{}
 	err = json.NewDecoder(r).Decode(&res)
-	return
-}
-
-func (s *BlockStorage) WriteManifest(m manifest.Manifest) (err error) {
-	w, err := os.OpenFile(s.filePath(manifests_ns, m.ID),
-		os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
-	if err != nil {
-		return
-	}
-	defer w.Close()
-	err = json.NewEncoder(w).Encode(&m)
 	return
 }
 
@@ -200,13 +189,29 @@ func (s *BlockStorage) finishChunk(base string, info manifest.Chunk, w io.Writer
 	return
 }
 
-func (s *BlockStorage) DestroyBLOB(id string) (err error) {
-	err = os.Remove(s.filePath(blob_ns, id))
+func (s *BlockStorage) ReadChunk(chunk proto.ChunkInfo, w io.Writer) (err error) {
+	f, err := os.Open(s.filePath(blob_ns, chunk.BlobID))
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	if _, err = f.Seek(chunk.Offset, 0); err != nil {
+		return
+	}
+
+	written, err := io.CopyN(w, f, chunk.Size)
+	if err != nil {
+		return
+	}
+	if written != chunk.Size {
+		err = fmt.Errorf("bad size for chunk %s %d != %s", chunk.ID, chunk.Size, written)
+	}
 	return
 }
 
-func (s *BlockStorage) ReadBLOB(id string) (r io.ReadCloser, err error) {
-	r, err = os.Open(s.filePath(blob_ns, id))
+func (s *BlockStorage) DestroyBLOB(id string) (err error) {
+	err = os.Remove(s.filePath(blob_ns, id))
 	return
 }
 

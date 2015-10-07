@@ -9,6 +9,10 @@ import (
 	"github.com/tamtam-im/logx"
 	"fmt"
 	"path/filepath"
+	"io/ioutil"
+	"github.com/akaspin/go-contentaddressable"
+	"golang.org/x/crypto/sha3"
+	"io"
 )
 
 // Common transport with pooled connections
@@ -171,8 +175,8 @@ func (t *Transport) UploadChunk(name string, blobID string, chunkInfo manifest.C
 	}
 
 	var res struct{}
-	err = cli.Call("Service.UploadChunk", &proto.BLOBChunk{
-		blobID, chunkInfo.ID, chunkInfo.Size, buf,
+	err = cli.Call("Service.UploadChunk", &proto.ChunkData{
+		proto.ChunkInfo{blobID, chunkInfo}, buf,
 	}, &res)
 
 	logx.Debugf("chunk %s %s:%s %d uploaded", name,
@@ -180,3 +184,154 @@ func (t *Transport) UploadChunk(name string, blobID string, chunkInfo manifest.C
 	return
 }
 
+func (t *Transport) Download(blobs model.Links) (err error) {
+
+	fetch, err := t.GetFetch(blobs.IDMap().IDs())
+
+	// little funny, but all chunks are equal - flatten them
+	chunkMap := map[string]proto.ChunkInfo{}
+	for _, mt := range fetch {
+		for _, ch := range mt.Chunks {
+			chunkMap[ch.ID] = proto.ChunkInfo{mt.ID, ch}
+		}
+	}
+	logx.Debug(chunkMap)
+
+	// Fetch all chunks to temporary dir
+	dir, err := ioutil.TempDir("", "chunk-")
+	if err != nil {
+		return
+	}
+	defer os.RemoveAll(dir)
+
+	wg := sync.WaitGroup{}
+	var errs []error
+	for _, chunk := range chunkMap {
+		wg.Add(1)
+		go func(ch proto.ChunkInfo) {
+			defer wg.Done()
+			if err1 := t.FetchChunk(ch, dir); err1 != nil {
+				errs = append(errs, err1)
+				return
+			}
+		}(chunk)
+	}
+ 	wg.Wait()
+	if len(errs) > 0 {
+		err = fmt.Errorf("errors while fetching chunks %s", errs)
+		return
+	}
+
+	// collect and relocate all
+	wg = sync.WaitGroup{}
+	for n, m := range blobs {
+		wg.Add(1)
+		go func(name string, man manifest.Manifest) {
+			defer wg.Done()
+			if err1 := t.collectBLOB(name, man, dir); err1 != nil {
+				errs = append(errs, err1)
+			}
+		}(n, m)
+	}
+	wg.Wait()
+	if len(errs) > 0 {
+		err = fmt.Errorf("errors while collecting blobs %s", errs)
+		return
+	}
+	return
+}
+
+func (t *Transport) collectBLOB(name string, man manifest.Manifest, dir string) (err error) {
+	logx.Debugf("assembling blob %s %s", name, man.ID)
+
+	blobdir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return
+	}
+	defer os.RemoveAll(blobdir)
+
+	caOpts := contentaddressable.DefaultOptions()
+	caOpts.Hasher = sha3.New256()
+
+	w, err := contentaddressable.NewFileWithOptions(
+		filepath.Join(blobdir, man.ID), caOpts)
+	if err != nil {
+		return
+	}
+	defer w.Close()
+
+	for _, chunk := range man.Chunks {
+		written, err := t.writeChunkTo(filepath.Join(dir, chunk.ID), w)
+		if err != nil {
+			return err
+		}
+		if written != chunk.Size {
+			return fmt.Errorf("bad size for chunk %s %s %s %d != %d",
+				name, man.ID, chunk.ID, chunk.Size, written)
+		}
+	}
+	if err = w.Accept(); err != nil {
+		return
+	}
+	os.Remove(filepath.Join(t.WD, name))
+	if err = os.Rename(filepath.Join(blobdir, man.ID), filepath.Join(t.WD, name)); err != nil {
+		return
+	}
+	logx.Debugf("done assemble blob %s %s", name, man.ID)
+
+	return
+}
+
+func (t *Transport) writeChunkTo(src string, dst io.Writer) (n int64, err error) {
+	r, err := os.Open(src)
+	if err != nil {
+		return
+	}
+	defer r.Close()
+	n, err = io.Copy(dst, r)
+	return
+}
+
+func (t *Transport) GetFetch(ids []string) (res []manifest.Manifest, err error) {
+	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	if err != nil {
+		return
+	}
+	defer cli.Release()
+	err = cli.Call("Service.GetFetch", &ids, &res)
+	return
+}
+
+func (t *Transport) FetchChunk(info proto.ChunkInfo, dir string) (err error) {
+	logx.Debugf("fetching chunk %s", info.ID)
+
+	caOpts := contentaddressable.DefaultOptions()
+	caOpts.Hasher = sha3.New256()
+
+	w, err := contentaddressable.NewFileWithOptions(
+		filepath.Join(dir, info.ID), caOpts)
+	if err != nil {
+		return
+	}
+	defer w.Close()
+
+	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	if err != nil {
+		return
+	}
+	defer cli.Release()
+
+	var res proto.ChunkData
+	if err = cli.Call("Service.FetchChunk", &info, &res); err != nil {
+		return
+	}
+	if _, err = w.Write(res.Data); err != nil {
+		return
+	}
+	if err = w.Accept(); err != nil {
+		logx.Error(err)
+		return
+	}
+	logx.Debugf("done fetch chunk %s", info.ID)
+	return
+}

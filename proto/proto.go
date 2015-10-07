@@ -9,8 +9,8 @@ import (
 // Server info
 type Info struct {
 
-	// Preferred endpoint
-	Endpoint string
+	// Alternate endpoints
+	Endpoints []string
 
 	// Preferred chunk size
 	ChunkSize int64
@@ -19,55 +19,14 @@ type Info struct {
 	MaxConn int
 }
 
-type BLOBChunk struct {
+type ChunkInfo struct {
 	BlobID string
-	ChunkID string
-	Size int64
+	manifest.Chunk
+}
+
+type ChunkData struct {
+	ChunkInfo
 	Data []byte
-}
-
-// Declare commit transaction request
-type DeclareUploadTxRequest struct {
-
-	// Commit id
-	CommitID string
-
-	// BLOB IDs
-	IDs []string
-}
-
-// Response for upload request
-type DeclareUploadTxResponse struct {
-
-	// Endpoints to upload
-	Endpoints []string
-
-	// Missing blob IDs
-	MissingIDs []string
-}
-
-// Commit upload (not implemented yet)
-type CommitUploadTxRequest struct {
-	UploadID string
-	BindToId string
-}
-
-// Download request
-type DownloadRequest struct {
-	IDs []string
-}
-
-// Response to download request
-type DownloadResponse struct {
-
-	// Manifests for BLOBs on bard
-	BLOBs []manifest.Manifest
-
-	// Mappings between IDs and endpoints
-	//
-	//    <endpoint>: {id, id ...}
-	//
-	Endpoints map[string][]string
 }
 
 // Tree spec
