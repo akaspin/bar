@@ -30,13 +30,6 @@ func (s *BardServer) Start() (err error) {
 		return
 	}
 
-
-//	mux.Handle("/v1/blob/upload/", &handler.SimpleUploadHandler{
-//		s.StoragePool, "/v1/blob/upload/"})
-//	mux.Handle("/v1/blob/check", &handler.CheckHandler{
-//		s.StoragePool})
-//	mux.Handle("/v1/tx/commit/declare", &handler.DeclareCommitTxHandler{
-//		s.StoragePool})
 //	mux.Handle("/v1/blob/download/", &handler.DownloadHandler{
 //		s.StoragePool, "/v1/blob/download/"})
 

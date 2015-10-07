@@ -5,6 +5,7 @@ import (
 	"github.com/akaspin/bar/proto/manifest"
 	"bytes"
 	"github.com/tamtam-im/logx"
+	"fmt"
 )
 
 // RPC service
@@ -31,7 +32,7 @@ func (s *Service) Check(req *[]string, res *[]string) (err error) {
 
 	var res1 []string
 	for _, id := range *req {
-		exists, err := store.IsExists(id)
+		exists, err := store.IsBLOBExists(id)
 		if err == nil && exists {
 			res1 = append(res1, id)
 		}
@@ -51,7 +52,7 @@ func (s *Service) NewUpload(req *[]manifest.Manifest, res *[]manifest.Manifest) 
 	var missing []manifest.Manifest
 	var exists bool
 	for _, m := range *req {
-		if exists, err = store.IsExists(m.ID); err != nil {
+		if exists, err = store.IsBLOBExists(m.ID); err != nil {
 			return
 		}
 		if !exists {
@@ -134,3 +135,40 @@ func (s *Service) FetchChunk(req *proto.ChunkInfo, res *proto.ChunkData) (err er
 
 	return
 }
+
+// Upload spec
+func (s *Service) UploadSpec(spec *proto.Spec, code *int) (err error) {
+	store, err := s.Storage.Take()
+	if err != nil {
+		return
+	}
+	defer s.Storage.Release(store)
+
+	ok, err := store.IsSpecExists(spec.ID)
+	if err != nil {
+		return
+	}
+	if ok {
+		*code = 301
+		return
+	}
+
+	for n, id := range spec.BLOBs {
+		exists, err := store.IsBLOBExists(id)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return fmt.Errorf("blob %s:%s not on bard for spec %s", n, id, spec.ID)
+		}
+	}
+
+	if err = store.WriteSpec(*spec); err != nil {
+		logx.Error(err)
+		return
+	}
+	*code = 200
+	logx.Debugf("spec %s stored", spec.ID)
+	return
+}
+

@@ -349,3 +349,18 @@ func (t *Transport) Check(ids []string) (res []string, err error) {
 
 	return
 }
+
+func (t *Transport) UploadSpec(spec proto.Spec) (err error) {
+	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	if err != nil {
+		return
+	}
+	defer cli.Release()
+
+	var res int
+	if err = cli.Call("Service.UploadSpec", &spec, &res); err != nil {
+		return
+	}
+
+	return
+}

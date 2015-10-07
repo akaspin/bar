@@ -46,8 +46,18 @@ func NewBlockStorage(root string, split int) *BlockStorage {
 	return &BlockStorage{root, split}
 }
 
-func (s *BlockStorage) IsExists(id string) (ok bool, err error) {
-	_, err = os.Stat(s.filePath(blob_ns, id))
+func (s *BlockStorage) IsSpecExists(id string) (ok bool, err error) {
+	ok, err = s.isExists(spec_ns, id + ".json")
+	return
+}
+
+func (s *BlockStorage) IsBLOBExists(id string) (ok bool, err error) {
+	ok, err = s.isExists(blob_ns, id)
+	return
+}
+
+func (s *BlockStorage) isExists(ns string, id string) (ok bool, err error) {
+	_, err = os.Stat(s.filePath(ns, id))
 	if os.IsNotExist(err) {
 		return false, nil
 	}
@@ -59,7 +69,11 @@ func (s *BlockStorage) IsExists(id string) (ok bool, err error) {
 }
 
 func (s *BlockStorage) WriteSpec(in proto.Spec) (err error) {
-	w, err := os.OpenFile(s.filePath(spec_ns, in.ID),
+	specName := s.filePath(spec_ns, in.ID + ".json")
+	if err = os.MkdirAll(filepath.Dir(specName), 0755); err != nil {
+		return
+	}
+	w, err := os.OpenFile(specName,
 		os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
 		return
@@ -70,7 +84,7 @@ func (s *BlockStorage) WriteSpec(in proto.Spec) (err error) {
 }
 
 func (s *BlockStorage) ReadSpec(id string) (res proto.Spec, err error) {
-	r, err := os.Open(s.filePath(spec_ns, id))
+	r, err := os.Open(s.filePath(spec_ns, id + ".json"))
 	if err != nil {
 		return
 	}

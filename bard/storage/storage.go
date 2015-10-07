@@ -13,7 +13,9 @@ type StorageFactory interface {
 type StorageDriver interface {
 	io.Closer
 
-	IsExists(id string) (ok bool, err error)
+	IsSpecExists(id string) (ok bool, err error)
+
+	IsBLOBExists(id string) (ok bool, err error)
 
 	// Write spec
 	WriteSpec(s proto.Spec) (err error)
@@ -38,8 +40,6 @@ type StorageDriver interface {
 
 	// Destroy blob
 	DestroyBLOB(id string) (err error)
-
-
 }
 
 
