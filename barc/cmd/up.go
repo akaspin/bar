@@ -43,7 +43,9 @@ func (c *UpCmd) Do() (err error) {
 		return
 	}
 
-	isDirty, dirty, err := c.model.Check()
+	feed := lists.NewFileList(c.FS.Args()...).ListDir(c.WD)
+
+	isDirty, dirty, err := c.model.Check(feed...)
 	if err != nil {
 		return
 	}
@@ -52,31 +54,32 @@ func (c *UpCmd) Do() (err error) {
 		return
 	}
 
-	feed := lists.NewFileList(c.FS.Args()...).ListDir(c.WD)
 	if c.useGit {
 		// filter by attrs
 		feed, err = c.model.Git.FilterByAttr("bar", feed...)
 	}
 
-	allBlobs, err := c.model.CollectManifests(true, false, feed...)
+	blobs, err := c.model.CollectManifests(true, false, feed...)
 	if err != nil {
 		return
 	}
 
-	logx.Debugf("collected blobs %s", allBlobs.IDMap())
+	logx.Debugf("collected blobs %s", blobs.IDMap())
 
 	trans := transport.NewTransport(c.WD, c.endpoint, c.poolSize)
 
-	err = trans.Upload(allBlobs)
+	err = trans.Upload(blobs)
 	if err != nil {
 		return
 	}
 
 	if c.squash {
-		if err = c.model.SquashBlobs(allBlobs); err != nil {
+		if err = c.model.SquashBlobs(blobs); err != nil {
 			return
 		}
-		err = c.model.Git.UpdateIndex(allBlobs.Names()...)
+		if c.useGit {
+			err = c.model.Git.UpdateIndex(blobs.Names()...)
+		}
 	}
 
 	return

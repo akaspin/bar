@@ -34,7 +34,7 @@ func route(s string, base *BaseSubCommand) (res SubCommand, err error) {
 		"git-smudge":     NewGitSmudgeCmd,
 		"git-pre-commit": NewGitPreCommitCmd,
 		"up":             NewUpCmd,
-//		"down":           NewDownCmd,
+		"down":           NewDownCmd,
 //		"ls":             NewLsCmd,
 		"git-diff":       NewGitDiffCmd,
 //		"spec-out":       NewSpecOutCmd,
@@ -43,7 +43,7 @@ func route(s string, base *BaseSubCommand) (res SubCommand, err error) {
 		err = fmt.Errorf("command %s not found", s)
 	}
 
-	return factory(base), nil
+	return factory(base), err
 }
 
 func Root(wd string, args []string, in io.Reader, out, errOut io.Writer) (err error) {

@@ -187,6 +187,7 @@ func (t *Transport) UploadChunk(name string, blobID string, chunkInfo manifest.C
 func (t *Transport) Download(blobs lists.Links) (err error) {
 
 	fetch, err := t.GetFetch(blobs.IDMap().IDs())
+	logx.Debug("fetching blobs %s", blobs.IDMap())
 
 	// little funny, but all chunks are equal - flatten them
 	chunkMap := map[string]proto.ChunkInfo{}
