@@ -3,7 +3,6 @@ import (
 	"github.com/akaspin/bar/proto"
 	"time"
 	"github.com/akaspin/bar/proto/manifest"
-	"github.com/akaspin/bar/barc/model"
 	"os"
 	"sync"
 	"github.com/tamtam-im/logx"
@@ -13,6 +12,7 @@ import (
 	"github.com/akaspin/go-contentaddressable"
 	"golang.org/x/crypto/sha3"
 	"io"
+	"github.com/akaspin/bar/barc/lists"
 )
 
 // Common transport with pooled connections
@@ -51,7 +51,7 @@ func (t *Transport) Ping() (res proto.Info, err error) {
 }
 
 // Upload blobs
-func (t *Transport) Upload(blobs model.Links) (err error) {
+func (t *Transport) Upload(blobs lists.Links) (err error) {
 	// declare upload
 	toUpload, err := t.NewUpload(blobs)
 	if err != nil {
@@ -89,7 +89,7 @@ func (t *Transport) Upload(blobs model.Links) (err error) {
 	return
 }
 
-func (t *Transport) NewUpload(blobs model.Links) (toUpload model.Links, err error) {
+func (t *Transport) NewUpload(blobs lists.Links) (toUpload lists.Links, err error) {
 	var req, res []manifest.Manifest
 
 	idmap := blobs.IDMap()
@@ -108,7 +108,7 @@ func (t *Transport) NewUpload(blobs model.Links) (toUpload model.Links, err erro
 		return
 	}
 
-	toUpload = model.Links{}
+	toUpload = lists.Links{}
 	for _, m := range res {
 		toUpload[idmap[m.ID]] = m
 	}
@@ -184,7 +184,7 @@ func (t *Transport) UploadChunk(name string, blobID string, chunkInfo manifest.C
 	return
 }
 
-func (t *Transport) Download(blobs model.Links) (err error) {
+func (t *Transport) Download(blobs lists.Links) (err error) {
 
 	fetch, err := t.GetFetch(blobs.IDMap().IDs())
 
@@ -195,7 +195,6 @@ func (t *Transport) Download(blobs model.Links) (err error) {
 			chunkMap[ch.ID] = proto.ChunkInfo{mt.ID, ch}
 		}
 	}
-	logx.Debug(chunkMap)
 
 	// Fetch all chunks to temporary dir
 	dir, err := ioutil.TempDir("", "chunk-")

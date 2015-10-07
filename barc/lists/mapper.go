@@ -45,6 +45,7 @@ func (m *Mapper) FromRoot(arg ...string) (res []string, err error) {
 func (m *Mapper) remap(from, to string, arg ...string) (res []string, err error) {
 	if from == to {
 		res = arg
+		return
 	}
 	var one string
 	for _, p := range arg {

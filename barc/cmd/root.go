@@ -33,7 +33,7 @@ func route(s string, base *BaseSubCommand) (res SubCommand, err error) {
 		"git-clean":      NewGitCleanCommand,
 		"git-smudge":     NewGitSmudgeCmd,
 //		"git-pre-commit": NewGitPreCommitCmd,
-//		"up":             NewUpCmd,
+		"up":             NewUpCmd,
 //		"down":           NewDownCmd,
 //		"ls":             NewLsCmd,
 		"git-diff":       NewGitDiffCmd,

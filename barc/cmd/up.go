@@ -2,6 +2,10 @@ package cmd
 import (
 	"github.com/akaspin/bar/proto/manifest"
 	"github.com/akaspin/bar/barc/model"
+	"fmt"
+	"github.com/akaspin/bar/barc/lists"
+	"github.com/tamtam-im/logx"
+	"github.com/akaspin/bar/barc/transport"
 )
 
 
@@ -37,6 +41,42 @@ func NewUpCmd(s *BaseSubCommand) SubCommand {
 func (c *UpCmd) Do() (err error) {
 	if c.model, err = model.New(c.WD, c.useGit, c.chunkSize, c.poolSize); err != nil {
 		return
+	}
+
+	isDirty, dirty, err := c.model.Check()
+	if err != nil {
+		return
+	}
+	if isDirty {
+		err = fmt.Errorf("dirty files in working tree %s", dirty)
+		return
+	}
+
+	feed := lists.NewFileList(c.FS.Args()...).ListDir(c.WD)
+	if c.useGit {
+		// filter by attrs
+		feed, err = c.model.Git.FilterByAttr("bar", feed...)
+	}
+
+	allBlobs, err := c.model.CollectManifests(true, false, feed...)
+	if err != nil {
+		return
+	}
+
+	logx.Debugf("collected blobs %s", allBlobs.IDMap())
+
+	trans := transport.NewTransport(c.WD, c.endpoint, c.poolSize)
+
+	err = trans.Upload(allBlobs)
+	if err != nil {
+		return
+	}
+
+	if c.squash {
+		if err = c.model.SquashBlobs(allBlobs); err != nil {
+			return
+		}
+		err = c.model.Git.UpdateIndex(allBlobs.Names()...)
 	}
 
 	return

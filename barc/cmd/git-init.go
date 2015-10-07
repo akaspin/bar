@@ -78,8 +78,8 @@ func (c *GitInitCmd) Do() (err error) {
 
 func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
 	return map[string]string{
-		"diff.bar.command": fmt.Sprintf(
-			"barc -log-level=%s git-diff -chunk=%d", c.log, info.ChunkSize),
+//		"diff.bar.command": fmt.Sprintf(
+//			"barc -log-level=%s git-diff -chunk=%d", c.log, info.ChunkSize),
 		"filter.bar.clean": fmt.Sprintf(
 			"barc -log-level=%s git-clean -chunk=%d -pool=%s %%f",
 			c.log, info.ChunkSize, info.MaxConn),

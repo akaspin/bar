@@ -9,6 +9,7 @@ import (
 	"sync"
 	"fmt"
 	"path/filepath"
+	"github.com/akaspin/bar/barc/lists"
 )
 
 
@@ -45,8 +46,8 @@ func (m *Model) Check(names ...string) (isDirty bool, dirty []string, err error)
 
 // Collect manifests by file names
 // Use blobs or/and manifests switches to select specific sources
-func (m *Model) CollectManifests(blobs, manifests bool, names ...string) (res Links, err error) {
-	res = Links{}
+func (m *Model) CollectManifests(blobs, manifests bool, names ...string) (res lists.Links, err error) {
+	res = lists.Links{}
 	var errs []error
 
 	wg := sync.WaitGroup{}
@@ -87,6 +88,46 @@ func (m *Model) CollectManifests(blobs, manifests bool, names ...string) (res Li
 	}
 	return
 }
+
+func (m *Model) SquashBlobs(blobs lists.Links) (err error) {
+	logx.Tracef("squashing blobs %s", blobs.IDMap())
+
+	wg := sync.WaitGroup{}
+	var errs []error
+	for n, mt := range blobs {
+		wg.Add(1)
+		go func(name string, man manifest.Manifest) {
+			defer wg.Done()
+			absname := filepath.Join(m.WD, name)
+			backName := absname + ".bar-backup"
+			os.Rename(absname, absname + ".bar-backup")
+			w, err1 := os.Create(filepath.Join(m.WD, name))
+			if err1 != nil {
+				errs = append(errs, err1)
+				os.Remove(absname)
+				os.Rename(backName, absname)
+				return
+			}
+			err1 = man.Serialize(w)
+			if err1 != nil {
+				errs = append(errs, err1)
+				os.Remove(absname)
+				os.Rename(backName, absname)
+				return
+			}
+			defer os.Remove(backName)
+			logx.Debugf("squashed %s", name)
+		}(n, mt)
+	}
+	wg.Wait()
+	if len(errs) > 0 {
+		err = fmt.Errorf("errors while squashing blobs %s", errs)
+		return
+	}
+	logx.Infof("blob %s squashed successfully", blobs.Names())
+	return
+}
+
 
 // Get manifest by filename or given reader
 func (m *Model) GetManifest(name string, in io.Reader) (res *manifest.Manifest, err error) {
@@ -133,6 +174,7 @@ func (m *Model) getGitReader(name string) (res io.Reader) {
 		return
 	}
 	if dirty {
+		err = nil
 		logx.Debugf("%s is dirty", name)
 		return
 	}
@@ -146,5 +188,6 @@ func (m *Model) getGitReader(name string) (res io.Reader) {
 		logx.Debug(err)
 		res = nil
 	}
+	logx.Debugf("manifest for %s parsed from git %s", name, oid)
 	return
 }

@@ -1,6 +1,8 @@
 package cmd
 import (
 	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/barc/model"
+	"fmt"
 )
 
 
@@ -28,6 +30,8 @@ type GitPreCommitCmd struct {
 	endpoint string
 	chunkSize int64
 	pool int
+
+	model *model.Model
 }
 
 func NewGitPreCommitCmd(s *BaseSubCommand) SubCommand {
@@ -40,6 +44,30 @@ func NewGitPreCommitCmd(s *BaseSubCommand) SubCommand {
 }
 
 func (c *GitPreCommitCmd) Do() (err error) {
-	return
+	if c.model, err = model.New(c.WD, true, c.chunkSize, c.pool); err != nil {
+		return
+	}
 
+	isDirty, dirty, err := c.model.Check()
+	if err != nil {
+		return
+	}
+	if isDirty {
+		err = fmt.Errorf("dirty files in working tree %s", dirty)
+		return
+	}
+
+	feedR, err := c.model.Git.Diff()
+	if err != nil {
+		return
+	}
+
+	_, err = c.model.Git.ManifestsFromDiff(feedR)
+	if err != nil {
+		return
+	}
+
+
+
+	return
 }

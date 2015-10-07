@@ -137,7 +137,7 @@ func Test_Download(t *testing.T) {
 	tree.KillBLOB("one/file-two.bin")
 	tree.KillBLOB("one/file-three.bin")
 
-	err = tr.Download(model.Links{
+	err = tr.Download(lists.Links{
 		"file-two.bin": mx["file-two.bin"],
 		"one/file-two.bin": mx["one/file-two.bin"],
 		"one/file-three.bin": mx["one/file-three.bin"],
