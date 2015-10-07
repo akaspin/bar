@@ -19,6 +19,27 @@ func (s *Service) Ping(req *struct{}, res *proto.Info) (err error) {
 	return
 }
 
+// Check BLOBs
+func (s *Service) Check(req *[]string, res *[]string) (err error) {
+	store, err := s.Storage.Take()
+	if err != nil {
+		return
+	}
+	defer s.Storage.Release(store)
+
+	logx.Debugf("checking %s", *req)
+
+	var res1 []string
+	for _, id := range *req {
+		exists, err := store.IsExists(id)
+		if err == nil && exists {
+			res1 = append(res1, id)
+		}
+	}
+	*res = res1
+	return
+}
+
 // Takes manifests from client and returns missing BLOB ids
 func (s *Service) NewUpload(req *[]manifest.Manifest, res *[]manifest.Manifest) (err error) {
 	store, err := s.Storage.Take()
@@ -73,7 +94,7 @@ func (s *Service) UploadChunk(chunk *proto.ChunkData, res *struct{}) (err error)
 	if err != nil {
 		return
 	}
-	logx.Debugf("chunk stored %s:%s %d bytes",
+	logx.Tracef("chunk stored %s:%s %d bytes",
 		chunk.BlobID, chunk.Chunk.ID, chunk.Size)
 	return
 }

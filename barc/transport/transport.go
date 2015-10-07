@@ -179,7 +179,7 @@ func (t *Transport) UploadChunk(name string, blobID string, chunkInfo manifest.C
 		proto.ChunkInfo{blobID, chunkInfo}, buf,
 	}, &res)
 
-	logx.Debugf("chunk %s %s:%s %d uploaded", name,
+	logx.Tracef("chunk %s %s:%s %d uploaded", name,
 		blobID, chunkInfo.ID, chunkInfo.Size)
 	return
 }
@@ -333,5 +333,19 @@ func (t *Transport) FetchChunk(info proto.ChunkInfo, dir string) (err error) {
 		return
 	}
 	logx.Debugf("done fetch chunk %s", info.ID)
+	return
+}
+
+func (t *Transport) Check(ids []string) (res []string, err error) {
+	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	if err != nil {
+		return
+	}
+	defer cli.Release()
+
+	if err = cli.Call("Service.Check", &ids, &res); err != nil {
+		return
+	}
+
 	return
 }

@@ -144,3 +144,38 @@ func Test_Download(t *testing.T) {
 	})
 	assert.NoError(t, err)
 }
+
+func Test_Check(t *testing.T) {
+	root := "fix-download"
+	endpoint, stop := fixtures.RunServer(t, root)
+	defer stop()
+	defer os.RemoveAll(root)
+
+	wd, _ := os.Getwd()
+	wd = filepath.Join(wd, "testdata")
+	tree := fixtures.NewTree(wd)
+	defer tree.Squash()
+	assert.NoError(t, tree.Populate())
+
+	tr := transport.NewTransport(wd, endpoint.String(), 16)
+	defer tr.Close()
+
+	ml, err := model.New(wd, false, manifest.CHUNK_SIZE, 16)
+	assert.NoError(t, err)
+
+	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(wd)...)
+	assert.NoError(t, err)
+
+	err = tr.Upload(mx)
+	assert.NoError(t, err)
+
+	res, err := tr.Check([]string{
+		"eebd7b0c388d7f4d4ede4681b472969d5f09228c0473010d670a6918a3c05e79",
+		"eebd7b0c388d7f4d4ede4681b472969d5f09228c0473010d670a6918a3c05e7a",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, []string{
+		"eebd7b0c388d7f4d4ede4681b472969d5f09228c0473010d670a6918a3c05e79",
+	}, res)
+}
+

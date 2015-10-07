@@ -89,6 +89,40 @@ func (m *Model) CollectManifests(blobs, manifests bool, names ...string) (res li
 	return
 }
 
+func (m *Model) IsBlobs(names []string) (res map[string]bool, err error) {
+	res = map[string]bool{}
+	wg := sync.WaitGroup{}
+	var errs []error
+
+	logx.Tracef("collecting states %s", names)
+	for _, n := range names {
+		wg.Add(1)
+		go func(name string) {
+			defer wg.Done()
+			f, err1 := os.Open(filepath.Join(m.WD, name))
+			if err1 != nil {
+				errs = append(errs, err1)
+				return
+			}
+			defer f.Close()
+			_, isManifest, err1 := manifest.Peek(f)
+			if err1 != nil {
+				errs = append(errs, err1)
+				return
+			}
+
+			res[name] = !isManifest
+		}(n)
+	}
+	wg.Wait()
+
+	if len(errs) > 0 {
+		err = fmt.Errorf("errors %s", errs)
+		logx.Error(err)
+	}
+	return
+}
+
 func (m *Model) SquashBlobs(blobs lists.Links) (err error) {
 	logx.Tracef("squashing blobs %s", blobs.IDMap())
 

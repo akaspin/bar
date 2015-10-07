@@ -35,7 +35,7 @@ func route(s string, base *BaseSubCommand) (res SubCommand, err error) {
 		"git-pre-commit": NewGitPreCommitCmd,
 		"up":             NewUpCmd,
 		"down":           NewDownCmd,
-//		"ls":             NewLsCmd,
+		"ls":             NewLsCmd,
 		"git-diff":       NewGitDiffCmd,
 //		"spec-out":       NewSpecOutCmd,
 	})[s]
