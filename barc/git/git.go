@@ -249,7 +249,8 @@ func (g *Git) Cat(oid string) (res io.Reader, err error) {
 //
 func (g *Git) Diff() (res io.Reader, err error) {
 	raw, err := g.Run("diff",
-		"--cached", "--staged", "--full-index", "--no-color")
+		"--cached", "--staged", "--full-index", "--no-color",
+		"-U99999999999999", "--no-prefix")
 	if err != nil {
 		return
 	}
@@ -368,8 +369,6 @@ func (g *Git) ManifestsFromDiff(r io.Reader) (res lists.Links, err error) {
 			}
 		}
 	}
-
-
 
 	return
 }

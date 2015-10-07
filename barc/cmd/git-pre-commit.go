@@ -3,6 +3,7 @@ import (
 	"github.com/akaspin/bar/proto/manifest"
 	"github.com/akaspin/bar/barc/model"
 	"fmt"
+	"github.com/akaspin/bar/barc/transport"
 )
 
 
@@ -62,12 +63,13 @@ func (c *GitPreCommitCmd) Do() (err error) {
 		return
 	}
 
-	_, err = c.model.Git.ManifestsFromDiff(feedR)
+	blobs, err := c.model.Git.ManifestsFromDiff(feedR)
 	if err != nil {
 		return
 	}
 
-
+	trans := transport.NewTransport(c.WD, c.endpoint, c.pool)
+	err = trans.Upload(blobs)
 
 	return
 }
