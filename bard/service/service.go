@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"github.com/tamtam-im/logx"
 	"fmt"
+	"github.com/akaspin/bar/barc/lists"
+	"sync"
 )
 
 // RPC service
@@ -137,7 +139,7 @@ func (s *Service) FetchChunk(req *proto.ChunkInfo, res *proto.ChunkData) (err er
 }
 
 // Upload spec
-func (s *Service) UploadSpec(spec *proto.Spec, code *int) (err error) {
+func (s *Service) UploadSpec(spec *proto.Spec, res *struct{}) (err error) {
 	store, err := s.Storage.Take()
 	if err != nil {
 		return
@@ -149,17 +151,16 @@ func (s *Service) UploadSpec(spec *proto.Spec, code *int) (err error) {
 		return
 	}
 	if ok {
-		*code = 301
 		return
 	}
 
-	for n, id := range spec.BLOBs {
-		exists, err := store.IsBLOBExists(id)
+	for n, m := range spec.BLOBs {
+		exists, err := store.IsBLOBExists(m)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			return fmt.Errorf("blob %s:%s not on bard for spec %s", n, id, spec.ID)
+			return fmt.Errorf("blob %s:%s not on bard for spec %s", n, m, spec.ID)
 		}
 	}
 
@@ -167,8 +168,53 @@ func (s *Service) UploadSpec(spec *proto.Spec, code *int) (err error) {
 		logx.Error(err)
 		return
 	}
-	*code = 200
 	logx.Debugf("spec %s stored", spec.ID)
+	return
+}
+
+// Get all links by spec-id
+func (s *Service) GetSpec(id *string, res *lists.Links) (err error) {
+	store, err := s.Storage.Take()
+	if err != nil {
+		return
+	}
+	defer s.Storage.Release(store)
+
+	spec, err := store.ReadSpec(id)
+	if err != nil {
+		return
+	}
+
+	res1 := lists.Links{}
+	wg := &sync.WaitGroup{}
+	var errs []error
+
+	for name, manifestID := range spec.BLOBs {
+		wg.Add(1)
+		go func(n, mID string) {
+			defer wg.Done()
+			store1, err := s.Storage.Take()
+			if err != nil {
+				return
+			}
+			defer s.Storage.Release(store1)
+
+			var err1 error
+			if res1[name], err1 = store1.ReadManifest(mID); err1 != nil {
+				errs = append(errs, err1)
+				return
+			}
+		}(name, manifestID)
+	}
+	wg.Wait()
+
+	if len(errs) > 0 {
+		err = fmt.Errorf("errors while collecting manifests for spec %s: %s",
+			spec.ID, errs)
+		return
+	}
+
+	*res = res1
 	return
 }
 

@@ -29,6 +29,10 @@ type ChunkData struct {
 	Data []byte
 }
 
+// Spec downloadable chunks
+// endpoint: [chunk-id, ...]
+type DownloadSpec []string
+
 // Tree spec
 type Spec struct {
 

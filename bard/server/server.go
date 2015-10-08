@@ -7,6 +7,7 @@ import (
 	"github.com/akaspin/bar/bard/service"
 	"net/rpc"
 	"github.com/akaspin/bar/proto"
+	"github.com/akaspin/bar/bard/handler"
 )
 
 type BardServerOptions struct  {
@@ -30,8 +31,6 @@ func (s *BardServer) Start() (err error) {
 		return
 	}
 
-//	mux.Handle("/v1/blob/download/", &handler.DownloadHandler{
-//		s.StoragePool, "/v1/blob/download/"})
 
 	rpcSvr := rpc.NewServer()
 	rpcService := &service.Service{s.Info, s.StoragePool}
@@ -41,6 +40,8 @@ func (s *BardServer) Start() (err error) {
 
 	mux := http.NewServeMux()
 	mux.Handle("/v1/rpc", rpcSvr)
+	mux.Handle("/v1/bat", &handler.BatHandler{})
+	mux.Handle("/v1/spec/", &handler.SpecHandler{s.StoragePool})
 
 	logx.Debugf("bard serving at http://%s/v1", s.Addr)
 	srv := &http.Server{Handler:mux}

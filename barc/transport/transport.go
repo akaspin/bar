@@ -357,10 +357,18 @@ func (t *Transport) UploadSpec(spec proto.Spec) (err error) {
 	}
 	defer cli.Release()
 
-	var res int
-	if err = cli.Call("Service.UploadSpec", &spec, &res); err != nil {
+	var res struct{}
+	err = cli.Call("Service.UploadSpec", &spec, &res)
+
+	return
+}
+
+func (t *Transport) GetSpec(id string) (res lists.Links, err error) {
+	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	if err != nil {
 		return
 	}
-
+	defer cli.Release()
+	err = cli.Call("Service.GetSpec", &id, &res)
 	return
 }
