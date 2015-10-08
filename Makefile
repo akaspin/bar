@@ -3,7 +3,8 @@ SRC_TEST=$(shell find . -type f -name '*_test.go')
 V=$(shell git describe --always --tags --dirty)
 REPO=github.com/akaspin/bar
 GOOPTS=-a -installsuffix cgo -ldflags '-s -X main.Version=${V}'
-HOSTNAME=$(shell hostname)
+
+HOSTNAME=$(shell ifconfig | grep 'inet ' | grep -v '127.0.0.1' | head -n1 | awk '{print $$2}')
 
 ifdef GOBIN
 	INSTALL_DIR=${GOBIN}

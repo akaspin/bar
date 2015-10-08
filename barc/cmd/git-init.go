@@ -52,6 +52,7 @@ func (c *GitInitCmd) Do() (err error) {
 		return
 	}
 
+
 	c.transport = transport.NewTransport(c.WD, c.endpoint, 10)
 	defer c.transport.Close()
 
@@ -81,37 +82,40 @@ func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
 //		"diff.bar.command": fmt.Sprintf(
 //			"barc -log-level=%s git-diff -chunk=%d", c.log, info.ChunkSize),
 		"filter.bar.clean": fmt.Sprintf(
-			"barc -log-level=%s git-clean -chunk=%d -pool=%s %%f",
+			"barc -log-level=%s git-clean -chunk=%d -pool=%d %%f",
 			c.log, info.ChunkSize, info.PoolSize),
 		"filter.bar.smudge": fmt.Sprintf(
 			"barc -log-level=%s git-smudge -endpoint=%s -chunk=%d -pool=%d %%f",
-			c.log, c.endpoint, info.ChunkSize, info.PoolSize),
+			c.log, info.Endpoint, info.ChunkSize, info.PoolSize),
 		"alias.bar-squash": fmt.Sprintf(
 			"!barc -log-level=%s up -squash -endpoint=%s -chunk=%d -pool=%d -git",
-			c.log, c.endpoint, info.ChunkSize, info.PoolSize),
+			c.log, info.Endpoint, info.ChunkSize, info.PoolSize),
 		"alias.bar-up": fmt.Sprintf(
 			"!barc -log-level=%s up -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, c.endpoint, info.ChunkSize, info.PoolSize),
+			c.log, info.Endpoint, info.ChunkSize, info.PoolSize),
 		"alias.bar-down": fmt.Sprintf(
 			"!barc -log-level=%s down -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, c.endpoint, info.ChunkSize, info.PoolSize),
-		"alias.bar-export": fmt.Sprintf(
-			"!barc -log-level=%s spec-export -upload -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, c.endpoint, info.ChunkSize, info.PoolSize),
-		"alias.bar-import": fmt.Sprintf(
-			"!barc -log-level=%s spec-import -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, c.endpoint, info.ChunkSize, info.PoolSize),
+			c.log, info.Endpoint, info.ChunkSize, info.PoolSize),
 		"alias.bar-ls": fmt.Sprintf(
 			"!barc -log-level=%s ls -endpoint=%s -git -pool=%d",
-			c.log, c.endpoint, info.PoolSize),
+			c.log, info.Endpoint, info.PoolSize),
+		"alias.bar-export": fmt.Sprintf(
+			"!barc -log-level=%s spec-export -upload -endpoint=%s -git -chunk=%d -pool=%d",
+			c.log, info.Endpoint, info.ChunkSize, info.PoolSize),
+		"alias.bar-import": fmt.Sprintf(
+			"!barc -log-level=%s spec-import -endpoint=%s -git -chunk=%d -pool=%d",
+			c.log, info.Endpoint, info.ChunkSize, info.PoolSize),
 	}
 }
 
 // Prepare to install. Check endpoint, pre-commit hook
 func (c *GitInitCmd) precheck() (res proto.Info, err error) {
+	logx.Debugf("requesting endpoint %s", c.endpoint)
 	if res, err = c.transport.Ping(); err != nil {
 		return
 	}
+
+	logx.Debug(res)
 
 	// Check for hook - fail if exists
 	_, hookErr := c.git.GetHook("pre-commit")

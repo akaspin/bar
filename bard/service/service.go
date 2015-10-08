@@ -19,6 +19,7 @@ type Service struct {
 // Just returns server info
 func (s *Service) Ping(req *struct{}, res *proto.Info) (err error) {
 	*res = *s.Info
+	logx.Debug("pong")
 	return
 }
 
