@@ -7,6 +7,10 @@ import (
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/transport"
 	"encoding/json"
+	"github.com/tamtam-im/logx"
+	"time"
+	"os"
+	"path/filepath"
 )
 
 /*
@@ -20,7 +24,7 @@ type SpecExportCmd struct {
 	chunkSize int64
 	upload bool
 	pool int
-
+	doCC bool
 }
 
 func NewSpecExportCmd(s *BaseSubCommand) SubCommand  {
@@ -29,8 +33,10 @@ func NewSpecExportCmd(s *BaseSubCommand) SubCommand  {
 		"bard endpoint")
 	s.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 	s.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
-	s.FS.BoolVar(&c.upload, "upload", false, "upload spec to bard and print URL")
 	s.FS.IntVar(&c.pool, "pool", 16, "pool sizes")
+
+	s.FS.BoolVar(&c.upload, "upload", false, "upload spec to bard and print URL")
+	s.FS.BoolVar(&c.doCC, "cc", false, "create spec carbon copy")
 	return c
 }
 
@@ -67,9 +73,25 @@ func (c *SpecExportCmd) Do() (err error) {
 		nameMap[name] = m.ID
 	}
 
-	spec, err := proto.NewSpec(nameMap)
+	spec, err := proto.NewSpec(nameMap, []string{})
 	if err != nil {
 		return
+	}
+
+
+	if c.doCC {
+		ccName := fmt.Sprintf("bar-spec-%d-%s.json",
+			time.Now().UnixNano(), spec.ID)
+		logx.Infof("storing carbon copy to %s", ccName)
+		ccf, err := os.Create(filepath.Join(c.WD, ccName))
+		if err != nil {
+			return err
+		}
+		defer ccf.Close()
+
+		if err = json.NewEncoder(ccf).Encode(&spec); err != nil {
+			return err
+		}
 	}
 
 	if !c.upload {

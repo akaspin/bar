@@ -186,7 +186,8 @@ func (s *Service) GetSpec(id *string, res *lists.Links) (err error) {
 	}
 
 	res1 := lists.Links{}
-	wg := &sync.WaitGroup{}
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 	var errs []error
 
 	for name, manifestID := range spec.BLOBs {
@@ -200,7 +201,10 @@ func (s *Service) GetSpec(id *string, res *lists.Links) (err error) {
 			defer s.Storage.Release(store1)
 
 			var err1 error
-			if res1[n], err1 = store1.ReadManifest(mID); err1 != nil {
+			mu.Lock()
+			res1[n], err1 = store1.ReadManifest(mID)
+			mu.Unlock()
+			if err1 != nil {
 				errs = append(errs, err1)
 				return
 			}

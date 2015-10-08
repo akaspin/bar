@@ -37,7 +37,7 @@ func Test_Spec1(t *testing.T) {
 	spec, err := proto.NewSpec(map[string]string{
 		"file/1": m1.ID,
 		"file/2": m2.ID,
-	})
+	}, []string{})
 
 	// hand-made fixture
 	var sorted sort.StringSlice

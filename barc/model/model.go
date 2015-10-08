@@ -50,7 +50,8 @@ func (m *Model) CollectManifests(blobs, manifests bool, names ...string) (res li
 	res = lists.Links{}
 	var errs []error
 
-	wg := sync.WaitGroup{}
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 	for _, name := range names {
 		wg.Add(1)
 		go func(n string) {
@@ -78,7 +79,9 @@ func (m *Model) CollectManifests(blobs, manifests bool, names ...string) (res li
 				errs = append(errs, err1)
 				return
 			}
+			mu.Lock()
 			res[n] = *m1
+			mu.Unlock()
 		}(name)
 	}
 	wg.Wait()

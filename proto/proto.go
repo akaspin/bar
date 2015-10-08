@@ -29,21 +29,20 @@ type ChunkData struct {
 	Data []byte
 }
 
-// Spec downloadable chunks
-// endpoint: [chunk-id, ...]
-type DownloadSpec []string
-
 // Tree spec
 type Spec struct {
 
 	// Spec ID is SHA3-256 hash of sorted filepath:manifest-id
 	ID string
 
-	// File mapping
+	// BLOB links
 	BLOBs map[string]string
+
+	// Deleted filenames
+	Kill []string
 }
 
-func NewSpec(in map[string]string) (res Spec, err error) {
+func NewSpec(in map[string]string, kill []string) (res Spec, err error) {
 	hasher := sha3.New256()
 	var idBuf []byte
 
@@ -64,6 +63,6 @@ func NewSpec(in map[string]string) (res Spec, err error) {
 			return
 		}
 	}
-	res = Spec{hex.EncodeToString(hasher.Sum(nil)), in}
+	res = Spec{hex.EncodeToString(hasher.Sum(nil)), in, kill}
 	return
 }

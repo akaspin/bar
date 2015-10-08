@@ -210,7 +210,7 @@ func Test_Spec(t *testing.T) {
 		nameMap[name] = m.ID
 	}
 
-	spec1, err := proto.NewSpec(nameMap)
+	spec1, err := proto.NewSpec(nameMap, []string{})
 	assert.NoError(t, err)
 
 	err = tr.UploadSpec(spec1)
