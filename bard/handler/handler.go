@@ -48,7 +48,7 @@ func (h *SpecHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/javascript")
+	w.Header().Set("Content-Type", "text/html")
 
 	if err = json.NewEncoder(w).Encode(&spec); err != nil {
 		logx.Error(err)
