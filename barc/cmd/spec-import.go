@@ -6,6 +6,7 @@ import (
 	"github.com/akaspin/bar/barc/transport"
 	"github.com/akaspin/bar/barc/model"
 	"github.com/tamtam-im/logx"
+	"fmt"
 )
 
 
@@ -59,10 +60,36 @@ func (c *SpecImportCmd) Do() (err error) {
 		// tree spec types
 		id := c.FS.Arg(0)
 
-
 		if spec, err = trans.GetSpec(id); err != nil {
 			logx.Debug(spec, err)
 			return
+		}
+	}
+
+	names := spec.Names()
+
+	logx.Debugf("importing %s", names)
+
+	if c.useGit {
+		// If git is used - check names for attrs
+		byAttr, err := mod.Git.FilterByAttr("bar", names...)
+		if err != nil {
+			return err
+		}
+
+		diff := []string{}
+		attrs := map[string]struct{}{}
+		for _, x := range byAttr {
+			attrs[x] = struct{}{}
+		}
+
+		for _, x := range names {
+			if _, ok := attrs[x]; !ok {
+				diff = append(diff, x)
+			}
+		}
+		if len(diff) > 0 {
+			return fmt.Errorf("some spec blobs is not under bar control %s", diff)
 		}
 	}
 
