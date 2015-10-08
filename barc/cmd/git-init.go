@@ -96,7 +96,10 @@ func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
 			"!barc -log-level=%s down -endpoint=%s -git -chunk=%d -pool=%d",
 			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
 		"alias.bar-export": fmt.Sprintf(
-			"!barc -log-level=%s spec-export -endpoint=%s -git -chunk=%d -pool=%d",
+			"!barc -log-level=%s spec-export -upload -endpoint=%s -git -chunk=%d -pool=%d",
+			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
+		"alias.bar-import": fmt.Sprintf(
+			"!barc -log-level=%s spec-import -endpoint=%s -git -chunk=%d -pool=%d",
 			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
 		"alias.bar-ls": fmt.Sprintf(
 			"!barc -log-level=%s ls -endpoint=%s -git -pool=%d",

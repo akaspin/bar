@@ -7,6 +7,7 @@ import (
 	"github.com/akaspin/bar/barc/model"
 	"github.com/tamtam-im/logx"
 	"fmt"
+	"path/filepath"
 )
 
 
@@ -94,11 +95,13 @@ func (c *SpecImportCmd) Do() (err error) {
 	}
 
 	// get stored links, ignore errors
-	stored, _ := mod.CollectManifests(true, true, spec.Names()...)
+	stored, _ := mod.CollectManifests(true, true, names...)
+
+	logx.Debugf("already stored %s", stored.Names())
 
 	// squash present
 	for n, m := range spec {
-		m1, ok := stored[n]
+		m1, ok := stored[filepath.FromSlash(n)]
 		if ok && m.ID == m1.ID {
 			delete(spec, n)
 		}

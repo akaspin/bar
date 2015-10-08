@@ -138,7 +138,8 @@ func (m *Model) SquashBlobs(blobs lists.Links) (err error) {
 			absname := filepath.Join(m.WD, name)
 			backName := absname + ".bar-backup"
 			os.Rename(absname, absname + ".bar-backup")
-			w, err1 := os.Create(filepath.Join(m.WD, name))
+			os.MkdirAll(filepath.Dir(absname), 0755)
+			w, err1 := os.Create(absname)
 			if err1 != nil {
 				errs = append(errs, err1)
 				os.Remove(absname)

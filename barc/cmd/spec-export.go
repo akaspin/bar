@@ -22,9 +22,11 @@ type SpecExportCmd struct {
 	endpoint string
 	useGit bool
 	chunkSize int64
-	upload bool
 	pool int
+
+	upload bool
 	doCC bool
+	track bool
 }
 
 func NewSpecExportCmd(s *BaseSubCommand) SubCommand  {

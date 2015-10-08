@@ -1,6 +1,7 @@
 package lists
 import (
 	"github.com/akaspin/bar/proto/manifest"
+	"path/filepath"
 )
 
 type IDMap map[string]string
@@ -24,7 +25,7 @@ func (l Links) IDMap() (res IDMap) {
 
 func (l Links) Names() (res []string) {
 	for n, _ := range l {
-		res = append(res, n)
+		res = append(res, filepath.FromSlash(n))
 	}
 	return
 }
