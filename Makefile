@@ -2,6 +2,7 @@ SRC=$(shell find . -type f \(  -iname '*.go' ! -iname "*_test.go" \))
 SRC_TEST=$(shell find . -type f -name '*_test.go')
 V=$(shell git describe --always --tags --dirty)
 REPO=github.com/akaspin/bar
+GOOPTS=-a -installsuffix cgo -ldflags '-s -X main.Version=${V}'
 
 ifdef GOBIN
 	INSTALL_DIR=${GOBIN}
@@ -35,21 +36,15 @@ dist/bar-${V}-%-amd64.tar.gz: dist/%/barc dist/%/bard
 
 dist/windows/%.exe: ${SRC}
 	@mkdir -p ${@D}
-	CGO_ENABLED=0 GOOS=windows go build \
-		-a -installsuffix cgo \
-		-ldflags '-s -X main.Version=${V}' -o $@ ${REPO}/$*
+	CGO_ENABLED=0 GOOS=windows go build ${GOOPTS} -o $@ ${REPO}/$*
 
 dist/%/bard: ${SRC}
 	@mkdir -p ${@D}
-	CGO_ENABLED=0 GOOS=$* go build \
-		-a -installsuffix cgo \
-		-ldflags '-s -X main.Version=${V}' -o $@ ${REPO}/$(@F)
+	CGO_ENABLED=0 GOOS=$* go build ${GOOPTS} -o $@ ${REPO}/$(@F)
 
 dist/%/barc: ${SRC}
 	@mkdir -p ${@D}
-	CGO_ENABLED=0 GOOS=$* go build \
-		-a -installsuffix cgo \
-		-ldflags '-s -X main.Version=${V}' -o $@ ${REPO}/$(@F)
+	CGO_ENABLED=0 GOOS=$* go build ${GOOPTS} -o $@ ${REPO}/$(@F)
 
 install: ${INSTALL_DIR}/bard ${INSTALL_DIR}/barc
 
@@ -57,14 +52,10 @@ uninstall:
 	rm ${INSTALL_DIR}/bard ${INSTALL_DIR}/barc
 
 ${INSTALL_DIR}/bard: ${SRC}
-	CGO_ENABLED=0 go install \
-		-a -installsuffix cgo \
-		-ldflags '-s -X main.Version=${V}' ${REPO}/bard
+	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}/bard
 
 ${INSTALL_DIR}/barc: ${SRC}
-	CGO_ENABLED=0 go install \
-		-a -installsuffix cgo \
-		-ldflags '-s -X main.Version=${V}' ${REPO}/barc
+	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}/barc
 
 bard-server: install
 	bard -logging-level=DEBUG -storage-block-root=testdata
