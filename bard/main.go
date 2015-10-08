@@ -14,9 +14,12 @@ import (
 var logLevel string
 
 var addr string
+
 var chunkSize int64
 var clientConns int
 var endpoint string
+var httpEndpoint string
+var barExe string
 
 var storageType string
 var storageWorkers int
@@ -25,13 +28,18 @@ var storageBlockRoot string
 var storageBlockSplit int
 
 func init() {
-	flag.StringVar(&logLevel, "logging-level", logx.ERROR, "logging level")
+	flag.StringVar(&logLevel, "log-level", logx.ERROR, "logging level")
 
 	flag.StringVar(&addr, "bind", ":3000", "bind addr")
 	flag.Int64Var(&chunkSize, "chunk", 1024*1024*2, "preferred chunk size")
 	flag.IntVar(&clientConns, "conns", 16,
 		"preferred conns from one client")
-	flag.StringVar(&endpoint, "endpoint", "http://localhost:3000/v1", "endpoint")
+	flag.StringVar(&endpoint, "endpoint", "http://localhost:3000/v1",
+		"RPC endpoint")
+	flag.StringVar(&httpEndpoint, "http-endpoint", "http://localhost:3000/v1",
+		"HTTP endpoint")
+	flag.StringVar(&barExe, "barc-exe", "",
+		"path to windows barc executable")
 
 	flag.StringVar(&storageType, "storage-type", "block", "storage type")
 	flag.IntVar(&storageWorkers, "storage-workers", 128, "storage workers")
@@ -54,8 +62,9 @@ func main() {
 	}
 	srv := server.NewBardServer(&server.BardServerOptions{
 		addr,
-		&proto.Info{[]string{endpoint}, chunkSize, clientConns},
+		&proto.Info{httpEndpoint, endpoint, chunkSize, clientConns},
 		pool,
+		barExe,
 	})
 
 	err = srv.Start()

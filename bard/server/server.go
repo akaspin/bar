@@ -14,6 +14,7 @@ type BardServerOptions struct  {
 	Addr string
 	Info *proto.Info
 	StoragePool *storage.StoragePool
+	BarExe string
 }
 
 type BardServer struct {
@@ -39,8 +40,10 @@ func (s *BardServer) Start() (err error) {
 	}
 
 	mux := http.NewServeMux()
+	mux.Handle("/", &handler.FrontHandler{s.Info, s.BarExe})
 	mux.Handle("/v1/rpc", rpcSvr)
-	mux.Handle("/v1/bat", &handler.BatHandler{})
+	mux.Handle("/v1/bar-export.bat", &handler.BatHandler{s.Info})
+	mux.Handle("/v1/barc.exe", &handler.ExeHandler{s.BarExe})
 	mux.Handle("/v1/spec/", &handler.SpecHandler{s.StoragePool})
 
 	logx.Debugf("bard serving at http://%s/v1", s.Addr)

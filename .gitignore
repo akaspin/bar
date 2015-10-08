@@ -4,7 +4,7 @@
 !cmd
 
 # fixtures
-testdata
+testdata*
 test_srv_data*
 
 .kitchen/

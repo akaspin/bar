@@ -3,6 +3,7 @@ SRC_TEST=$(shell find . -type f -name '*_test.go')
 V=$(shell git describe --always --tags --dirty)
 REPO=github.com/akaspin/bar
 GOOPTS=-a -installsuffix cgo -ldflags '-s -X main.Version=${V}'
+HOSTNAME=$(shell hostname)
 
 ifdef GOBIN
 	INSTALL_DIR=${GOBIN}
@@ -21,9 +22,11 @@ dist-linux: dist/bar-${V}-linux-amd64.tar.gz
 
 dist-darwin: dist/bar-${V}-darwin-amd64.tar.gz
 
+distclean:
+	rm -rf dist
+
 clean:
-	@rm -rf dist
-	@rm -rf testdata
+	find . -type d -name testdata* -exec rm -rf '{}' ';'
 
 dist/bar-${V}-windows-amd64.zip: dist/windows/barc.exe dist/windows/bard.exe
 	zip -r -j -D $@ ${<D}
@@ -57,8 +60,12 @@ ${INSTALL_DIR}/bard: ${SRC}
 ${INSTALL_DIR}/barc: ${SRC}
 	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}/barc
 
-bard-server: install
-	bard -logging-level=DEBUG -storage-block-root=testdata
+run-server: ${INSTALL_DIR}/bard
+	bard -log-level=DEBUG \
+		-storage-block-root=testdata \
+		-endpoint=http://${HOSTNAME}:3000/v1 \
+		-http-endpoint=http://${HOSTNAME}:3000/v1 \
+		-barc-exe=dist/windows/barc.exe
 
 test: install ${SRC_TEST}
 	CGO_ENABLED=0 INTEGRATION=yes go test ./...

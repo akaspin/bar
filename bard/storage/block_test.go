@@ -8,7 +8,7 @@ import (
 	"bytes"
 )
 
-const sPath  = "test_storage"
+const sPath  = "testdata-storage"
 
 func Test_BlockDriver_WriteBLOB(t *testing.T) {
 

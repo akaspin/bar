@@ -23,8 +23,11 @@ func RunServer(t *testing.T, root string) (endpoint *url.URL, stop func() error)
 	srv := server.NewBardServer(&server.BardServerOptions{
 		fmt.Sprintf(":%d", port),
 		&proto.Info{
-			[]string{endpoint.String()},
-			1024 * 1024 * 2, 16}, p,
+			fmt.Sprintf("http://localhost:%d/v1"),
+			fmt.Sprintf("http://localhost:%d/v1"),
+			1024 * 1024 * 2, 16},
+		p,
+		"",
 	})
 
 	go srv.Start()

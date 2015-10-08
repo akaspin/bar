@@ -6,14 +6,17 @@ import (
 // Server info
 type Info struct {
 
-	// Alternate endpoints
-	Endpoints []string
+	// HTTP Endpoint
+	HTTPEndpoint string
+
+	// RPC Endpoint
+	Endpoint string
 
 	// Preferred chunk size
 	ChunkSize int64
 
 	// Preferred number of connections from client
-	MaxConn int
+	PoolSize int
 }
 
 type ChunkInfo struct {

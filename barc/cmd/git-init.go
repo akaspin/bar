@@ -62,7 +62,7 @@ func (c *GitInitCmd) Do() (err error) {
 
 	if err = c.git.SetHook("pre-commit",
 		fmt.Sprintf(hook,
-			c.log, c.endpoint, opts.ChunkSize, opts.MaxConn)); err != nil {
+			c.log, c.endpoint, opts.ChunkSize, opts.PoolSize)); err != nil {
 		return
 	}
 	logx.Infof("pre-commit hook installed to %s",
@@ -82,28 +82,28 @@ func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
 //			"barc -log-level=%s git-diff -chunk=%d", c.log, info.ChunkSize),
 		"filter.bar.clean": fmt.Sprintf(
 			"barc -log-level=%s git-clean -chunk=%d -pool=%s %%f",
-			c.log, info.ChunkSize, info.MaxConn),
+			c.log, info.ChunkSize, info.PoolSize),
 		"filter.bar.smudge": fmt.Sprintf(
 			"barc -log-level=%s git-smudge -endpoint=%s -chunk=%d -pool=%d %%f",
-			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
+			c.log, c.endpoint, info.ChunkSize, info.PoolSize),
 		"alias.bar-squash": fmt.Sprintf(
 			"!barc -log-level=%s up -squash -endpoint=%s -chunk=%d -pool=%d -git",
-			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
+			c.log, c.endpoint, info.ChunkSize, info.PoolSize),
 		"alias.bar-up": fmt.Sprintf(
 			"!barc -log-level=%s up -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
+			c.log, c.endpoint, info.ChunkSize, info.PoolSize),
 		"alias.bar-down": fmt.Sprintf(
 			"!barc -log-level=%s down -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
+			c.log, c.endpoint, info.ChunkSize, info.PoolSize),
 		"alias.bar-export": fmt.Sprintf(
 			"!barc -log-level=%s spec-export -upload -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
+			c.log, c.endpoint, info.ChunkSize, info.PoolSize),
 		"alias.bar-import": fmt.Sprintf(
 			"!barc -log-level=%s spec-import -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, c.endpoint, info.ChunkSize, info.MaxConn),
+			c.log, c.endpoint, info.ChunkSize, info.PoolSize),
 		"alias.bar-ls": fmt.Sprintf(
 			"!barc -log-level=%s ls -endpoint=%s -git -pool=%d",
-			c.log, c.endpoint, info.MaxConn),
+			c.log, c.endpoint, info.PoolSize),
 	}
 }
 
