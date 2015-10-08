@@ -9,11 +9,12 @@ import (
 	"github.com/akaspin/bar/barc/model"
 	"github.com/akaspin/bar/proto/manifest"
 	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/proto"
 )
 
 func Test_Ping(t *testing.T) {
 //	logx.SetLevel(logx.DEBUG)
-	root := "fix-up-ping"
+	root := "testdata-Ping"
 	endpoint, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
@@ -27,7 +28,7 @@ func Test_Ping(t *testing.T) {
 }
 
 func Test_DeclareUpload(t *testing.T) {
-	root := "fix-up-ping"
+	root := "testdata-DeclareUpload"
 	endpoint, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
@@ -54,7 +55,7 @@ func Test_DeclareUpload(t *testing.T) {
 }
 
 func Test_Upload(t *testing.T) {
-	root := "fix-up-ping"
+	root := "testdata-Upload"
 	endpoint, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
@@ -80,7 +81,7 @@ func Test_Upload(t *testing.T) {
 }
 
 func Test_GetFetch(t *testing.T) {
-	root := "fix-up-ping"
+	root := "testdata-GetFetch"
 	endpoint, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
@@ -109,7 +110,7 @@ func Test_GetFetch(t *testing.T) {
 }
 
 func Test_Download(t *testing.T) {
-	root := "fix-download"
+	root := "testdata-Download"
 	endpoint, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
@@ -146,7 +147,7 @@ func Test_Download(t *testing.T) {
 }
 
 func Test_Check(t *testing.T) {
-	root := "fix-download"
+	root := "testdata-Check"
 	endpoint, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
@@ -177,6 +178,46 @@ func Test_Check(t *testing.T) {
 	assert.Equal(t, []string{
 		"eebd7b0c388d7f4d4ede4681b472969d5f09228c0473010d670a6918a3c05e79",
 	}, res)
+}
+
+func Test_Spec(t *testing.T) {
+	root := "testdata-Spec"
+	endpoint, stop := fixtures.RunServer(t, root)
+	defer stop()
+	defer os.RemoveAll(root)
+
+	wd, _ := os.Getwd()
+	wd = filepath.Join(wd, "testdata")
+	tree := fixtures.NewTree(wd)
+	defer tree.Squash()
+	assert.NoError(t, tree.Populate())
+
+	tr := transport.NewTransport(wd, endpoint.String(), 16)
+	defer tr.Close()
+
+	ml, err := model.New(wd, false, manifest.CHUNK_SIZE, 16)
+	assert.NoError(t, err)
+
+	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(wd)...)
+	assert.NoError(t, err)
+
+	err = tr.Upload(mx)
+	assert.NoError(t, err)
+
+	// make spec
+	nameMap := map[string]string{}
+	for name, m := range mx {
+		nameMap[name] = m.ID
+	}
+
+	spec1, err := proto.NewSpec(nameMap)
+	assert.NoError(t, err)
+
+	err = tr.UploadSpec(spec1)
+	assert.NoError(t, err)
+
+	_, err = tr.GetSpec(spec1.ID)
+	assert.NoError(t, err)
 }
 
 

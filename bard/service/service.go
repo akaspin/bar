@@ -180,7 +180,7 @@ func (s *Service) GetSpec(id *string, res *lists.Links) (err error) {
 	}
 	defer s.Storage.Release(store)
 
-	spec, err := store.ReadSpec(id)
+	spec, err := store.ReadSpec(*id)
 	if err != nil {
 		return
 	}
@@ -200,7 +200,7 @@ func (s *Service) GetSpec(id *string, res *lists.Links) (err error) {
 			defer s.Storage.Release(store1)
 
 			var err1 error
-			if res1[name], err1 = store1.ReadManifest(mID); err1 != nil {
+			if res1[n], err1 = store1.ReadManifest(mID); err1 != nil {
 				errs = append(errs, err1)
 				return
 			}

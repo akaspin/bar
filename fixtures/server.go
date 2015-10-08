@@ -28,7 +28,7 @@ func RunServer(t *testing.T, root string) (endpoint *url.URL, stop func() error)
 	})
 
 	go srv.Start()
-	time.Sleep(time.Millisecond * 200)
+	time.Sleep(time.Millisecond * 300)
 	assert.NoError(t, err)
 	stop = srv.Stop
 	return

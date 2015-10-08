@@ -30,7 +30,7 @@ func NewTransport(wd string, endpoint string, n int) (res *Transport) {
 	res = &Transport{
 		WD: wd,
 		DefaultEndpoint: endpoint,
-		rpcPool: NewRPCPool(n, time.Minute),
+		rpcPool: NewRPCPool(n, time.Minute * 30),
 	}
 	return
 }

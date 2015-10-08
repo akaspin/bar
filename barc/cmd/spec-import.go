@@ -1,9 +1,22 @@
 package cmd
-import "github.com/akaspin/bar/proto/manifest"
+import (
+	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/barc/lists"
+	"encoding/json"
+	"github.com/akaspin/bar/barc/transport"
+	"github.com/akaspin/bar/barc/model"
+	"github.com/tamtam-im/logx"
+)
 
 
 /*
 Import spec from bard and populate manifests
+
+	$ cat spec.json | bar spec-import -raw
+	$ bar spec-import 1bcaa5...578bd24
+	$ bar spec-import http://localhost:3000/v1/spec/1bcaa5...578bd24
+	$ bar spec-import http://localhost:3000/v1/spec/1bcaa5...578bd24.json
+
 */
 type SpecImportCmd struct  {
 	*BaseSubCommand
@@ -12,27 +25,59 @@ type SpecImportCmd struct  {
 	useGit bool
 	chunkSize int64
 	pool int
+
+	raw bool
+	fetchBlobs bool
 }
 
 func NewSpecImportCmd(s *BaseSubCommand) SubCommand  {
-	c := &SpecExportCmd{BaseSubCommand: s}
+	c := &SpecImportCmd{BaseSubCommand: s}
 	s.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
 	s.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 	s.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
 	s.FS.IntVar(&c.pool, "pool", 16, "pool sizes")
+	s.FS.BoolVar(&c.raw, "raw", false, "read spec from STDIN")
+	s.FS.BoolVar(&c.fetchBlobs, "blobs", false, "download blobs")
 	return c
 }
 
 func (c *SpecImportCmd) Do() (err error) {
+	// get spec first
+	var spec lists.Links
+	trans := transport.NewTransport(c.WD, c.endpoint, c.pool)
+	mod, err := model.New(c.WD, c.useGit, c.chunkSize, c.pool)
+	if err != nil {
+		return
+	}
+
+	if c.raw {
+		if err = json.NewDecoder(c.Stdin).Decode(&spec); err != nil {
+			return
+		}
+	} else {
+		// tree spec types
+		id := c.FS.Arg(0)
+
+
+		if spec, err = trans.GetSpec(id); err != nil {
+			logx.Debug(spec, err)
+			return
+		}
+	}
+
+	// get stored links, ignore errors
+	stored, _ := mod.CollectManifests(true, true, spec.Names()...)
+
+	// squash present
+	for n, m := range spec {
+		m1, ok := stored[n]
+		if ok && m.ID == m1.ID {
+			delete(spec, n)
+		}
+	}
+
+	err = mod.SquashBlobs(spec)
 	return
 }
 
-//c := &SpecExportCmd{BaseSubCommand: s}
-//s.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
-//"bard endpoint")
-//s.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
-//s.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
-//s.FS.BoolVar(&c.upload, "upload", false, "upload spec to bard and print URL")
-//s.FS.IntVar(&c.pool, "pool", 16, "pool sizes")
-//return c

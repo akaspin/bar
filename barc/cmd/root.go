@@ -38,6 +38,7 @@ func route(s string, base *BaseSubCommand) (res SubCommand, err error) {
 		"ls":             NewLsCmd,
 		"git-diff":       NewGitDiffCmd,
 		"spec-export":    NewSpecExportCmd,
+		"spec-import":    NewSpecImportCmd,
 	})[s]
 	if !ok {
 		err = fmt.Errorf("command %s not found", s)

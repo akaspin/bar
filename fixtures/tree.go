@@ -3,6 +3,7 @@ import (
 	"os/exec"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 
@@ -34,6 +35,7 @@ func (f *Tree) Populate() (err error) {
 			}
 		}
 	}
+	time.Sleep(time.Millisecond * 300)
 	return
 }
 
