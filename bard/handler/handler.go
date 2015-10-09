@@ -46,7 +46,7 @@ const bat_tpl = `
 @WHERE barc
 IF %ERRORLEVEL% NEQ 0 (
 	ECHO barc is not found. downloading...
-	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"http://{{.HTTPEndpoint}}:3000/v1/barc.exe\", \"barc.exe\")"
+	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"{{.HTTPEndpoint}}/barc.exe\", \"barc.exe\")"
 )
 
 barc -log-level=DEBUG up -endpoint={{.Endpoint}} -chunk={{.ChunkSize}} -pool={{.PoolSize}} !bar*.bat !bar-spec*.json !barc.exe !desktop.ini

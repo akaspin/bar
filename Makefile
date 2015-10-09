@@ -27,7 +27,7 @@ distclean:
 	rm -rf dist
 
 clean:
-	find . -type d -name testdata* -exec rm -rf '{}' ';'
+	-find . -type d -name testdata* -exec rm -rf '{}' ';'
 
 dist/bar-${V}-windows-amd64.zip: dist/windows/barc.exe dist/windows/bard.exe
 	zip -r -j -D $@ ${<D}

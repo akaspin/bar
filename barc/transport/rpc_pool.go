@@ -54,7 +54,7 @@ func newRpcClientPool(endpoint *url.URL, n int, timeout time.Duration) (res *rpc
 }
 
 func (p *rpcClientPool) take() (res *RPCClient, err error) {
-	c, err := p.p.TryGet()
+	c, err := p.p.Get(time.Minute * 30)
 	if err != nil {
 		return
 	}
@@ -84,7 +84,7 @@ func NewRPCPool(n int, timeout time.Duration) *RPCPool {
 
 func (p *RPCPool) Take(endpoint string) (res *RPCClient, err error) {
 	pool, exists := p.pools[endpoint]
-	if exists {
+	if exists && pool != nil {
 		res, err = pool.take()
 		return
 	}
