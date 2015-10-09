@@ -10,12 +10,17 @@ import (
 	"path/filepath"
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/proto"
+	"os"
 )
 
 func RunServer(t *testing.T, root string) (endpoint *url.URL, stop func() error)  {
 	logx.SetLevel(logx.DEBUG)
 
-	p := storage.NewStoragePool(storage.NewBlockStorageFactory(root, 2), 200, time.Minute)
+	wd, _ := os.Getwd()
+	rt := filepath.Join(wd, "testdata", root + "srv")
+	os.RemoveAll(rt)
+
+	p := storage.NewStoragePool(storage.NewBlockStorageFactory(rt, 2), 200, time.Minute)
 	port, err := GetOpenPort()
 	assert.NoError(t, err)
 
@@ -38,5 +43,7 @@ func RunServer(t *testing.T, root string) (endpoint *url.URL, stop func() error)
 }
 
 func ServerStoredName(root string, id string) string {
-	return filepath.Join(root, "blobs", id[:2], id)
+	wd, _ := os.Getwd()
+	rt := filepath.Join(wd, "testdata", root + "srv")
+	return filepath.Join(rt, "blobs", id[:2], id)
 }

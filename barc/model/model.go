@@ -16,7 +16,7 @@ import (
 type Model struct {
 	WD string
 	Git *git.Git
-	Hasher *manifest.Hasher
+	Hasher *manifest.HasherPool
 }
 
 func New(wd string, useGit bool, chunkSize int64, pool int) (res *Model, err error) {
@@ -50,23 +50,33 @@ func (m *Model) CollectManifests(blobs, manifests bool, names ...string) (res li
 	res = lists.Links{}
 	var errs []error
 
-	var wg sync.WaitGroup
-	var mu sync.Mutex
+	resChan := make(chan struct{
+		name string
+		manifest *manifest.Manifest
+	}, 1)
+//	}, len(names))
+	errChan := make(chan error, 1)
+
 	for _, name := range names {
-		wg.Add(1)
+
 		go func(n string) {
-			defer wg.Done()
-			var err1 error
+			h, err1 := m.Hasher.Take()
+			if err != nil {
+				errChan <- err1
+				return
+			}
+			defer h.Release()
+
 			f, err1 := os.Open(filepath.Join(m.WD, n))
-			if err1 != nil {
-				errs = append(errs, err1)
+			if err != nil {
+				errChan <- err1
 				return
 			}
 			defer f.Close()
 
-			r, isManifest, err1 := manifest.Peek(f)
-			if err1 != nil {
-				errs = append(errs, err1)
+			r, isManifest, err1 := h.Peek(f)
+			if err != nil {
+				errChan <- err1
 				return
 			}
 
@@ -74,17 +84,26 @@ func (m *Model) CollectManifests(blobs, manifests bool, names ...string) (res li
 				return
 			}
 
-			m1, err1 := m.GetManifest(n, r)
-			if err1 != nil {
-				errs = append(errs, err1)
+			m1, err1 := m.GetManifest(n, r, h)
+			if err != nil {
+				errChan <- err1
 				return
 			}
-			mu.Lock()
-			res[n] = *m1
-			mu.Unlock()
+			resChan <- struct{
+				name string
+				manifest *manifest.Manifest
+			}{n, m1}
 		}(name)
 	}
-	wg.Wait()
+
+	for i := 0; i < len(names); i++ {
+		select {
+		case r1 := <- resChan:
+			res[r1.name] = *r1.manifest
+		case err1 := <- errChan:
+			errs = append(errs, err1)
+		}
+	}
 
 	if len(errs) > 0 {
 		err = fmt.Errorf("errors while collecting manifests %s", errs)
@@ -168,7 +187,16 @@ func (m *Model) SquashBlobs(blobs lists.Links) (err error) {
 
 
 // Get manifest by filename or given reader
-func (m *Model) GetManifest(name string, in io.Reader) (res *manifest.Manifest, err error) {
+func (m *Model) GetManifest(name string, in io.Reader, hasher *manifest.Hasher) (res *manifest.Manifest, err error) {
+	if hasher == nil {
+		hasher, err = m.Hasher.Take()
+		if err != nil {
+			return
+		}
+		defer hasher.Release()
+
+	}
+
 	if in == nil {
 		var f *os.File
 		if f, err = os.Open(filepath.Join(m.WD, name)); err != nil {
@@ -178,14 +206,14 @@ func (m *Model) GetManifest(name string, in io.Reader) (res *manifest.Manifest, 
 		in = f
 	}
 
-	r, isManifest, err := manifest.Peek(in)
+	r, isManifest, err := hasher.Peek(in)
 	if err != nil {
 		return
 	}
 
 	if isManifest {
 		// ok - just read
-		res, err = m.Hasher.Make(r)
+		res, err = hasher.MakeFromManifest(r)
 		return
 	}
 
@@ -193,13 +221,13 @@ func (m *Model) GetManifest(name string, in io.Reader) (res *manifest.Manifest, 
 	var sideR io.Reader
 	if m.Git != nil {
 		if sideR = m.getGitReader(name); sideR != nil {
-			res, err = m.Hasher.Make(sideR)
+			res, err = hasher.Make(sideR)
 			return
 		}
 	}
 
 	// No git - make from blob
-	res, err = m.Hasher.Make(r)
+	res, err = hasher.MakeFromBLOB(r)
 	return
 }
 
@@ -229,3 +257,4 @@ func (m *Model) getGitReader(name string) (res io.Reader) {
 	logx.Debugf("manifest for %s parsed from git %s", name, oid)
 	return
 }
+

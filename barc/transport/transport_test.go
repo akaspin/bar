@@ -5,7 +5,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/barc/transport"
 	"os"
-	"path/filepath"
 	"github.com/akaspin/bar/barc/model"
 	"github.com/akaspin/bar/proto/manifest"
 	"github.com/akaspin/bar/barc/lists"
@@ -32,20 +31,18 @@ func Test_DeclareUpload(t *testing.T) {
 	endpoint, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
-	wd, _ := os.Getwd()
-	wd = filepath.Join(wd, "testdata")
 
-	tr := transport.NewTransport(wd, endpoint.String(), 16)
-	defer tr.Close()
-
-	tree := fixtures.NewTree(wd)
-	defer tree.Squash()
+	tree := fixtures.NewTree("declare-upload", "")
 	assert.NoError(t, tree.Populate())
 
-	ml, err := model.New(wd, false, manifest.CHUNK_SIZE, 16)
+	tr := transport.NewTransport(tree.CWD, endpoint.String(), 16)
+	defer tr.Close()
+
+
+	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
-	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(wd)...)
+	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
 	toUp, err := tr.NewUpload(mx)
@@ -60,20 +57,17 @@ func Test_Upload(t *testing.T) {
 	defer stop()
 	defer os.RemoveAll(root)
 
-	wd, _ := os.Getwd()
-	wd = filepath.Join(wd, "testdata")
-	tree := fixtures.NewTree(wd)
-	defer tree.Squash()
+	tree := fixtures.NewTree("testdata-Upload", "")
 	assert.NoError(t, tree.Populate())
 
-	tr := transport.NewTransport(wd, endpoint.String(), 16)
+	tr := transport.NewTransport(tree.CWD, endpoint.String(), 16)
 	defer tr.Close()
 
 
-	ml, err := model.New(wd, false, manifest.CHUNK_SIZE, 16)
+	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
-	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(wd)...)
+	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
 	err = tr.Upload(mx)
@@ -86,19 +80,16 @@ func Test_GetFetch(t *testing.T) {
 	defer stop()
 	defer os.RemoveAll(root)
 
-	wd, _ := os.Getwd()
-	wd = filepath.Join(wd, "testdata")
-	tree := fixtures.NewTree(wd)
-	defer tree.Squash()
+	tree := fixtures.NewTree("GetFetch", "")
 	assert.NoError(t, tree.Populate())
 
-	tr := transport.NewTransport(wd, endpoint.String(), 16)
+	tr := transport.NewTransport(tree.CWD, endpoint.String(), 16)
 	defer tr.Close()
 
-	ml, err := model.New(wd, false, manifest.CHUNK_SIZE, 16)
+	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
-	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(wd)...)
+	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
 	err = tr.Upload(mx)
@@ -115,19 +106,16 @@ func Test_Download(t *testing.T) {
 	defer stop()
 	defer os.RemoveAll(root)
 
-	wd, _ := os.Getwd()
-	wd = filepath.Join(wd, "testdata")
-	tree := fixtures.NewTree(wd)
-	defer tree.Squash()
+	tree := fixtures.NewTree("testdata-Download", "")
 	assert.NoError(t, tree.Populate())
 
-	tr := transport.NewTransport(wd, endpoint.String(), 16)
+	tr := transport.NewTransport(tree.CWD, endpoint.String(), 16)
 	defer tr.Close()
 
-	ml, err := model.New(wd, false, manifest.CHUNK_SIZE, 16)
+	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
-	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(wd)...)
+	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
 	err = tr.Upload(mx)
@@ -152,19 +140,16 @@ func Test_Check(t *testing.T) {
 	defer stop()
 	defer os.RemoveAll(root)
 
-	wd, _ := os.Getwd()
-	wd = filepath.Join(wd, "testdata")
-	tree := fixtures.NewTree(wd)
-	defer tree.Squash()
+	tree := fixtures.NewTree("testdata-Check", "")
 	assert.NoError(t, tree.Populate())
 
-	tr := transport.NewTransport(wd, endpoint.String(), 16)
+	tr := transport.NewTransport(tree.CWD, endpoint.String(), 16)
 	defer tr.Close()
 
-	ml, err := model.New(wd, false, manifest.CHUNK_SIZE, 16)
+	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
-	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(wd)...)
+	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
 	err = tr.Upload(mx)
@@ -186,19 +171,16 @@ func Test_Spec(t *testing.T) {
 	defer stop()
 	defer os.RemoveAll(root)
 
-	wd, _ := os.Getwd()
-	wd = filepath.Join(wd, "testdata")
-	tree := fixtures.NewTree(wd)
-	defer tree.Squash()
+	tree := fixtures.NewTree(root, "")
 	assert.NoError(t, tree.Populate())
 
-	tr := transport.NewTransport(wd, endpoint.String(), 16)
+	tr := transport.NewTransport(tree.CWD, endpoint.String(), 16)
 	defer tr.Close()
 
-	ml, err := model.New(wd, false, manifest.CHUNK_SIZE, 16)
+	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
-	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(wd)...)
+	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
 	err = tr.Upload(mx)

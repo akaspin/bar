@@ -66,6 +66,7 @@ func MakeNamedBLOB(name string, size int64) (err error) {
 		}
 	}
 	err = buf.Flush()
+	f.Sync()
 	return
 }
 

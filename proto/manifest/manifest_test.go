@@ -176,7 +176,7 @@ func Test_Shadow_NewFromBLOB_3b(t *testing.T)  {
 		`), (*m).String())
 }
 
-func Benchmark_Shadow_NewFromBLOB_500MB(b *testing.B)  {
+func Benchmark_Manifest_NewFromBLOB_500MB(b *testing.B)  {
 	b.Skip()
 	bn, err := fixtures.MakeBLOBPure(1024 * 1024 * 500)
 	if err != nil {
@@ -188,5 +188,4 @@ func Benchmark_Shadow_NewFromBLOB_500MB(b *testing.B)  {
 	for i := 0; i < b.N; i++ {
 		_, _ = fixtures.NewShadowFromFile(bn)
 	}
-
 }

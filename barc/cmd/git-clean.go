@@ -53,7 +53,7 @@ func (c *GitCleanCommand) Do() (err error) {
 	}
 
 
-	s, err := c.Model.GetManifest(name, c.Stdin)
+	s, err := c.Model.GetManifest(name, c.Stdin, nil)
 	if err != nil {
 		return
 	}

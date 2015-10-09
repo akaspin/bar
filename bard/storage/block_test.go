@@ -6,9 +6,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"bytes"
+	"path/filepath"
 )
 
-const sPath  = "testdata-storage"
+const sPath  = "testdata"
 
 func Test_BlockDriver_WriteBLOB(t *testing.T) {
 
@@ -47,7 +48,8 @@ func Test_BlockDriver_WriteBLOB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// check stored file manifest
-	m2, err := fixtures.NewShadowFromFile(fixtures.ServerStoredName(sPath, m.ID))
+	m2, err := fixtures.NewShadowFromFile(filepath.Join(
+		"testdata/blobs/26", m.ID))
 	assert.NoError(t, err)
 
 	assert.Equal(t, m.String(), m2.String())

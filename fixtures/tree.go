@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"time"
 	"fmt"
+	"github.com/nu7hatch/gouuid"
+"math/rand"
 )
 
 
@@ -12,12 +14,17 @@ type Tree struct {
 	CWD string
 }
 
-func NewTree(where string) *Tree {
-	if where == "" {
-		where, _ = os.Getwd()
-		where = filepath.Join(where, "testdata")
+func NewTree(where, wd string) *Tree {
+	if wd == "" {
+		wd, _ = os.Getwd()
 	}
-	return &Tree{where}
+	if where == "" {
+		id, _ := uuid.NewV4()
+		where = id.String()
+	}
+	root := filepath.Join(wd, "testdata", where)
+	os.RemoveAll(root)
+	return &Tree{root}
 }
 
 func (f *Tree) Populate() (err error) {
@@ -42,12 +49,14 @@ func (f *Tree) Populate() (err error) {
 
 func (f *Tree) PopulateN(size int64, n int) (err error) {
 	for i := 0; i < n; i++ {
+		rand.Seed(time.Now().Unix())
 		if err = f.WriteBLOB(
 			filepath.Join("big", fmt.Sprintf("file-big-%d.bin", i)),
-			size + int64(n)); err != nil {
+			size + int64(rand.Int31n(100))); err != nil {
 			return
 		}
 	}
+
 	time.Sleep(time.Millisecond * 100)
 	return
 }

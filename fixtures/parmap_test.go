@@ -32,7 +32,7 @@ func Benchmark_BarMapChan(b *testing.B) {
 
 func parmapChan(n int) (res map[string]string) {
 	res = map[string]string{}
-	resChan := make(chan string, 1)
+	resChan := make(chan string, 8)
 
 	for i := 0; i < n; i++ {
 		go func(i int) {
@@ -40,12 +40,12 @@ func parmapChan(n int) (res map[string]string) {
 		}(i)
 	}
 
-	for {
+	for i := 0; i < n; i++ {
 		r :=<- resChan
 		res[r] = r
-		if len(res) == n {
-			break
-		}
+//		if len(res) == n {
+//			break
+//		}
 	}
 	return
 }
@@ -56,8 +56,8 @@ func parmapWG(n int) (res map[string]string) {
 	var wg sync.WaitGroup
 	var mu sync.RWMutex
 
+	wg.Add(n)
 	for i := 0; i < n; i++ {
-		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
 			r := op(i)
