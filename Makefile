@@ -68,5 +68,8 @@ run-server: ${INSTALL_DIR}/bard
 		-http-endpoint=http://${HOSTNAME}:3000/v1 \
 		-barc-exe=dist/windows/barc.exe
 
+bench:
+	go test -v -run=XXX -bench=. -benchmem ./...
+
 test: install ${SRC_TEST}
 	CGO_ENABLED=0 INTEGRATION=yes go test ./...

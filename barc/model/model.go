@@ -22,7 +22,7 @@ type Model struct {
 func New(wd string, useGit bool, chunkSize int64, pool int) (res *Model, err error) {
 	res = &Model{
 		WD: wd,
-		Hasher: manifest.NewHasherPool(chunkSize, pool, time.Minute * 5),
+		Hasher: manifest.NewHasherPool(chunkSize, pool, time.Minute * 30),
 	}
 	if useGit {
 		res.Git, err = git.NewGit(wd)

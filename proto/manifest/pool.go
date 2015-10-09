@@ -36,7 +36,7 @@ func NewHasherPool(chunkSize int64, n int, timeout time.Duration) *Hasher {
 
 // Make from reader
 func (p *Hasher) Make(in io.Reader) (res *Manifest, err error)  {
-	h1, err := p.pool.TryGet()
+	h1, err := p.pool.Get(time.Minute * 30)
 	if err != nil {
 		return
 	}

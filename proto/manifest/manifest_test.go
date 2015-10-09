@@ -177,6 +177,7 @@ func Test_Shadow_NewFromBLOB_3b(t *testing.T)  {
 }
 
 func Benchmark_Shadow_NewFromBLOB_500MB(b *testing.B)  {
+	b.Skip()
 	bn, err := fixtures.MakeBLOBPure(1024 * 1024 * 500)
 	if err != nil {
 		b.Fail()

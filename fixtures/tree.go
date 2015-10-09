@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"fmt"
 )
 
 
@@ -35,7 +36,19 @@ func (f *Tree) Populate() (err error) {
 			}
 		}
 	}
-	time.Sleep(time.Millisecond * 300)
+	time.Sleep(time.Millisecond * 100)
+	return
+}
+
+func (f *Tree) PopulateN(size int64, n int) (err error) {
+	for i := 0; i < n; i++ {
+		if err = f.WriteBLOB(
+			filepath.Join("big", fmt.Sprintf("file-big-%d.bin", i)),
+			size + int64(n)); err != nil {
+			return
+		}
+	}
+	time.Sleep(time.Millisecond * 100)
 	return
 }
 
