@@ -31,7 +31,10 @@ const front_tpl = `
 <pre>
 {{.BatBody}}
 </pre>
-<p>Also download <a href="{{.Info.HTTPEndpoint}}/barc.exe"><code>barc.exe</code></a> and save
+<p>This script is no-brain solution to export bar specs. It automatically
+download <code>barc.exe</code> if it is not found and upload BLOBs and spec
+to bard</p>
+<p>You can also download <a href="{{.Info.HTTPEndpoint}}/barc.exe"><code>barc.exe</code></a> and save
 	it beside <code>bar-export.bat</code> or somewhere in PATH.</p>
 </body>
 </html>
@@ -39,6 +42,12 @@ const front_tpl = `
 
 const bat_tpl = `
 @echo off
+
+@WHERE barc
+IF %ERRORLEVEL% NEQ 0 (
+	ECHO barc is not found. downloading...
+	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"http://{{.HTTPEndpoint}}:3000/v1/barc.exe\", \"barc.exe\")"
+)
 
 barc -log-level=DEBUG up -endpoint={{.Endpoint}} -chunk={{.ChunkSize}} -pool={{.PoolSize}} !bar*.bat !bar-spec*.json !barc.exe !desktop.ini
 for /f %%i in ('barc -log-level=DEBUG spec-export -endpoint={{.Endpoint}} -chunk={{.ChunkSize}} -pool={{.PoolSize}} -upload -cc !bar*.bat !bar-spec*.json !barc.exe !desktop.ini') do set VAR=%%i
