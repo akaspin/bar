@@ -91,7 +91,7 @@ func (c *LsCmd) Do() (err error) {
 		}
 	}
 
-	blobs, err := mod.CollectManifests(!c.noBlobs, !c.noManifests, feed...)
+	blobs, err := mod.FeedManifests(!c.noBlobs, !c.noManifests, true, feed...)
 	if err != nil {
 		return
 	}
@@ -151,7 +151,7 @@ func (c *LsCmd) Do() (err error) {
 
 	var blobMap map[string]bool
 	if !c.noBlobs && !c.noManifests {
-		if blobMap, err = mod.IsBlobs(names); err != nil {
+		if blobMap, err = mod.IsBlobs(names...); err != nil {
 			return
 		}
 	}

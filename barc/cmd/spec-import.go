@@ -95,7 +95,7 @@ func (c *SpecImportCmd) Do() (err error) {
 	}
 
 	// get stored links, ignore errors
-	stored, _ := mod.CollectManifests(true, true, names...)
+	stored, _ := mod.FeedManifests(true, true, false, names...)
 
 	logx.Debugf("already stored %s", stored.Names())
 

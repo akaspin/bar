@@ -42,7 +42,7 @@ func Test_DeclareUpload(t *testing.T) {
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
-	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(tree.CWD)...)
+	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
 	toUp, err := tr.NewUpload(mx)
@@ -67,7 +67,7 @@ func Test_Upload(t *testing.T) {
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
-	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(tree.CWD)...)
+	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
 	err = tr.Upload(mx)
@@ -89,7 +89,7 @@ func Test_GetFetch(t *testing.T) {
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
-	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(tree.CWD)...)
+	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
 	err = tr.Upload(mx)
@@ -115,7 +115,7 @@ func Test_Download(t *testing.T) {
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
-	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(tree.CWD)...)
+	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
 	err = tr.Upload(mx)
@@ -149,7 +149,7 @@ func Test_Check(t *testing.T) {
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
-	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(tree.CWD)...)
+	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
 	err = tr.Upload(mx)
@@ -180,7 +180,7 @@ func Test_Spec(t *testing.T) {
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
-	mx, err := ml.CollectManifests(true, true, lists.NewFileList().ListDir(tree.CWD)...)
+	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
 	err = tr.Upload(mx)

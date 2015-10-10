@@ -57,7 +57,7 @@ func (c *DownCmd) Do() (err error) {
 		feed, err = c.model.Git.FilterByAttr("bar", feed...)
 	}
 
-	blobs, err := c.model.CollectManifests(false, true, feed...)
+	blobs, err := c.model.FeedManifests(false, true, true, feed...)
 	if err != nil {
 		return
 	}

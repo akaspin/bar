@@ -13,7 +13,7 @@ else
 endif
 
 
-.PHONY: clean uninstall test
+.PHONY: clean uninstall test bench
 
 dist: dist-win dist-linux dist-darwin
 
@@ -69,7 +69,10 @@ run-server: ${INSTALL_DIR}/bard
 		-barc-exe=dist/windows/barc.exe
 
 bench:
-	go test -v -run=XXX -bench=ParMap -benchmem ./...
+	go test -v -run=XXX -bench=. -benchmem ./...
 
-test: install ${SRC_TEST}
-	CGO_ENABLED=0 INTEGRATION=yes go test ./...
+test:
+	CGO_ENABLED=0 go test ./...
+
+test-short:
+	CGO_ENABLED=0 go test -short ./...

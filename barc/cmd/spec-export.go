@@ -64,7 +64,7 @@ func (c *SpecExportCmd) Do() (err error) {
 		feed, err = mod.Git.FilterByAttr("bar", feed...)
 	}
 
-	blobs, err := mod.CollectManifests(true, true, feed...)
+	blobs, err := mod.FeedManifests(true, true, true, feed...)
 	if err != nil {
 		return
 	}
