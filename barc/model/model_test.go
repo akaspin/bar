@@ -29,7 +29,7 @@ func Test_Model_CollectManifests_Large(t *testing.T) {
 	defer tree.Squash()
 
 	assert.NoError(t, tree.Populate())
-	assert.NoError(t, tree.PopulateN(1024 * 1024 * 500, 1))
+	assert.NoError(t, tree.PopulateN(1024 * 1024 * 300, 1))
 
 	names := lists.NewFileList().ListDir(tree.CWD)
 
@@ -61,7 +61,7 @@ func Test_Model_CollectManifests_Many(t *testing.T) {
 }
 
 func Benchmark_CollectManifests_Many(b *testing.B)  {
-	n := 70000
+	n := 100000
 
 	tree := fixtures.NewTree("collect-manifests-many-B", "")
 	defer tree.Squash()
@@ -85,7 +85,7 @@ func Benchmark_CollectManifests_Large(b *testing.B)  {
 	tree := fixtures.NewTree("collect-manifests-large-B", "")
 	defer tree.Squash()
 	assert.NoError(b, tree.Populate())
-	assert.NoError(b, tree.PopulateN(1024 * 1024 * 500, 10))
+	assert.NoError(b, tree.PopulateN(1024 * 1024 * 500, 5))
 
 	names := lists.NewFileList().ListDir(tree.CWD)
 

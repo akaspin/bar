@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/parmap"
 )
 
 
@@ -17,12 +18,14 @@ type Model struct {
 	WD string
 	Git *git.Git
 	Hasher *manifest.HasherPool
+	Pool *parmap.ParMap
 }
 
 func New(wd string, useGit bool, chunkSize int64, pool int) (res *Model, err error) {
 	res = &Model{
 		WD: wd,
-		Hasher: manifest.NewHasherPool(chunkSize, pool, time.Minute * 30),
+		Hasher: manifest.NewHasherPool(chunkSize, pool, time.Hour),
+		Pool: parmap.NewWorkerPool(pool),
 	}
 	if useGit {
 		res.Git, err = git.NewGit(wd)
@@ -44,6 +47,13 @@ func (m *Model) Check(names ...string) (isDirty bool, dirty []string, err error)
 	return
 }
 
+
+func (m *Model) FeedManifests(blobs, manifests bool, names ...string) (res lists.Links, err error) {
+
+
+	return
+}
+
 // Collect manifests by file names
 // Use blobs or/and manifests switches to select specific sources
 func (m *Model) CollectManifests(blobs, manifests bool, names ...string) (res lists.Links, err error) {
@@ -53,8 +63,7 @@ func (m *Model) CollectManifests(blobs, manifests bool, names ...string) (res li
 	resChan := make(chan struct{
 		name string
 		manifest *manifest.Manifest
-	}, 1)
-//	}, len(names))
+	}, len(names))
 	errChan := make(chan error, 1)
 
 	for _, name := range names {
@@ -185,7 +194,6 @@ func (m *Model) SquashBlobs(blobs lists.Links) (err error) {
 	return
 }
 
-
 // Get manifest by filename or given reader
 func (m *Model) GetManifest(name string, in io.Reader, hasher *manifest.Hasher) (res *manifest.Manifest, err error) {
 	if hasher == nil {
@@ -194,7 +202,6 @@ func (m *Model) GetManifest(name string, in io.Reader, hasher *manifest.Hasher) 
 			return
 		}
 		defer hasher.Release()
-
 	}
 
 	if in == nil {
