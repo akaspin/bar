@@ -99,7 +99,7 @@ func (c *LsCmd) Do() (err error) {
 	onRemote := map[string]struct{}{}
 	if !c.noRemote {
 		var exists []string
-		trans := transport.NewTransport(c.WD, c.endpoint, c.pool)
+		trans := transport.NewTransport(mod, c.endpoint, c.pool)
 		if exists, err = trans.Check(blobs.IDMap().IDs()); err != nil {
 			return
 		}

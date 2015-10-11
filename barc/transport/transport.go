@@ -14,6 +14,7 @@ import (
 	"io"
 	"github.com/akaspin/bar/barc/lists"
 	"github.com/akaspin/bar/barc/model"
+	"github.com/akaspin/bar/parmap"
 )
 
 // Common transport with pooled connections
@@ -25,14 +26,17 @@ type Transport struct {
 
 	model *model.Model
 	rpcPool *RPCPool
+	pool *parmap.ParMap
 }
 
 // New RPC pool with default endpoint
-func NewTransport(wd string, endpoint string, n int) (res *Transport) {
+func NewTransport(mod *model.Model, endpoint string, n int) (res *Transport) {
 	res = &Transport{
-		WD: wd,
+		WD: mod.WD,
+		model: mod,
 		DefaultEndpoint: endpoint,
 		rpcPool: NewRPCPool(n, time.Hour, endpoint),
+		pool: parmap.NewWorkerPool(n),
 	}
 	return
 }
@@ -91,6 +95,7 @@ func (t *Transport) Upload(blobs lists.Links) (err error) {
 	return
 }
 
+// Declare upload on bard server
 func (t *Transport) NewUpload(blobs lists.Links) (toUpload lists.Links, err error) {
 	var req, res []manifest.Manifest
 
@@ -117,31 +122,28 @@ func (t *Transport) NewUpload(blobs lists.Links) (toUpload lists.Links, err erro
 	return
 }
 
+// Upload chunks from blob
 func (t *Transport) UploadBlob(name string, info manifest.Manifest) (err error) {
-	wg := sync.WaitGroup{}
-	var errs []error
 
 	logx.Debugf("uploading %s %s (%d chunks)", name, info.ID, len(info.Chunks))
-	for _, chunk := range info.Chunks {
-		wg.Add(1)
-		go func(ci manifest.Chunk) {
-			defer wg.Done()
-			var err1 error
-			if err1 = t.UploadChunk(name, info.ID, ci); err1 != nil {
-				errs = append(errs, err1)
-				return
-			}
 
-		}(chunk)
+	req := map[string]interface{}{}
+	for _, chunk := range info.Chunks {
+		req[chunk.ID] = chunk
 	}
-	wg.Wait()
-	if len(errs) > 0 {
-		err = fmt.Errorf("errors while upload %s %s %s", name, info.ID, errs)
-		return
-	}
+
+	_, err = t.pool.RunBatch(parmap.Task{
+		Map: req,
+		Fn: func(id string, v interface{}) (res interface{}, err error) {
+			err = t.UploadChunk(name, info.ID, v.(manifest.Chunk))
+			return
+		},
+	})
+
 	return
 }
 
+// Finish BLOB upload
 func (t *Transport) FinishUpload(id string) (err error) {
 	cli, err := t.rpcPool.Take()
 	if err != nil {
@@ -157,32 +159,29 @@ func (t *Transport) FinishUpload(id string) (err error) {
 	return
 }
 
-func (t *Transport) UploadChunk(name string, blobID string, chunkInfo manifest.Chunk) (err error) {
+// Upload chunk
+func (t *Transport) UploadChunk(name string, blobID string, chunk manifest.Chunk) (err error) {
+	logx.Tracef("uploading chunk %s (size: %d, offset %d) for BLOB %s:%s",
+		chunk.ID, chunk.Size, chunk.Offset, name, blobID)
+
+	buf := make([]byte, chunk.Size)
+	if err = t.model.ReadChunk(name, chunk, buf); err != nil {
+		return
+	}
+
 	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
 	}
 	defer cli.Release()
 
-	// read chunk
-	f, err := os.Open(filepath.Join(t.WD, name))
-	if err != nil {
-		return
-	}
-	defer f.Close()
-
-	buf := make([]byte, chunkInfo.Size)
-	if _, err = f.ReadAt(buf, chunkInfo.Offset); err != nil {
-		return
-	}
-
 	var res struct{}
 	err = cli.Call("Service.UploadChunk", &proto.ChunkData{
-		proto.ChunkInfo{blobID, chunkInfo}, buf,
+		proto.ChunkInfo{blobID, chunk}, buf,
 	}, &res)
 
 	logx.Tracef("chunk %s %s:%s %d uploaded", name,
-		blobID, chunkInfo.ID, chunkInfo.Size)
+		blobID, chunk.ID, chunk.Size)
 	return
 }
 

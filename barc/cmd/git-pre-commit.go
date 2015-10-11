@@ -68,7 +68,7 @@ func (c *GitPreCommitCmd) Do() (err error) {
 		return
 	}
 
-	trans := transport.NewTransport(c.WD, c.endpoint, c.pool)
+	trans := transport.NewTransport(c.model, c.endpoint, c.pool)
 	err = trans.Upload(blobs)
 
 	return

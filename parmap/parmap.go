@@ -8,7 +8,7 @@ type taskRequest struct  {
 	ResChan chan *taskResult
 	Key string
 	Fn func(key string, arg interface{}) (res interface{}, err error)
-	Arg interface{}
+	Args interface{}
 }
 
 type taskResult struct {
@@ -25,7 +25,7 @@ func serve(
 	for {
 		select {
 		case task := <- taskChan:
-			res, err := task.Fn(task.Key, task.Arg)
+			res, err := task.Fn(task.Key, task.Args)
 			task.ResChan <- &taskResult{task.Key, res, err}
 		case <-ctx.Done():
 			return
@@ -65,14 +65,35 @@ func NewWorkerPool(size int) (res *ParMap)  {
 	return
 }
 
-func (p *ParMap) Run(task Task) (
-	res map[string]interface{},
-	err error,
-) {
+
+func (p ParMap) RunOne(
+	key string,
+	arg interface{},
+	fn func(key string, arg interface{}) (res interface{}, err error),
+) (res interface{}, err error) {
+	resChan := make(chan *taskResult)
+	ctx, _ := context.WithCancel(p.ctx)
+
+	go func(key string, arg interface{}) {
+		p.taskChan <- &taskRequest{resChan, key, fn, arg}
+	}(key, arg)
+
+	select {
+	case <-ctx.Done():
+		break
+	case r := <-resChan:
+		res, err = r.Value, r.Error
+	}
+
+	return
+}
+
+func (p *ParMap) RunBatch(task Task) (res map[string]interface{}, err error) {
 	res = map[string]interface{}{}
 	var errs []error
 	resChan := make(chan *taskResult)
 	ctx, _ := context.WithCancel(p.ctx)
+
 	for k, a := range task.Map {
 		go func(key string, arg interface{}) {
 			p.taskChan <- &taskRequest{resChan, key, task.Fn, arg}

@@ -17,7 +17,7 @@ func Test_ParMap1(t *testing.T)  {
 		req[fmt.Sprintf("%d", i)] = i
 	}
 
-	res, err := parmap.NewWorkerPool(128).Run(
+	res, err := parmap.NewWorkerPool(128).RunBatch(
 		parmap.Task{
 			Map: req,
 			Fn: func(k string, a interface{}) (res interface{}, err1 error) {
@@ -36,7 +36,7 @@ func Test_ParMap2(t *testing.T)  {
 		req[fmt.Sprintf("%d", i)] = i
 	}
 
-	res, err := parmap.NewWorkerPool(128).Run(parmap.Task{
+	res, err := parmap.NewWorkerPool(128).RunBatch(parmap.Task{
 		Map: req,
 		Fn: func(k string, a interface{}) (res interface{}, err1 error) {
 			return a, nil
@@ -54,7 +54,7 @@ func Test_ParMap_Nils(t *testing.T)  {
 		req[fmt.Sprintf("%d", i)] = i
 	}
 
-	res, err := parmap.NewWorkerPool(128).Run(parmap.Task{
+	res, err := parmap.NewWorkerPool(128).RunBatch(parmap.Task{
 		Map: req,
 		Fn: func(k string, a interface{}) (res interface{}, err1 error) {
 			return nil, nil
@@ -76,7 +76,7 @@ func Benchmark_ParMapWorkerPool(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		res, err := parmap.NewWorkerPool(128).Run(parmap.Task{
+		res, err := parmap.NewWorkerPool(128).RunBatch(parmap.Task{
 			Map: req,
 			Fn: func(k string, a interface{}) (res interface{}, err1 error) {
 				return op(a.(int)), nil

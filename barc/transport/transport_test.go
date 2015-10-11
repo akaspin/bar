@@ -12,13 +12,14 @@ import (
 )
 
 func Test_Ping(t *testing.T) {
-//	logx.SetLevel(logx.DEBUG)
 	root := "testdata-Ping"
 	endpoint, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
 
-	tr := transport.NewTransport("", endpoint.String(), 16)
+	mod, err := model.New("", false, manifest.CHUNK_SIZE, 16)
+	assert.NoError(t, err)
+	tr := transport.NewTransport(mod, endpoint.String(), 16)
 	defer tr.Close()
 
 	res, err := tr.Ping()
@@ -35,7 +36,9 @@ func Test_DeclareUpload(t *testing.T) {
 	tree := fixtures.NewTree("declare-upload", "")
 	assert.NoError(t, tree.Populate())
 
-	tr := transport.NewTransport(tree.CWD, endpoint.String(), 16)
+	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	assert.NoError(t, err)
+	tr := transport.NewTransport(mod, endpoint.String(), 16)
 	defer tr.Close()
 
 
@@ -60,7 +63,9 @@ func Test_Upload(t *testing.T) {
 	tree := fixtures.NewTree("testdata-Upload", "")
 	assert.NoError(t, tree.Populate())
 
-	tr := transport.NewTransport(tree.CWD, endpoint.String(), 16)
+	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	assert.NoError(t, err)
+	tr := transport.NewTransport(mod, endpoint.String(), 16)
 	defer tr.Close()
 
 
@@ -83,7 +88,9 @@ func Test_GetFetch(t *testing.T) {
 	tree := fixtures.NewTree("GetFetch", "")
 	assert.NoError(t, tree.Populate())
 
-	tr := transport.NewTransport(tree.CWD, endpoint.String(), 16)
+	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	assert.NoError(t, err)
+	tr := transport.NewTransport(mod, endpoint.String(), 16)
 	defer tr.Close()
 
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
@@ -109,7 +116,9 @@ func Test_Download(t *testing.T) {
 	tree := fixtures.NewTree("testdata-Download", "")
 	assert.NoError(t, tree.Populate())
 
-	tr := transport.NewTransport(tree.CWD, endpoint.String(), 16)
+	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	assert.NoError(t, err)
+	tr := transport.NewTransport(mod, endpoint.String(), 16)
 	defer tr.Close()
 
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
@@ -143,7 +152,9 @@ func Test_Check(t *testing.T) {
 	tree := fixtures.NewTree("testdata-Check", "")
 	assert.NoError(t, tree.Populate())
 
-	tr := transport.NewTransport(tree.CWD, endpoint.String(), 16)
+	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	assert.NoError(t, err)
+	tr := transport.NewTransport(mod, endpoint.String(), 16)
 	defer tr.Close()
 
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
@@ -174,7 +185,9 @@ func Test_Spec(t *testing.T) {
 	tree := fixtures.NewTree(root, "")
 	assert.NoError(t, tree.Populate())
 
-	tr := transport.NewTransport(tree.CWD, endpoint.String(), 16)
+	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	assert.NoError(t, err)
+	tr := transport.NewTransport(mod, endpoint.String(), 16)
 	defer tr.Close()
 
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)

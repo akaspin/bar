@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/proto"
+	"github.com/akaspin/bar/barc/model"
+	"github.com/akaspin/bar/proto/manifest"
 )
 
 const hook  = `#!/bin/sh
@@ -46,14 +48,19 @@ func NewGitInitCmd(s *BaseSubCommand) SubCommand {
 }
 
 func (c *GitInitCmd) Do() (err error) {
-	c.git, err = git.NewGit(c.WD)
+	mod, err := model.New(c.WD, true, manifest.CHUNK_SIZE, 16)
+	if err != nil {
+		return
+	}
+
+	c.git = mod.Git
 	if c.clean {
 		err = c.uninstall()
 		return
 	}
 
 
-	c.transport = transport.NewTransport(c.WD, c.endpoint, 10)
+	c.transport = transport.NewTransport(mod, c.endpoint, 10)
 	defer c.transport.Close()
 
 	var opts proto.Info

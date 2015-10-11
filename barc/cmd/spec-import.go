@@ -47,11 +47,11 @@ func NewSpecImportCmd(s *BaseSubCommand) SubCommand  {
 func (c *SpecImportCmd) Do() (err error) {
 	// get spec first
 	var spec lists.Links
-	trans := transport.NewTransport(c.WD, c.endpoint, c.pool)
 	mod, err := model.New(c.WD, c.useGit, c.chunkSize, c.pool)
 	if err != nil {
 		return
 	}
+	trans := transport.NewTransport(mod, c.endpoint, c.pool)
 
 	if c.raw {
 		if err = json.NewDecoder(c.Stdin).Decode(&spec); err != nil {

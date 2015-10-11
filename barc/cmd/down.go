@@ -62,7 +62,7 @@ func (c *DownCmd) Do() (err error) {
 		return
 	}
 
-	trans := transport.NewTransport(c.WD, c.endpoint, c.maxPool)
+	trans := transport.NewTransport(c.model, c.endpoint, c.maxPool)
 	if err = trans.Download(blobs); err != nil {
 		return
 	}

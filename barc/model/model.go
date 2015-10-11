@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"github.com/akaspin/bar/barc/lists"
 	"github.com/akaspin/bar/parmap"
+	"time"
 )
 
 
@@ -15,6 +16,7 @@ type Model struct {
 	WD string
 	Git *git.Git
 	Pool *parmap.ParMap
+	FdLocks *parmap.LocksPool
 	chunkSize int64
 }
 
@@ -23,6 +25,7 @@ func New(wd string, useGit bool, chunkSize int64, pool int) (res *Model, err err
 		WD: wd,
 		Pool: parmap.NewWorkerPool(pool),
 		chunkSize: chunkSize,
+		FdLocks: parmap.NewLockPool(64, time.Hour),
 	}
 	if useGit {
 		res.Git, err = git.NewGit(wd)
@@ -44,6 +47,22 @@ func (m *Model) Check(names ...string) (isDirty bool, dirty []string, err error)
 	return
 }
 
+func (m *Model) ReadChunk(name string, chunk manifest.Chunk, res []byte) (err error) {
+	lock, err := m.FdLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Release()
+
+	f, err := os.Open(filepath.Join(m.WD, name))
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	_, err = f.ReadAt(res, chunk.Offset)
+	return
+}
 
 func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (res lists.Links, err error) {
 	req := map[string]interface{}{}
@@ -52,7 +71,7 @@ func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (r
 	for _, n := range names {
 		req[n] = struct{}{}
 	}
-	res1, err := m.Pool.Run(parmap.Task{
+	res1, err := m.Pool.RunBatch(parmap.Task{
 		Map: req,
 		Fn: func(name string, trail interface{}) (res interface{}, err error) {
 			res, err = m.getManifest(name, blobs, manifests)
@@ -71,6 +90,12 @@ func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (r
 }
 
 func (m *Model) getManifest(name string, blobs, manifests bool) (res *manifest.Manifest, err error) {
+	lock, err := m.FdLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Release()
+
 	f, err := os.Open(filepath.Join(m.WD, name))
 	if err != nil {
 		return
@@ -112,9 +137,15 @@ func (m *Model) IsBlobs(names ...string) (res map[string]bool, err error) {
 	}
 
 	logx.Tracef("collecting states %s", names)
-	res1, err := m.Pool.Run(parmap.Task{
+	res1, err := m.Pool.RunBatch(parmap.Task{
 		Map: req,
 		Fn: func(name string, trail interface{}) (res interface{}, err error) {
+			lock, err := m.FdLocks.Take()
+			if err != nil {
+				return
+			}
+			defer lock.Release()
+
 			f, err := os.Open(filepath.Join(m.WD, name))
 			if err != nil {
 				return
@@ -146,9 +177,15 @@ func (m *Model) SquashBlobs(blobs lists.Links) (err error) {
 		req[k] = v
 	}
 
-	if _, err = m.Pool.Run(parmap.Task{
+	if _, err = m.Pool.RunBatch(parmap.Task{
 		Map: req,
 		Fn: func(name string, in interface{}) (res interface{}, err error) {
+			lock, err := m.FdLocks.Take()
+			if err != nil {
+				return
+			}
+			defer lock.Release()
+
 			man := in.(manifest.Manifest)
 			absname := filepath.Join(m.WD, name)
 			backName := absname + ".bar-backup"

@@ -101,7 +101,7 @@ func (c *SpecExportCmd) Do() (err error) {
 		return
 	}
 
-	trans := transport.NewTransport(c.WD, c.endpoint, c.pool)
+	trans := transport.NewTransport(mod, c.endpoint, c.pool)
 	if err = trans.UploadSpec(spec); err != nil {
 		return
 	}
