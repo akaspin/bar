@@ -54,13 +54,19 @@ func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (r
 	}
 	res1, err := m.Pool.Run(parmap.Task{
 		Map: req,
-		Fn: func(name string, trail interface{}) (interface{}, error) {
-			return m.getManifest(name, blobs, manifests)
+		Fn: func(name string, trail interface{}) (res interface{}, err error) {
+			res, err = m.getManifest(name, blobs, manifests)
+			return
 		},
 		IgnoreErrors: !strict,
 	})
+
+	logx.Debug(res1)
+
 	for k, v := range res1 {
-		res[k] = *(v.(*manifest.Manifest))
+		if v.(*manifest.Manifest) != nil {
+			res[k] = *(v.(*manifest.Manifest))
+		}
 	}
 
 	return

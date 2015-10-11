@@ -22,6 +22,20 @@ func Test_Model_FeedManifests(t *testing.T)  {
 	assert.Len(t, lx.Names(), 16)
 }
 
+func Test_Model_FeedManifests_Nil(t *testing.T)  {
+	tree := fixtures.NewTree("feed-manifests", "")
+	assert.NoError(t, tree.Populate())
+
+	names := lists.NewFileList().ListDir(tree.CWD)
+	tree.KillBLOB("file-one.bin")
+
+	m, err := model.New(tree.CWD, false, 1024 * 1024, 16)
+	assert.NoError(t, err)
+	lx, err := m.FeedManifests(true, true, false, names...)
+	assert.Error(t, err)
+	assert.Len(t, lx.Names(), 15)
+}
+
 func Test_Model_FeedManifests_Large(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

@@ -46,6 +46,24 @@ func Test_ParMap2(t *testing.T)  {
 	assert.Len(t, res, 10)
 }
 
+func Test_ParMap_Nils(t *testing.T)  {
+	n := 10
+
+	req := map[string]interface{}{}
+	for i := 0; i < n; i++ {
+		req[fmt.Sprintf("%d", i)] = i
+	}
+
+	res, err := parmap.NewWorkerPool(128).Run(parmap.Task{
+		Map: req,
+		Fn: func(k string, a interface{}) (res interface{}, err1 error) {
+			return nil, nil
+		},
+	})
+	assert.NoError(t, err)
+	assert.Len(t, res, 0)
+}
+
 func Benchmark_ParMapWorkerPool(b *testing.B) {
 	n := 1000000
 	var v string

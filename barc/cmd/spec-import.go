@@ -100,14 +100,21 @@ func (c *SpecImportCmd) Do() (err error) {
 	logx.Debugf("already stored %s", stored.Names())
 
 	// squash present
+	toSquash := lists.Links{}
 	for n, m := range spec {
 		m1, ok := stored[filepath.FromSlash(n)]
-		if ok && m.ID == m1.ID {
-			delete(spec, n)
+		if !ok || m.ID != m1.ID {
+			toSquash[n] = spec[n]
 		}
 	}
 
-	err = mod.SquashBlobs(spec)
+	if err = mod.SquashBlobs(toSquash); err != nil {
+		return
+	}
+
+	for k, _ := range spec {
+		fmt.Fprintf(c.Stdout, "%s ", filepath.FromSlash(k))
+	}
 	return
 }
 

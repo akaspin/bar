@@ -43,9 +43,6 @@ type Task struct {
 
 	// Do not fail on errors
 	IgnoreErrors bool
-
-	// Accept <nil> results
-	AcceptNil bool
 }
 
 type ParMap struct {
@@ -89,15 +86,12 @@ func (p *ParMap) Run(task Task) (
 		case r := <-resChan:
 			if r.Error != nil {
 				errs = append(errs, r.Error)
-				if task.IgnoreErrors {
-					continue
+				if !task.IgnoreErrors {
+					break
 				}
-				break
+			} else {
+				res[r.Key] = r.Value
 			}
-			if !task.AcceptNil && r.Value == nil {
-				continue
-			}
-			res[r.Key] = r.Value
 		}
 	}
 

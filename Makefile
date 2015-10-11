@@ -61,7 +61,7 @@ ${INSTALL_DIR}/bard: ${SRC}
 ${INSTALL_DIR}/barc: ${SRC}
 	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}/barc
 
-run-server: ${INSTALL_DIR}/bard
+run-server: ${INSTALL_DIR}/bard dist/windows/barc.exe
 	bard -log-level=DEBUG \
 		-storage-block-root=testdata \
 		-endpoint=http://${HOSTNAME}:3000/v1 \
