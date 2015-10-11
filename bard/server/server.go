@@ -1,25 +1,23 @@
 package server
 import (
 	"github.com/akaspin/bar/bard/storage"
-	"net/http"
-	"github.com/tamtam-im/logx"
-	"net"
-	"github.com/akaspin/bar/bard/service"
-	"net/rpc"
 	"github.com/akaspin/bar/proto"
-	"github.com/akaspin/bar/bard/handler"
 )
 
 type BardServerOptions struct  {
-	Addr string
+	HttpAddr string
+	RPCAddr string
 	Info *proto.Info
 	StoragePool *storage.StoragePool
 	BarExe string
 }
 
+
+
 type BardServer struct {
 	*BardServerOptions
-	l net.Listener
+	*BardHttpServer
+	*BardRPCServer
 }
 
 func NewBardServer(opts *BardServerOptions) *BardServer {
@@ -27,38 +25,26 @@ func NewBardServer(opts *BardServerOptions) *BardServer {
 }
 
 func (s *BardServer) Start() (err error) {
-	s.l, err = net.Listen("tcp", s.Addr)
-	if err != nil {
-		return
-	}
+	s.BardHttpServer = NewBardHttpServer(s.BardServerOptions)
+	s.BardRPCServer = NewBardRPCServer(s.BardServerOptions)
 
+	errChan := make(chan error, 1)
 
-	rpcSvr := rpc.NewServer()
-	rpcService := &service.Service{s.Info, s.StoragePool}
-	if err = rpcSvr.Register(rpcService); err != nil {
-		return
-	}
+	go func() {
+		errChan <- s.BardRPCServer.Start()
+	}()
 
-	mux := http.NewServeMux()
-	mux.Handle("/", &handler.FrontHandler{s.Info})
-	mux.Handle("/v1/rpc", rpcSvr)
-	mux.Handle("/v1/win/bar-export.bat", &handler.ExportBatHandler{s.Info})
-	mux.Handle("/v1/win/bar-import/", &handler.ImportBatHandler{s.Info})
-	mux.Handle("/v1/win/barc.exe", &handler.ExeHandler{s.BarExe})
-	mux.Handle("/v1/spec/", &handler.SpecHandler{
-		s.StoragePool, s.Info, s.BarExe})
+	go func() {
+		errChan <- s.BardHttpServer.Start()
+	}()
 
-	logx.Debugf("bard serving at http://%s/v1", s.Addr)
-	srv := &http.Server{Handler:mux}
-	err = srv.Serve(s.l)
+	err = <- errChan
+
 	return
 }
 
 func (s *BardServer) Stop() (err error) {
-	err = s.l.Close()
-	if err != nil {
-		return
-	}
-	logx.Debugf("http://%s/v1 bye!", s.Addr)
+	s.BardHttpServer.Stop()
+	s.BardRPCServer.Stop()
 	return
 }

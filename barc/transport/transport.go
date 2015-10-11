@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/sha3"
 	"io"
 	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/barc/model"
 )
 
 // Common transport with pooled connections
@@ -22,6 +23,7 @@ type Transport struct {
 	// base endpoint. http://example.com/v1
 	DefaultEndpoint string
 
+	model *model.Model
 	rpcPool *RPCPool
 }
 
@@ -30,7 +32,7 @@ func NewTransport(wd string, endpoint string, n int) (res *Transport) {
 	res = &Transport{
 		WD: wd,
 		DefaultEndpoint: endpoint,
-		rpcPool: NewRPCPool(n, time.Minute * 30),
+		rpcPool: NewRPCPool(n, time.Hour, endpoint),
 	}
 	return
 }
@@ -40,7 +42,7 @@ func (t *Transport) Close() {
 }
 
 func (t *Transport) Ping() (res proto.Info, err error) {
-	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
 	}
@@ -98,7 +100,7 @@ func (t *Transport) NewUpload(blobs lists.Links) (toUpload lists.Links, err erro
 		req = append(req, blobs[name])
 	}
 
-	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
 	}
@@ -141,7 +143,7 @@ func (t *Transport) UploadBlob(name string, info manifest.Manifest) (err error) 
 }
 
 func (t *Transport) FinishUpload(id string) (err error) {
-	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
 	}
@@ -156,7 +158,7 @@ func (t *Transport) FinishUpload(id string) (err error) {
 }
 
 func (t *Transport) UploadChunk(name string, blobID string, chunkInfo manifest.Chunk) (err error) {
-	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
 	}
@@ -293,7 +295,7 @@ func (t *Transport) writeChunkTo(src string, dst io.Writer) (n int64, err error)
 }
 
 func (t *Transport) GetFetch(ids []string) (res []manifest.Manifest, err error) {
-	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
 	}
@@ -315,7 +317,7 @@ func (t *Transport) FetchChunk(info proto.ChunkInfo, dir string) (err error) {
 	}
 	defer w.Close()
 
-	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
 	}
@@ -337,7 +339,7 @@ func (t *Transport) FetchChunk(info proto.ChunkInfo, dir string) (err error) {
 }
 
 func (t *Transport) Check(ids []string) (res []string, err error) {
-	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
 	}
@@ -351,7 +353,7 @@ func (t *Transport) Check(ids []string) (res []string, err error) {
 }
 
 func (t *Transport) UploadSpec(spec proto.Spec) (err error) {
-	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
 	}
@@ -364,7 +366,7 @@ func (t *Transport) UploadSpec(spec proto.Spec) (err error) {
 }
 
 func (t *Transport) GetSpec(id string) (res lists.Links, err error) {
-	cli, err := t.rpcPool.Take(t.DefaultEndpoint)
+	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
 	}

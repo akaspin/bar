@@ -61,8 +61,6 @@ func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (r
 		IgnoreErrors: !strict,
 	})
 
-	logx.Debug(res1)
-
 	for k, v := range res1 {
 		if v.(*manifest.Manifest) != nil {
 			res[k] = *(v.(*manifest.Manifest))

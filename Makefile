@@ -63,9 +63,11 @@ ${INSTALL_DIR}/barc: ${SRC}
 
 run-server: ${INSTALL_DIR}/bard dist/windows/barc.exe
 	bard -log-level=DEBUG \
+		-bind-http=:3001 \
+		-bind-rpc=:3000 \
 		-storage-block-root=testdata \
 		-endpoint=http://${HOSTNAME}:3000/v1 \
-		-http-endpoint=http://${HOSTNAME}:3000/v1 \
+		-http-endpoint=http://${HOSTNAME}:3001/v1 \
 		-barc-exe=dist/windows/barc.exe
 
 bench:

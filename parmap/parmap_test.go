@@ -61,7 +61,7 @@ func Test_ParMap_Nils(t *testing.T)  {
 		},
 	})
 	assert.NoError(t, err)
-	assert.Len(t, res, 0)
+	assert.Len(t, res, 10)
 }
 
 func Benchmark_ParMapWorkerPool(b *testing.B) {

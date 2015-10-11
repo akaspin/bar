@@ -13,7 +13,8 @@ import (
 
 var logLevel string
 
-var addr string
+var httpAddr string
+var rpcAddr string
 
 var chunkSize int64
 var clientConns int
@@ -30,7 +31,10 @@ var storageBlockSplit int
 func init() {
 	flag.StringVar(&logLevel, "log-level", logx.ERROR, "logging level")
 
-	flag.StringVar(&addr, "bind", ":3000", "bind addr")
+	flag.StringVar(&httpAddr, "bind-http", ":3001", "HTTP bind addr")
+	flag.StringVar(&rpcAddr, "bind-rpc", "3000", "RPC bind addr")
+
+
 	flag.Int64Var(&chunkSize, "chunk", 1024*1024*2, "preferred chunk size")
 	flag.IntVar(&clientConns, "conns", 16,
 		"preferred conns from one client")
@@ -61,7 +65,8 @@ func main() {
 		os.Exit(2)
 	}
 	srv := server.NewBardServer(&server.BardServerOptions{
-		addr,
+		httpAddr,
+		rpcAddr,
 		&proto.Info{httpEndpoint, endpoint, chunkSize, clientConns},
 		pool,
 		barExe,

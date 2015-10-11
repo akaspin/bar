@@ -8,13 +8,16 @@ import (
 
 type RPCClient struct  {
 	endpoint *url.URL
-	pool *rpcClientPool
-	c *rpc.Client
+	pool *RPCPool
+	client *rpc.Client
 }
 
 func (c *RPCClient) Connect() (err error) {
-	if c.c == nil {
-		c.c, err = rpc.DialHTTPPath("tcp", c.endpoint.Host, c.endpoint.Path + "/rpc")
+	if c.client == nil {
+		c.client, err = rpc.DialHTTPPath(
+			"tcp",
+			c.endpoint.Host,
+			c.endpoint.Path + "/rpc")
 	}
 	return
 }
@@ -23,83 +26,63 @@ func (c *RPCClient) Call(serviceMethod string, args interface{}, reply interface
 	if err = c.Connect(); err != nil {
 		return
 	}
-	err = c.c.Call(serviceMethod, args, reply)
+	err = c.client.Call(serviceMethod, args, reply)
 	return
 }
 
 func (c *RPCClient) Release() {
-	if c.c == nil {
-		c.pool.p.Put(nil)
+	if c.client == nil {
+		c.pool.Put(nil)
 		return
 	}
-	c.pool.p.Put(c)
+	c.pool.Put(c)
 }
 
 func (c *RPCClient) Close() {
-	if c.c != nil {
-		c.c.Close()
+	if c.client != nil {
+		c.client.Close()
 	}
-	c.c = nil
-}
-
-type rpcClientPool struct {
-	endpoint *url.URL
-	p *pools.ResourcePool
-}
-
-func newRpcClientPool(endpoint *url.URL, n int, timeout time.Duration) (res *rpcClientPool) {
-	res = &rpcClientPool{endpoint: endpoint}
-	res.p = pools.NewResourcePool(res.factory, n, n, timeout)
-	return
-}
-
-func (p *rpcClientPool) take() (res *RPCClient, err error) {
-	c, err := p.p.Get(time.Minute * 30)
-	if err != nil {
-		return
-	}
-	res = c.(*RPCClient)
-	err = res.Connect()
-	return
-}
-
-func (p *rpcClientPool) factory() (res pools.Resource, err error) {
-	res = &RPCClient{endpoint: p.endpoint, pool: p}
-	return
+	c.client = nil
 }
 
 
 type RPCPool struct {
-	n int
+	endpoint string
 	timeout time.Duration
-	pools map[string]*rpcClientPool
+	*pools.ResourcePool
 }
 
-func NewRPCPool(n int, timeout time.Duration) *RPCPool {
-	return &RPCPool{
-		n, timeout,
-		map[string]*rpcClientPool{},
+func NewRPCPool(n int, ttl time.Duration, endpoint string) (res *RPCPool) {
+	res = &RPCPool{
+		endpoint: endpoint,
+		timeout: ttl,
 	}
-}
-
-func (p *RPCPool) Take(endpoint string) (res *RPCClient, err error) {
-	pool, exists := p.pools[endpoint]
-	if exists && pool != nil {
-		res, err = pool.take()
-		return
-	}
-	u, err := url.Parse(endpoint)
-	if err != nil {
-		return
-	}
-	p.pools[endpoint] = newRpcClientPool(u, p.n, p.timeout)
-	res, err = p.pools[endpoint].take()
+	res.ResourcePool = pools.NewResourcePool(res.factory, n, n, ttl)
 	return
 }
 
-func (p *RPCPool) Close() {
-	for _, pool := range p.pools {
-		pool.p.Close()
+func (p *RPCPool) Take() (res *RPCClient, err error) {
+	r1, err := p.Get(p.timeout)
+	if err != nil {
+		return
 	}
+	res = r1.(*RPCClient)
+	// connect
+	if err = res.Connect(); err != nil {
+		res.Close()
+		res.Release()
+		res = nil
+	}
+	return
 }
+
+func (p *RPCPool) factory() (res pools.Resource, err error) {
+	u, err := url.Parse(p.endpoint)
+	if err != nil {
+		return
+	}
+	res = &RPCClient{endpoint: u, pool: p}
+	return
+}
+
 
