@@ -17,7 +17,7 @@ type Assembler struct  {
 	model *Model
 }
 
-func NewAssemble(m *Model) (res *Assembler, err error) {
+func NewAssembler(m *Model) (res *Assembler, err error) {
 	where, err := ioutil.TempDir("", "")
 	if err != nil {
 		return

@@ -25,7 +25,7 @@ func Test_Assembler_StoreChunk(t *testing.T) {
 	_, err = hasher.Write([]byte(data))
 	id := hex.EncodeToString(hasher.Sum(nil))
 
-	a, err := model.NewAssemble(m)
+	a, err := model.NewAssembler(m)
 	assert.NoError(t, err)
 	defer a.Close()
 
@@ -59,7 +59,7 @@ func Test_Assembler(t *testing.T) {
 		lists.NewFileList(names...).ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
-	a, err := model.NewAssemble(ml)
+	a, err := model.NewAssembler(ml)
 	assert.NoError(t, err)
 
 	for name, man := range mx {

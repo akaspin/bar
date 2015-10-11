@@ -23,9 +23,9 @@ type Model struct {
 func New(wd string, useGit bool, chunkSize int64, pool int) (res *Model, err error) {
 	res = &Model{
 		WD: wd,
-		Pool: parmap.NewWorkerPool(pool),
+		Pool: parmap.NewWorkerPool(pool * 32),
 		chunkSize: chunkSize,
-		FdLocks: parmap.NewLockPool(64, time.Hour),
+		FdLocks: parmap.NewLockPool(pool, time.Hour),
 	}
 	if useGit {
 		res.Git, err = git.NewGit(wd)

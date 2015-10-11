@@ -3,18 +3,13 @@ import (
 	"github.com/akaspin/bar/proto"
 	"time"
 	"github.com/akaspin/bar/proto/manifest"
-	"os"
 	"sync"
 	"github.com/tamtam-im/logx"
 	"fmt"
-	"path/filepath"
-	"io/ioutil"
-	"github.com/akaspin/go-contentaddressable"
-	"golang.org/x/crypto/sha3"
-	"io"
 	"github.com/akaspin/bar/barc/lists"
 	"github.com/akaspin/bar/barc/model"
 	"github.com/akaspin/bar/parmap"
+	"bytes"
 )
 
 // Common transport with pooled connections
@@ -191,105 +186,95 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 	logx.Debug("fetching blobs %s", blobs.IDMap())
 
 	// little funny, but all chunks are equal - flatten them
-	chunkMap := map[string]proto.ChunkInfo{}
+	chunkMap := map[string]interface{}{}
+	fetchIds := map[string]struct{}{}
+
 	for _, mt := range fetch {
-		for _, ch := range mt.Chunks {
+		fetchIds[mt.ID] = struct{}{}
+		for _, ch := range mt.Chunks    {
 			chunkMap[ch.ID] = proto.ChunkInfo{mt.ID, ch}
 		}
 	}
 
-	// Fetch all chunks to temporary dir
-	dir, err := ioutil.TempDir("", "chunk-")
-	if err != nil {
-		return
-	}
-	defer os.RemoveAll(dir)
+	a, err := model.NewAssembler(t.model)
+	defer a.Close()
 
-	wg := sync.WaitGroup{}
-	var errs []error
-	for _, chunk := range chunkMap {
-		wg.Add(1)
-		go func(ch proto.ChunkInfo) {
-			defer wg.Done()
-			if err1 := t.FetchChunk(ch, dir); err1 != nil {
-				errs = append(errs, err1)
+	// Fetch all chunks
+	_, err = t.model.Pool.RunBatch(parmap.Task{
+		Map: chunkMap,
+		Fn: func(id string, arg interface{}) (res interface{}, err error) {
+			cli, err := t.rpcPool.Take()
+			if err != nil {
 				return
 			}
-		}(chunk)
-	}
- 	wg.Wait()
-	if len(errs) > 0 {
-		err = fmt.Errorf("errors while fetching chunks %s", errs)
-		return
-	}
+			defer cli.Release()
 
-	// collect and relocate all
-	wg = sync.WaitGroup{}
-	for n, m := range blobs {
-		wg.Add(1)
-		go func(name string, man manifest.Manifest) {
-			defer wg.Done()
-			if err1 := t.collectBLOB(name, man, dir); err1 != nil {
-				errs = append(errs, err1)
+			ci := arg.(proto.ChunkInfo)
+
+			var data proto.ChunkData
+			if err = cli.Call("Service.FetchChunk", &ci, &data); err != nil {
+				return
 			}
-		}(n, m)
-	}
-	wg.Wait()
-	if len(errs) > 0 {
-		err = fmt.Errorf("errors while collecting blobs %s", errs)
-		return
-	}
-	return
-}
 
-func (t *Transport) collectBLOB(name string, man manifest.Manifest, dir string) (err error) {
-	logx.Debugf("assembling blob %s %s", name, man.ID)
-
-	blobdir, err := ioutil.TempDir("", "")
+			err = a.StoreChunk(bytes.NewReader(data.Data), ci.ID)
+			return
+		},
+	})
 	if err != nil {
 		return
 	}
-	defer os.RemoveAll(blobdir)
 
-	caOpts := contentaddressable.DefaultOptions()
-	caOpts.Hasher = sha3.New256()
-
-	w, err := contentaddressable.NewFileWithOptions(
-		filepath.Join(blobdir, man.ID), caOpts)
-	if err != nil {
-		return
-	}
-	defer w.Close()
-
-	for _, chunk := range man.Chunks {
-		written, err := t.writeChunkTo(filepath.Join(dir, chunk.ID), w)
-		if err != nil {
-			return err
-		}
-		if written != chunk.Size {
-			return fmt.Errorf("bad size for chunk %s %s %s %d != %d",
-				name, man.ID, chunk.ID, chunk.Size, written)
+	// filter blobs
+	toAssemble := lists.Links{}
+	for name, man := range blobs {
+		_, exists := fetchIds[man.ID]
+		if exists {
+			toAssemble[name] = man
 		}
 	}
-	if err = w.Accept(); err != nil {
-		return
-	}
-	os.Remove(filepath.Join(t.WD, name))
-	if err = os.Rename(filepath.Join(blobdir, man.ID), filepath.Join(t.WD, name)); err != nil {
-		return
-	}
-	logx.Debugf("done assemble blob %s %s", name, man.ID)
 
-	return
-}
+	err = a.Done(toAssemble)
 
-func (t *Transport) writeChunkTo(src string, dst io.Writer) (n int64, err error) {
-	r, err := os.Open(src)
-	if err != nil {
-		return
-	}
-	defer r.Close()
-	n, err = io.Copy(dst, r)
+//	dir, err := ioutil.TempDir("", "chunk-")
+//	if err != nil {
+//		return
+//	}
+//	defer os.RemoveAll(dir)
+//
+//	wg := sync.WaitGroup{}
+//	var errs []error
+//	for _, chunk := range chunkMap {
+//		wg.Add(1)
+//		go func(ch proto.ChunkInfo) {
+//			defer wg.Done()
+//			if err1 := t.FetchChunk(ch, dir); err1 != nil {
+//				errs = append(errs, err1)
+//				return
+//			}
+//		}(chunk)
+//	}
+// 	wg.Wait()
+//	if len(errs) > 0 {
+//		err = fmt.Errorf("errors while fetching chunks %s", errs)
+//		return
+//	}
+//
+//	// collect and relocate all
+//	wg = sync.WaitGroup{}
+//	for n, m := range blobs {
+//		wg.Add(1)
+//		go func(name string, man manifest.Manifest) {
+//			defer wg.Done()
+//			if err1 := t.collectBLOB(name, man, dir); err1 != nil {
+//				errs = append(errs, err1)
+//			}
+//		}(n, m)
+//	}
+//	wg.Wait()
+//	if len(errs) > 0 {
+//		err = fmt.Errorf("errors while collecting blobs %s", errs)
+//		return
+//	}
 	return
 }
 
@@ -300,40 +285,6 @@ func (t *Transport) GetFetch(ids []string) (res []manifest.Manifest, err error) 
 	}
 	defer cli.Release()
 	err = cli.Call("Service.GetFetch", &ids, &res)
-	return
-}
-
-func (t *Transport) FetchChunk(info proto.ChunkInfo, dir string) (err error) {
-	logx.Debugf("fetching chunk %s", info.ID)
-
-	caOpts := contentaddressable.DefaultOptions()
-	caOpts.Hasher = sha3.New256()
-
-	w, err := contentaddressable.NewFileWithOptions(
-		filepath.Join(dir, info.ID), caOpts)
-	if err != nil {
-		return
-	}
-	defer w.Close()
-
-	cli, err := t.rpcPool.Take()
-	if err != nil {
-		return
-	}
-	defer cli.Release()
-
-	var res proto.ChunkData
-	if err = cli.Call("Service.FetchChunk", &info, &res); err != nil {
-		return
-	}
-	if _, err = w.Write(res.Data); err != nil {
-		return
-	}
-	if err = w.Accept(); err != nil {
-		logx.Error(err)
-		return
-	}
-	logx.Debugf("done fetch chunk %s", info.ID)
 	return
 }
 

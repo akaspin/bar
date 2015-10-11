@@ -75,7 +75,7 @@ func Test_Model_FeedManifests_Many(t *testing.T) {
 	assert.Len(t, lx.Names(), 1016)
 }
 
-func Benchmark_FeedManifests_Many(b *testing.B)  {
+func Benchmark_Model_FeedManifests_Many(b *testing.B)  {
 	n := 100000
 
 	tree := fixtures.NewTree("collect-manifests-many-B", "")
@@ -96,7 +96,7 @@ func Benchmark_FeedManifests_Many(b *testing.B)  {
 	}
 }
 
-func Benchmark_FeedManifests_Large(b *testing.B)  {
+func Benchmark_Model_FeedManifests_Large(b *testing.B)  {
 	tree := fixtures.NewTree("collect-manifests-large-B", "")
 	defer tree.Squash()
 	assert.NoError(b, tree.Populate())

@@ -12,8 +12,11 @@ else
     INSTALL_DIR=${GOPATH}/bin
 endif
 
+BENCH=.
+
 
 .PHONY: clean uninstall test bench
+
 
 dist: dist-win dist-linux dist-darwin
 
@@ -71,7 +74,7 @@ run-server: ${INSTALL_DIR}/bard dist/windows/barc.exe
 		-barc-exe=dist/windows/barc.exe
 
 bench:
-	go test -v -run=XXX -bench=. -benchmem ./...
+	go test -v -run=XXX -bench=${BENCH} -benchmem ./...
 
 test:
 	CGO_ENABLED=0 go test ./...
