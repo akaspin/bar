@@ -32,7 +32,6 @@ to bard</p>
 
 type FrontHandler struct {
 	Info *proto.Info
-	BarExe string
 }
 
 func (h *FrontHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +45,6 @@ func (h *FrontHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if err = front_template.Execute(w, map[string]interface{}{
 		"Info": h.Info,
-		"BarExe": h.BarExe,
 	}); err != nil {
 		logx.Error(err)
 		w.WriteHeader(500)

@@ -35,11 +35,11 @@ const import_bat_tpl = `
 @WHERE barc
 IF %ERRORLEVEL% NEQ 0 (
 	ECHO barc is not found. downloading...
-	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"{{.HTTPEndpoint}}/win/barc.exe\", \"barc.exe\")"
+	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"{{.Info.HTTPEndpoint}}/win/barc.exe\", \"barc.exe\")"
 )
 
-barc -log-level=DEBUG spec-import -endpoint={{.Endpoint}} -chunk={{.ChunkSize}} -pool={{.PoolSize}} {{.ID}}
-barc -log-level=DEBUG down -endpoint={{.Endpoint}} -chunk={{.ChunkSize}} -pool={{.PoolSize}} {{.ID}}
+for /f %%i in ('barc -log-level=DEBUG spec-import -endpoint={{.Info.Endpoint}} -chunk={{.Info.ChunkSize}} -pool={{.Info.PoolSize}} {{.ID}}') do set VAR=%%i
+barc -log-level=DEBUG down -endpoint={{.Info.Endpoint}} -chunk={{.Info.ChunkSize}} -pool={{.Info.PoolSize}} %VAR%
 
 echo press any key...
 pause >nul
@@ -67,13 +67,27 @@ func (h *ExportBatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 type ImportBatHandler struct {
 	Info *proto.Info
-	BarExe string
 }
 
 func (h *ImportBatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/v1/win/bar-import/")[:64]
 
-	w.Write([]byte(id))
+	bat_template, err := template.New("bat_template").Parse(import_bat_tpl)
+	if err != nil {
+		return
+	}
+	buf := new(bytes.Buffer)
+
+	if err = bat_template.Execute(buf, map[string]interface{}{
+		"Info": h.Info,
+		"ID": id,
+	}); err != nil {
+		return
+	}
+	body := string(buf.Bytes())
+	crlf := strings.Replace(body, "\n", "\r\n", -1)
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Write([]byte(crlf))
 }
 
 type ExeHandler struct {

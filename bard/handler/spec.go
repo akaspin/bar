@@ -17,10 +17,10 @@ const spec_tpl string = `
 </head>
 <body>
 <h1>:-)</h1>
-<p>Send it to someone who knows what to do with it.</p>
 <pre>
 {{.ID}}
 </pre>
+<p>Send it to someone who knows what to do with it.</p>
 <h2>Windows users</h2>
 <p>To import spec download
 	<a href="{{.Info.HTTPEndpoint}}/win/bar-import/{{.ID}}/bar-import-{{.ShortID}}.bat"><code>bar-import-{{.ShortID}}.bat</code></a>,
