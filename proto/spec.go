@@ -13,14 +13,17 @@ type Spec struct {
 	// Spec ID is SHA3-256 hash of sorted filepath:manifest-id + kills-filepaths
 	ID string
 
+	// Spec timestamp
+	Timestamp int64
+
 	// BLOB links
 	BLOBs map[string]string
 
-	// Deleted filenames
+	// Deleted filenames (not implemented)
 	Remove []string
 }
 
-func NewSpec(in map[string]string, kill []string) (res Spec, err error) {
+func NewSpec(timestamp int64, in map[string]string, kill []string) (res Spec, err error) {
 	hasher := sha3.New256()
 	var idBuf []byte
 
@@ -55,6 +58,10 @@ func NewSpec(in map[string]string, kill []string) (res Spec, err error) {
 		removalsDrop = append(removalsDrop, filepath.ToSlash(n))
 	}
 
-	res = Spec{hex.EncodeToString(hasher.Sum(nil)), drop, removalsDrop}
+	res = Spec{
+		hex.EncodeToString(hasher.Sum(nil)),
+		timestamp,
+		drop,
+		removalsDrop}
 	return
 }

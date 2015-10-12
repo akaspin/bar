@@ -75,7 +75,7 @@ func (c *SpecExportCmd) Do() (err error) {
 		nameMap[name] = m.ID
 	}
 
-	spec, err := proto.NewSpec(nameMap, []string{})
+	spec, err := proto.NewSpec(time.Now().UnixNano(), nameMap, []string{})
 	if err != nil {
 		return
 	}

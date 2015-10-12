@@ -9,6 +9,7 @@ import (
 	"github.com/akaspin/bar/proto/manifest"
 	"github.com/akaspin/bar/barc/lists"
 	"github.com/akaspin/bar/proto"
+	"time"
 )
 
 func Test_Ping(t *testing.T) {
@@ -205,7 +206,7 @@ func Test_Spec(t *testing.T) {
 		nameMap[name] = m.ID
 	}
 
-	spec1, err := proto.NewSpec(nameMap, []string{})
+	spec1, err := proto.NewSpec(time.Now().UnixNano(), nameMap, []string{})
 	assert.NoError(t, err)
 
 	err = tr.UploadSpec(spec1)

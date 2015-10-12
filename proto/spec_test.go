@@ -8,6 +8,7 @@ import (
 	"sort"
 	"golang.org/x/crypto/sha3"
 	"encoding/hex"
+	"time"
 )
 
 func Test_Spec1(t *testing.T) {
@@ -34,7 +35,7 @@ func Test_Spec1(t *testing.T) {
 	`))
 	assert.NoError(t, err)
 
-	spec, err := proto.NewSpec(map[string]string{
+	spec, err := proto.NewSpec(time.Now().UnixNano(), map[string]string{
 		"file/1": m1.ID,
 		"file/2": m2.ID,
 	}, []string{})
