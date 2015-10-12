@@ -14,11 +14,6 @@ import (
 
 // Common transport with pooled connections
 type Transport struct {
-	WD string
-
-	// base endpoint. http://example.com/v1
-	DefaultEndpoint string
-
 	model *model.Model
 	rpcPool *RPCPool
 	pool *parmap.ParMap
@@ -27,9 +22,7 @@ type Transport struct {
 // New RPC pool with default endpoint
 func NewTransport(mod *model.Model, endpoint string, n int) (res *Transport) {
 	res = &Transport{
-		WD: mod.WD,
 		model: mod,
-		DefaultEndpoint: endpoint,
 		rpcPool: NewRPCPool(n, time.Hour, endpoint),
 		pool: parmap.NewWorkerPool(n),
 	}
@@ -97,7 +90,7 @@ func (t *Transport) NewUpload(blobs lists.Links) (toUpload lists.Links, err erro
 	idmap := blobs.IDMap()
 
 	for _, name := range idmap {
-		req = append(req, blobs[name])
+		req = append(req, blobs[name[0]])
 	}
 
 	cli, err := t.rpcPool.Take()
@@ -112,7 +105,7 @@ func (t *Transport) NewUpload(blobs lists.Links) (toUpload lists.Links, err erro
 
 	toUpload = lists.Links{}
 	for _, m := range res {
-		toUpload[idmap[m.ID]] = m
+		toUpload[idmap[m.ID][0]] = m
 	}
 	return
 }
@@ -234,47 +227,6 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 	}
 
 	err = a.Done(toAssemble)
-
-//	dir, err := ioutil.TempDir("", "chunk-")
-//	if err != nil {
-//		return
-//	}
-//	defer os.RemoveAll(dir)
-//
-//	wg := sync.WaitGroup{}
-//	var errs []error
-//	for _, chunk := range chunkMap {
-//		wg.Add(1)
-//		go func(ch proto.ChunkInfo) {
-//			defer wg.Done()
-//			if err1 := t.FetchChunk(ch, dir); err1 != nil {
-//				errs = append(errs, err1)
-//				return
-//			}
-//		}(chunk)
-//	}
-// 	wg.Wait()
-//	if len(errs) > 0 {
-//		err = fmt.Errorf("errors while fetching chunks %s", errs)
-//		return
-//	}
-//
-//	// collect and relocate all
-//	wg = sync.WaitGroup{}
-//	for n, m := range blobs {
-//		wg.Add(1)
-//		go func(name string, man manifest.Manifest) {
-//			defer wg.Done()
-//			if err1 := t.collectBLOB(name, man, dir); err1 != nil {
-//				errs = append(errs, err1)
-//			}
-//		}(n, m)
-//	}
-//	wg.Wait()
-//	if len(errs) > 0 {
-//		err = fmt.Errorf("errors while collecting blobs %s", errs)
-//		return
-//	}
 	return
 }
 
