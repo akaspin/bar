@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package pb3;
+
+message TestRep {
+    string id = 1;
+    bytes body = 2;
+}
+
+service Bar {
+    rpc Test(TestRep) returns (TestRep) {}
+}

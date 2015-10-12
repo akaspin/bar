@@ -24,19 +24,22 @@ func RunServer(t *testing.T, root string) (endpoint *url.URL, stop func() error)
 	ports, err := GetOpenPorts(2)
 	assert.NoError(t, err)
 
-	endpoint, _ = url.Parse(fmt.Sprintf("http://127.0.0.1:%d/v1", ports[0]))
-	srv := server.NewBardServer(&server.BardServerOptions{
+	endpoint, _ = url.Parse(fmt.Sprintf("http://127.0.0.1:%d/v1", ports[1]))
+	srv, err := server.NewBardServer(&server.BardServerOptions{
 		HttpAddr: fmt.Sprintf(":%d", ports[1]),
 		RPCAddr: fmt.Sprintf(":%d", ports[0]),
 		Info: &proto.Info{
 			HTTPEndpoint: fmt.Sprintf("http://localhost:%d/v1", ports[1]),
-			Endpoint: fmt.Sprintf("http://localhost:%d/v1", ports[0]),
+			Endpoint: fmt.Sprintf("tcp://localhost:%d", ports[0]),
 			ChunkSize: 1024 * 1024 * 2,
 			PoolSize: 16,
 		},
 		StoragePool: p,
 		BarExe: "",
 	})
+	if err != nil {
+		return
+	}
 
 	go srv.Start()
 	time.Sleep(time.Millisecond * 300)

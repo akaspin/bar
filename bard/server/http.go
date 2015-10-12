@@ -4,15 +4,17 @@ import (
 	"net/http"
 	"github.com/akaspin/bar/bard/handler"
 	"github.com/tamtam-im/logx"
+	"net/rpc"
 )
 
 type BardHttpServer struct  {
 	*BardServerOptions
+	service *rpc.Server
 	net.Listener
 }
 
-func NewBardHttpServer(opts *BardServerOptions) *BardHttpServer {
-	return &BardHttpServer{BardServerOptions: opts}
+func NewBardHttpServer(opts *BardServerOptions, service *rpc.Server) *BardHttpServer {
+	return &BardHttpServer{BardServerOptions: opts, service: service}
 }
 
 func (s *BardHttpServer) Start() (err error) {
@@ -29,7 +31,7 @@ func (s *BardHttpServer) Start() (err error) {
 	mux.Handle("/v1/win/barc.exe", &handler.ExeHandler{s.BarExe})
 	mux.Handle("/v1/spec/", &handler.SpecHandler{
 		s.StoragePool, s.Info, s.BarExe})
-
+	mux.Handle("/v1/rpc", s.service)
 	logx.Debugf("bard http serving at http://%s/v1", s.HttpAddr)
 	srv := &http.Server{Handler:mux}
 	err = srv.Serve(s.Listener)

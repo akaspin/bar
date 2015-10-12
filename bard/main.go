@@ -64,13 +64,16 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
-	srv := server.NewBardServer(&server.BardServerOptions{
+	srv, err := server.NewBardServer(&server.BardServerOptions{
 		httpAddr,
 		rpcAddr,
 		&proto.Info{httpEndpoint, endpoint, chunkSize, clientConns},
 		pool,
 		barExe,
 	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
 
 	err = srv.Start()
 	if err != nil {

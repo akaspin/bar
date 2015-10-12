@@ -2,6 +2,8 @@ package server
 import (
 	"github.com/akaspin/bar/bard/storage"
 	"github.com/akaspin/bar/proto"
+	"net/rpc"
+	"github.com/akaspin/bar/bard/service"
 )
 
 type BardServerOptions struct  {
@@ -16,15 +18,24 @@ type BardServer struct {
 	*BardServerOptions
 	*BardHttpServer
 	*BardRPCServer
+	service *rpc.Server
 }
 
-func NewBardServer(opts *BardServerOptions) *BardServer {
-	return &BardServer{BardServerOptions: opts}
+func NewBardServer(opts *BardServerOptions) (res *BardServer, err error) {
+	res = &BardServer{BardServerOptions: opts}
+
+	res.service = rpc.NewServer()
+	rpcService := &service.Service{res.Info, res.StoragePool}
+	if err = res.service.Register(rpcService); err != nil {
+		return
+	}
+
+	return
 }
 
 func (s *BardServer) Start() (err error) {
-	s.BardHttpServer = NewBardHttpServer(s.BardServerOptions)
-	s.BardRPCServer = NewBardRPCServer(s.BardServerOptions)
+	s.BardHttpServer = NewBardHttpServer(s.BardServerOptions, s.service)
+	s.BardRPCServer = NewBardRPCServer(s.BardServerOptions, s.service)
 
 	errChan := make(chan error, 1)
 

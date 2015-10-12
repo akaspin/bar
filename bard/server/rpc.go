@@ -2,18 +2,18 @@ package server
 import (
 	"net"
 	"net/rpc"
-	"github.com/akaspin/bar/bard/service"
-"net/http"
 	"github.com/tamtam-im/logx"
+	"net/http"
 )
 
 type BardRPCServer struct  {
 	*BardServerOptions
+	service *rpc.Server
 	net.Listener
 }
 
-func NewBardRPCServer(opts *BardServerOptions) *BardRPCServer {
-	return &BardRPCServer{BardServerOptions: opts}
+func NewBardRPCServer(opts *BardServerOptions, service *rpc.Server) *BardRPCServer {
+	return &BardRPCServer{BardServerOptions: opts, service: service}
 }
 
 func (s *BardRPCServer) Start() (err error) {
@@ -21,28 +21,20 @@ func (s *BardRPCServer) Start() (err error) {
 		return
 	}
 
-	// make rpc server
-	rpcSvr := rpc.NewServer()
-	rpcService := &service.Service{s.Info, s.StoragePool}
-	if err = rpcSvr.Register(rpcService); err != nil {
-		return
-	}
-
-	// make http frontend
+	logx.Debugf("bard RPC serving at tcp://%s", s.RPCAddr)
 	mux := http.NewServeMux()
-	mux.Handle("/v1/rpc", rpcSvr)
-
-	logx.Debugf("bard RPC serving at http://%s/v1", s.RPCAddr)
+	mux.Handle("/v1/rpc", s.service)
+	logx.Debugf("bard http serving at http://%s/v1", s.HttpAddr)
 	srv := &http.Server{Handler:mux}
 	err = srv.Serve(s.Listener)
 	return
 }
 
 func (s *BardRPCServer) Stop() (err error) {
-	logx.Tracef("closing http://%s/v1", s.HttpAddr)
+	logx.Tracef("closing rpc tcp://%s", s.HttpAddr)
 	if err = s.Listener.Close(); err != nil {
 		return
 	}
-	logx.Debugf("http %s closed", s.HttpAddr)
+	logx.Debugf("rpc tcp://%s is closed", s.HttpAddr)
 	return
 }
