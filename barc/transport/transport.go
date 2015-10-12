@@ -212,10 +212,9 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 			err = a.StoreChunk(bytes.NewReader(data.Data), ci.ID)
 			return
 		},
+		IgnoreErrors: true,
 	})
-	if err != nil {
-		return
-	}
+	logx.OnError(err)
 
 	// filter blobs
 	toAssemble := lists.Links{}

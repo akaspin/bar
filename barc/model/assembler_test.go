@@ -79,6 +79,7 @@ func Test_Assembler(t *testing.T) {
 	tree.KillBLOB("file-two.bin")
 	tree.KillBLOB("one/file-two.bin")
 
+
 	err = a.Done(mx)
 	assert.NoError(t, err)
 

@@ -10,6 +10,7 @@ import (
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/parmap"
 	"github.com/akaspin/bar/proto/manifest"
+	"strings"
 )
 
 type Assembler struct  {
@@ -55,6 +56,21 @@ func (a *Assembler) StoreChunk(r io.Reader, id string) (err error) {
 	return
 }
 
+func (a *Assembler) StoredChunks() (res []string, err error) {
+	err = filepath.Walk(a.Where,
+		func(path string, info os.FileInfo, errIn error) (err error) {
+			if info.IsDir() {
+				return
+			}
+			n := filepath.Base(path)
+			if !strings.HasSuffix(n, "-temp") {
+				res = append(res, n)
+			}
+			return
+		})
+	return
+}
+
 // Assemble target files from stored chunks
 func (a *Assembler) Done(what lists.Links) (err error) {
 	logx.Debugf("assembling %s", what.Names())
@@ -87,6 +103,7 @@ func (a *Assembler) Done(what lists.Links) (err error) {
 			}
 			return
 		},
+		IgnoreErrors: true,
 	})
 	if err != nil {
 		return
