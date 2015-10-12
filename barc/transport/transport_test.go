@@ -35,6 +35,7 @@ func Test_DeclareUpload(t *testing.T) {
 	defer os.RemoveAll(root)
 
 	tree := fixtures.NewTree("declare-upload", "")
+	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
@@ -61,7 +62,8 @@ func Test_Upload(t *testing.T) {
 	defer stop()
 	defer os.RemoveAll(root)
 
-	tree := fixtures.NewTree("testdata-Upload", "")
+	tree := fixtures.NewTree("Upload", "")
+	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
@@ -87,6 +89,7 @@ func Test_GetFetch(t *testing.T) {
 	defer os.RemoveAll(root)
 
 	tree := fixtures.NewTree("GetFetch", "")
+	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
@@ -109,12 +112,13 @@ func Test_GetFetch(t *testing.T) {
 }
 
 func Test_Download(t *testing.T) {
-	root := "testdata-Download"
+	root := "Download"
 	endpoint, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
 
-	tree := fixtures.NewTree("testdata-Download", "")
+	tree := fixtures.NewTree("Download", "")
+	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
@@ -145,12 +149,13 @@ func Test_Download(t *testing.T) {
 }
 
 func Test_Check(t *testing.T) {
-	root := "testdata-Check"
+	root := "Check"
 	endpoint, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
 
-	tree := fixtures.NewTree("testdata-Check", "")
+	tree := fixtures.NewTree("Check", "")
+	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
@@ -178,12 +183,13 @@ func Test_Check(t *testing.T) {
 }
 
 func Test_Spec(t *testing.T) {
-	root := "testdata-Spec"
+	root := "Spec"
 	endpoint, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
 
 	tree := fixtures.NewTree(root, "")
+	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)

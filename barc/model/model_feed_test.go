@@ -11,6 +11,7 @@ import (
 func Test_Model_FeedManifests(t *testing.T)  {
 	tree := fixtures.NewTree("feed-manifests", "")
 	assert.NoError(t, tree.Populate())
+	defer tree.Squash()
 
 	names := lists.NewFileList().ListDir(tree.CWD)
 
@@ -25,6 +26,7 @@ func Test_Model_FeedManifests(t *testing.T)  {
 func Test_Model_FeedManifests_Nil(t *testing.T)  {
 	tree := fixtures.NewTree("feed-manifests", "")
 	assert.NoError(t, tree.Populate())
+	defer tree.Squash()
 
 	names := lists.NewFileList().ListDir(tree.CWD)
 	tree.KillBLOB("file-one.bin")
@@ -62,6 +64,7 @@ func Test_Model_FeedManifests_Many(t *testing.T) {
 	}
 	tree := fixtures.NewTree("collect-manifests-large", "")
 	defer tree.Squash()
+
 	assert.NoError(t, tree.Populate())
 	assert.NoError(t, tree.PopulateN(10, 1000))
 

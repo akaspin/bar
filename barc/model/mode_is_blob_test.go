@@ -10,6 +10,7 @@ import (
 func Test_Model_IsBlobs(t *testing.T)  {
 	tree := fixtures.NewTree("is-blob", "")
 	assert.NoError(t, tree.Populate())
+	defer tree.Squash()
 
 	names := lists.NewFileList().ListDir(tree.CWD)
 

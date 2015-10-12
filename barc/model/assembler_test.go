@@ -36,6 +36,7 @@ func Test_Assembler_StoreChunk(t *testing.T) {
 	f, err := os.Open(filepath.Join(a.Where, id))
 	assert.NoError(t, err)
 	defer f.Close()
+	defer os.Remove(filepath.Join(a.Where, id))
 
 	r2, err := ioutil.ReadAll(f)
 	assert.NoError(t, err)
@@ -46,6 +47,7 @@ func Test_Assembler_StoreChunk(t *testing.T) {
 func Test_Assembler(t *testing.T) {
 	tree := fixtures.NewTree("Assembler", "")
 	assert.NoError(t, tree.Populate())
+	defer tree.Squash()
 
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
