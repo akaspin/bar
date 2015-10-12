@@ -12,8 +12,6 @@ type BardServerOptions struct  {
 	BarExe string
 }
 
-
-
 type BardServer struct {
 	*BardServerOptions
 	*BardHttpServer
