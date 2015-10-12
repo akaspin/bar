@@ -29,7 +29,7 @@ type SpecImportCmd struct  {
 	pool int
 
 	raw bool
-	fetchBlobs bool
+	noop bool
 }
 
 func NewSpecImportCmd(s *BaseSubCommand) SubCommand  {
@@ -40,7 +40,7 @@ func NewSpecImportCmd(s *BaseSubCommand) SubCommand  {
 	s.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
 	s.FS.IntVar(&c.pool, "pool", 16, "pool sizes")
 	s.FS.BoolVar(&c.raw, "raw", false, "read spec from STDIN")
-	s.FS.BoolVar(&c.fetchBlobs, "blobs", false, "download blobs")
+	s.FS.BoolVar(&c.noop, "noop", false, "just print without local changes")
 	return c
 }
 
@@ -108,8 +108,10 @@ func (c *SpecImportCmd) Do() (err error) {
 		}
 	}
 
-	if err = mod.SquashBlobs(toSquash); err != nil {
-		return
+	if !c.noop {
+		if err = mod.SquashBlobs(toSquash); err != nil {
+			return
+		}
 	}
 
 	for k, _ := range spec {
