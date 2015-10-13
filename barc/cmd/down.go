@@ -18,6 +18,7 @@ type DownCmd struct {
 	*BaseSubCommand
 
 	endpoint string
+	rpcEndpoints string
 	useGit bool
 	maxPool int
 	chunkSize int64
@@ -29,6 +30,8 @@ func NewDownCmd(s *BaseSubCommand) SubCommand {
 	c := &DownCmd{BaseSubCommand: s}
 	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
+	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
+		"bard rpc endpoints separated by comma")
 	c.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 	c.FS.IntVar(&c.maxPool, "pool", 16, "pool size")
 	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "chunk size")
@@ -62,7 +65,7 @@ func (c *DownCmd) Do() (err error) {
 		return
 	}
 
-	trans := transport.NewTransport(c.model, c.endpoint, c.maxPool)
+	trans := transport.NewTransport(c.model, c.endpoint, c.rpcEndpoints, c.maxPool)
 	if err = trans.Download(blobs); err != nil {
 		return
 	}

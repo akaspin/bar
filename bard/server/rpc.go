@@ -17,24 +17,24 @@ func NewBardRPCServer(opts *BardServerOptions, service *rpc.Server) *BardRPCServ
 }
 
 func (s *BardRPCServer) Start() (err error) {
-	if s.Listener, err = net.Listen("tcp", s.RPCAddr); err != nil {
+	if s.Listener, err = net.Listen("tcp", s.RPCBind); err != nil {
 		return
 	}
 
-	logx.Debugf("bard RPC serving at tcp://%s", s.RPCAddr)
+	logx.Debugf("bard RPC serving at tcp://%s", s.RPCBind)
 	mux := http.NewServeMux()
 	mux.Handle("/v1/rpc", s.service)
-	logx.Debugf("bard http serving at http://%s/v1", s.HttpAddr)
+	logx.Debugf("bard http serving at http://%s/v1", s.HttpBind)
 	srv := &http.Server{Handler:mux}
 	err = srv.Serve(s.Listener)
 	return
 }
 
 func (s *BardRPCServer) Stop() (err error) {
-	logx.Tracef("closing rpc tcp://%s", s.HttpAddr)
+	logx.Tracef("closing rpc tcp://%s", s.HttpBind)
 	if err = s.Listener.Close(); err != nil {
 		return
 	}
-	logx.Debugf("rpc tcp://%s is closed", s.HttpAddr)
+	logx.Debugf("rpc tcp://%s is closed", s.HttpBind)
 	return
 }

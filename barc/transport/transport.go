@@ -10,6 +10,7 @@ import (
 	"github.com/akaspin/bar/barc/model"
 	"github.com/akaspin/bar/parmap"
 	"bytes"
+	"strings"
 )
 
 // Common transport with pooled connections
@@ -20,10 +21,11 @@ type Transport struct {
 }
 
 // New RPC pool with default endpoint
-func NewTransport(mod *model.Model, endpoint string, n int) (res *Transport) {
+func NewTransport(mod *model.Model, endpoint string, rpcEndpoints string, n int) (res *Transport) {
+	rpcEP := strings.Split(rpcEndpoints, ",")
 	res = &Transport{
 		model: mod,
-		rpcPool: NewRPCPool(n, time.Hour, endpoint),
+		rpcPool: NewRPCPool(n, time.Hour, endpoint, rpcEP),
 		pool: parmap.NewWorkerPool(n),
 	}
 	return

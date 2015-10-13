@@ -31,8 +31,8 @@ var storageBlockSplit int
 func init() {
 	flag.StringVar(&logLevel, "log-level", logx.ERROR, "logging level")
 
-	flag.StringVar(&httpAddr, "bind-http", ":3001", "HTTP bind addr")
-	flag.StringVar(&rpcAddr, "bind-rpc", "3000", "RPC bind addr")
+	flag.StringVar(&httpAddr, "bind-http", ":3000", "HTTP bind addr")
+	flag.StringVar(&rpcAddr, "bind-rpc", ":3000", "RPC bind addr")
 
 
 	flag.Int64Var(&chunkSize, "chunk", 1024*1024*2, "preferred chunk size")

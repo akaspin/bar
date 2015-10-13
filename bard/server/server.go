@@ -6,10 +6,11 @@ import (
 	"github.com/akaspin/bar/bard/service"
 )
 
+
 type BardServerOptions struct  {
-	HttpAddr string
-	RPCAddr string
 	Info *proto.Info
+	HttpBind string
+	RPCBind string
 	StoragePool *storage.StoragePool
 	BarExe string
 }
@@ -17,7 +18,6 @@ type BardServerOptions struct  {
 type BardServer struct {
 	*BardServerOptions
 	*BardHttpServer
-	*BardRPCServer
 	service *rpc.Server
 }
 
@@ -35,13 +35,8 @@ func NewBardServer(opts *BardServerOptions) (res *BardServer, err error) {
 
 func (s *BardServer) Start() (err error) {
 	s.BardHttpServer = NewBardHttpServer(s.BardServerOptions, s.service)
-	s.BardRPCServer = NewBardRPCServer(s.BardServerOptions, s.service)
 
 	errChan := make(chan error, 1)
-
-	go func() {
-		errChan <- s.BardRPCServer.Start()
-	}()
 
 	go func() {
 		errChan <- s.BardHttpServer.Start()
@@ -54,6 +49,5 @@ func (s *BardServer) Start() (err error) {
 
 func (s *BardServer) Stop() (err error) {
 	s.BardHttpServer.Stop()
-	s.BardRPCServer.Stop()
 	return
 }

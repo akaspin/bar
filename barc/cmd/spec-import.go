@@ -51,7 +51,7 @@ func (c *SpecImportCmd) Do() (err error) {
 	if err != nil {
 		return
 	}
-	trans := transport.NewTransport(mod, c.endpoint, c.pool)
+	trans := transport.NewTransport(mod, c.endpoint, c.endpoint, c.pool)
 
 	if c.raw {
 		if err = json.NewDecoder(c.Stdin).Decode(&spec); err != nil {

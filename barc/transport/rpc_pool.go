@@ -48,11 +48,13 @@ func (c *RPCClient) Close() {
 
 type RPCPool struct {
 	endpoint string
+	rpcEndpoints string
 	timeout time.Duration
 	*pools.ResourcePool
 }
 
-func NewRPCPool(n int, ttl time.Duration, endpoint string) (res *RPCPool) {
+func NewRPCPool(n int, ttl time.Duration,
+	endpoint string, rpcEndpoints []string) (res *RPCPool) {
 	res = &RPCPool{
 		endpoint: endpoint,
 		timeout: ttl,

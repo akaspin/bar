@@ -18,7 +18,7 @@ func NewBardHttpServer(opts *BardServerOptions, service *rpc.Server) *BardHttpSe
 }
 
 func (s *BardHttpServer) Start() (err error) {
-	s.Listener, err = net.Listen("tcp", s.HttpAddr)
+	s.Listener, err = net.Listen("tcp", s.HttpBind)
 	if err != nil {
 		return
 	}
@@ -32,17 +32,17 @@ func (s *BardHttpServer) Start() (err error) {
 	mux.Handle("/v1/spec/", &handler.SpecHandler{
 		s.StoragePool, s.Info, s.BarExe})
 	mux.Handle("/v1/rpc", s.service)
-	logx.Debugf("bard http serving at http://%s/v1", s.HttpAddr)
+	logx.Debugf("bard http serving at http://%s/v1", s.HttpBind)
 	srv := &http.Server{Handler:mux}
 	err = srv.Serve(s.Listener)
 	return
 }
 
 func (s *BardHttpServer) Stop() (err error) {
-	logx.Tracef("closing http://%s/v1", s.HttpAddr)
+	logx.Tracef("closing http://%s/v1", s.HttpBind)
 	if err = s.Listener.Close(); err != nil {
 		return
 	}
-	logx.Debugf("http %s closed", s.HttpAddr)
+	logx.Debugf("http %s closed", s.HttpBind)
 	return
 }

@@ -123,17 +123,20 @@ func Benchmark_Proto_GRPC(b *testing.B) {
 
 	c := pb3.NewBarClient(conn)
 
+	b.Log(srv1.Port, b.N)
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		req := pb3.TestRep{
-			"12345678910",
-			[]byte("mama myla ramu"),
-		}
-		res, err := c.Test(context.Background(), &req)
-		b.StopTimer()
-		assert.NoError(b, err)
-		assert.EqualValues(b, req, *res)
+			b.StartTimer()
+			req := pb3.TestRep{
+				fmt.Sprintf("%d", i),
+				[]byte("mama myla ramu"),
+			}
+			res, err := c.Test(context.Background(), &req)
+			b.StopTimer()
+			assert.NoError(b, err)
+			assert.EqualValues(b, req, *res)
+			b.SetBytes(int64(len(req.Body) * 2))
 	}
 }
 
@@ -149,16 +152,19 @@ func Benchmark_Proto_GRPC_Large(b *testing.B) {
 
 	c := pb3.NewBarClient(conn)
 
+	b.Log(srv1.Port, b.N)
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		req := pb3.TestRep{
-			"test",
-			[]byte(strings.Repeat("m", 1024 * 1024)),
-		}
-		res, err := c.Test(context.Background(), &req)
-		b.StopTimer()
-		assert.NoError(b, err)
-		assert.EqualValues(b, req, *res)
+			b.StartTimer()
+			req := pb3.TestRep{
+				fmt.Sprintf("%d", i),
+				[]byte(strings.Repeat("m", 1024 * 1024)),
+			}
+			res, err := c.Test(context.Background(), &req)
+			b.StopTimer()
+			assert.NoError(b, err)
+			assert.EqualValues(b, req, *res)
+			b.SetBytes(int64(len(req.Body) * 2))
 	}
 }

@@ -31,6 +31,7 @@ This command installs git infrastructure to use with bar:
 type GitInitCmd struct {
 	*BaseSubCommand
 	endpoint string
+	rpcEndpoints string
 	log string
 	clean bool
 
@@ -42,6 +43,8 @@ func NewGitInitCmd(s *BaseSubCommand) SubCommand {
 	c := &GitInitCmd{BaseSubCommand: s}
 	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
+	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
+		"bard rpc endpoints separated by comma")
 	c.FS.StringVar(&c.log, "log", "WARNING", "barc logging level")
 	c.FS.BoolVar(&c.clean, "clean", false, "uninstall bar")
 	return c
@@ -60,7 +63,7 @@ func (c *GitInitCmd) Do() (err error) {
 	}
 
 
-	c.transport = transport.NewTransport(mod, c.endpoint, 10)
+	c.transport = transport.NewTransport(mod, c.endpoint, c.rpcEndpoints, 10)
 	defer c.transport.Close()
 
 	var opts proto.Info

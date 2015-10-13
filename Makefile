@@ -66,18 +66,30 @@ ${INSTALL_DIR}/barc: ${SRC}
 
 run-server: ${INSTALL_DIR}/bard dist/windows/barc.exe
 	bard -log-level=DEBUG \
-		-bind-http=:3001 \
-		-bind-rpc=:3000 \
+		-bind-http=:3000 \
+		-bind-rpc=:3001 \
 		-storage-block-root=testdata \
 		-endpoint=http://${HOSTNAME}:3000/v1 \
-		-http-endpoint=http://${HOSTNAME}:3001/v1 \
+		-http-endpoint=http://${HOSTNAME}:3000/v1 \
 		-barc-exe=dist/windows/barc.exe
 
-bench:
+bench-mem:
 	go test -run=XXX -bench=${BENCH} -benchmem ./...
+
+bench:
+	go test -run=XXX -bench=${BENCH} ./...
 
 test:
 	CGO_ENABLED=0 go test ./...
 
 test-short:
 	CGO_ENABLED=0 go test -short ./...
+
+stubs: proto/bar/ttypes.go
+
+proto/bar/ttypes.go: proto/proto.thrift
+	mkdir -p ${@D}
+	thrift -strict -v -out proto --gen \
+		go:package=bar,package_prefix=github.com/akaspin/bar/proto,thrift_import=github.com/apache/thrift/lib/go/thrift,ignore_initialisms \
+		$<
+	rm -rf ${@D}/bar-remote

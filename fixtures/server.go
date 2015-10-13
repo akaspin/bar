@@ -1,7 +1,6 @@
 package fixtures
 import (
 	"testing"
-	"net/url"
 	"github.com/akaspin/bar/bard/storage"
 	"time"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +12,7 @@ import (
 	"os"
 )
 
-func RunServer(t *testing.T, root string) (endpoint *url.URL, stop func() error)  {
+func RunServer(t *testing.T, root string) (endpoint string, stop func() error)  {
 	logx.SetLevel(logx.DEBUG)
 
 	wd, _ := os.Getwd()
@@ -21,16 +20,16 @@ func RunServer(t *testing.T, root string) (endpoint *url.URL, stop func() error)
 	os.RemoveAll(rt)
 
 	p := storage.NewStoragePool(storage.NewBlockStorageFactory(rt, 2), 200, time.Minute)
-	ports, err := GetOpenPorts(2)
+	ports, err := GetOpenPorts(1)
 	assert.NoError(t, err)
 
-	endpoint, _ = url.Parse(fmt.Sprintf("http://127.0.0.1:%d/v1", ports[1]))
+	endpoint = fmt.Sprintf("http://127.0.0.1:%d/v1", ports[0])
 	srv, err := server.NewBardServer(&server.BardServerOptions{
-		HttpAddr: fmt.Sprintf(":%d", ports[1]),
-		RPCAddr: fmt.Sprintf(":%d", ports[0]),
+		HttpBind: fmt.Sprintf(":%d", ports[0]),
+//		RPCAddr: fmt.Sprintf(":%d", ports[0]),
 		Info: &proto.Info{
-			HTTPEndpoint: fmt.Sprintf("http://localhost:%d/v1", ports[1]),
-			Endpoint: fmt.Sprintf("tcp://localhost:%d", ports[0]),
+			HTTPEndpoint: fmt.Sprintf("http://localhost:%d/v1", ports[0]),
+			Endpoint: fmt.Sprintf("http://localhost:%d/v1", ports[0]),
 			ChunkSize: 1024 * 1024 * 2,
 			PoolSize: 16,
 		},

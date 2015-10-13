@@ -20,7 +20,7 @@ func Test_Ping(t *testing.T) {
 
 	mod, err := model.New("", false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint.String(), 16)
+	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
 	defer tr.Close()
 
 	res, err := tr.Ping()
@@ -40,7 +40,7 @@ func Test_DeclareUpload(t *testing.T) {
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint.String(), 16)
+	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
 	defer tr.Close()
 
 
@@ -68,7 +68,7 @@ func Test_Upload(t *testing.T) {
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint.String(), 16)
+	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
 	defer tr.Close()
 
 
@@ -94,7 +94,7 @@ func Test_GetFetch(t *testing.T) {
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint.String(), 16)
+	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
 	defer tr.Close()
 
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
@@ -123,7 +123,7 @@ func Test_Download(t *testing.T) {
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint.String(), 16)
+	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
 	defer tr.Close()
 
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
@@ -160,7 +160,7 @@ func Test_Check(t *testing.T) {
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint.String(), 16)
+	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
 	defer tr.Close()
 
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
@@ -194,7 +194,7 @@ func Test_Spec(t *testing.T) {
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint.String(), 16)
+	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
 	defer tr.Close()
 
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)

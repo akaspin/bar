@@ -66,7 +66,7 @@ func (c *UpCmd) Do() (err error) {
 
 	logx.Debugf("collected blobs %s", blobs.IDMap())
 
-	trans := transport.NewTransport(c.model, c.endpoint, c.poolSize)
+	trans := transport.NewTransport(c.model, c.endpoint, c.endpoint, c.poolSize)
 
 	err = trans.Upload(blobs)
 	if err != nil {

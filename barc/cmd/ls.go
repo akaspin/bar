@@ -26,6 +26,7 @@ type LsCmd struct {
 
 	useGit bool
 	endpoint string
+	rpcEndpoints string
 	pool int
 
 	noHeader bool
@@ -45,6 +46,8 @@ func NewLsCmd(s *BaseSubCommand) SubCommand {
 	c.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
+	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
+		"bard rpc endpoints separated by comma")
 	c.FS.IntVar(&c.pool, "pool", 16, "pools size")
 
 	c.FS.BoolVar(&c.noHeader, "no-header", false, "do not print header")
@@ -99,7 +102,7 @@ func (c *LsCmd) Do() (err error) {
 	onRemote := map[string]struct{}{}
 	if !c.noRemote {
 		var exists []string
-		trans := transport.NewTransport(mod, c.endpoint, c.pool)
+		trans := transport.NewTransport(mod, c.endpoint, c.rpcEndpoints, c.pool)
 		if exists, err = trans.Check(blobs.IDMap().IDs()); err != nil {
 			return
 		}

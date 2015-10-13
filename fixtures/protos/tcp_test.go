@@ -13,6 +13,7 @@ type binaryTestServer struct {
 }
 
 func (s *binaryTestServer) start() (err error) {
+
 	go func() {
 		for {
 			conn, err := s.Listener.Accept()
@@ -121,6 +122,7 @@ func Test_Proto_Binary_Timeout(t *testing.T)  {
 }
 
 func Benchmark_Proto_Binary(b *testing.B)  {
+	b.Skip()
 	srv := &binaryTestServer{&baseTestServer{}}
 	port, err := srv.listen()
 	assert.NoError(b, err)
@@ -131,22 +133,26 @@ func Benchmark_Proto_Binary(b *testing.B)  {
 	assert.NoError(b, err)
 	defer client.Close()
 
+	b.Log(port)
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		var res TestMessage
-		req := TestMessage{
-			"12345678910",
-			[]byte("mama myla ramu"),
-		}
-		err = client.Call("ServiceFixture.Ping", &req, &res)
-		b.StopTimer()
-		assert.NoError(b, err)
-		assert.Equal(b, req, res)
+			b.StartTimer()
+			var res TestMessage
+			req := TestMessage{
+				"12345678910",
+				[]byte("mama myla ramu"),
+			}
+			err = client.Call("ServiceFixture.Ping", &req, &res)
+			b.StopTimer()
+			assert.NoError(b, err)
+			assert.Equal(b, req, res)
+			b.SetBytes(int64(len(req.Data) * 2))
 	}
 }
 
 func Benchmark_Proto_Binary_Large(b *testing.B)  {
+	b.Skip()
 	srv := &binaryTestServer{&baseTestServer{}}
 	port, err := srv.listen()
 	assert.NoError(b, err)
@@ -157,18 +163,21 @@ func Benchmark_Proto_Binary_Large(b *testing.B)  {
 	assert.NoError(b, err)
 	defer client.Close()
 
+	b.Log(port)
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		var res TestMessage
-		req := TestMessage{
-			"12345678910",
-			[]byte(strings.Repeat("0", 1024 * 1024)),
-		}
-		err = client.Call("ServiceFixture.Ping", &req, &res)
-		b.StopTimer()
-		assert.NoError(b, err)
-		assert.Equal(b, req, res)
+			b.StartTimer()
+			var res TestMessage
+			req := TestMessage{
+				"12345678910",
+				[]byte(strings.Repeat("0", 1024 * 1024)),
+			}
+			err = client.Call("ServiceFixture.Ping", &req, &res)
+			b.StopTimer()
+			assert.NoError(b, err)
+			assert.Equal(b, req, res)
+			b.SetBytes(int64(len(req.Data) * 2))
 	}
 }
 

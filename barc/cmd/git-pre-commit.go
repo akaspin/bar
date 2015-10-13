@@ -29,6 +29,7 @@ type GitPreCommitCmd struct {
 	*BaseSubCommand
 
 	endpoint string
+	rpcEndpoints string
 	chunkSize int64
 	pool int
 
@@ -39,6 +40,8 @@ func NewGitPreCommitCmd(s *BaseSubCommand) SubCommand {
 	c := &GitPreCommitCmd{BaseSubCommand: s}
 	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
 		"bard endpoint")
+	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
+		"bard rpc endpoints separated by comma")
 	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
 	c.FS.IntVar(&c.pool, "pool", 16, "pool size")
 	return c
@@ -68,7 +71,7 @@ func (c *GitPreCommitCmd) Do() (err error) {
 		return
 	}
 
-	trans := transport.NewTransport(c.model, c.endpoint, c.pool)
+	trans := transport.NewTransport(c.model, c.endpoint, c.rpcEndpoints, c.pool)
 	err = trans.Upload(blobs)
 
 	return

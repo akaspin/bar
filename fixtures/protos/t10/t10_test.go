@@ -12,6 +12,8 @@ import (
 
 type service struct {}
 
+const thrift_buffer = 1024 * 1024 * 8
+
 func (s *service) Test(par *srv.TestRep) (r *srv.TestRep, err error) {
 	r = par
 	return
@@ -22,13 +24,12 @@ type TServer struct {
 	Server thrift.TServer
 }
 
-func (s *TServer) Start() (err error) {
+func (s *TServer) Start(transportFactory thrift.TTransportFactory) (err error) {
 	if s.Port, err = fixtures.GetOpenPort(); err != nil {
 		return
 	}
 
 	protoFactory := thrift.NewTBinaryProtocolFactoryDefault()
-	transportFactory := thrift.NewTTransportFactory()
 	processor := srv.NewTSrvProcessor(&service{})
 
 	var transport thrift.TServerTransport
@@ -45,7 +46,7 @@ func (s *TServer) Start() (err error) {
 
 func Test_Proto_Thrift(t *testing.T) {
 	server := &TServer{}
-	err := server.Start()
+	err := server.Start(thrift.NewTTransportFactory())
 	assert.NoError(t, err)
 	defer server.Server.Stop()
 
@@ -61,7 +62,6 @@ func Test_Proto_Thrift(t *testing.T) {
 	defer transport.Close()
 
 	protoFactory := thrift.NewTBinaryProtocolFactoryDefault()
-
 	client := srv.NewTSrvClientFactory(transport, protoFactory)
 
 	req := srv.TestRep{
@@ -73,72 +73,76 @@ func Test_Proto_Thrift(t *testing.T) {
 	assert.EqualValues(t, req, *res)
 }
 
-func Benchmark_Proto_Thrift(t *testing.B) {
+func Benchmark_Proto_Thrift_Buffered(b *testing.B) {
 	server := &TServer{}
-	err := server.Start()
-	assert.NoError(t, err)
+	err := server.Start(thrift.NewTBufferedTransportFactory(thrift_buffer))
+	assert.NoError(b, err)
 	defer server.Server.Stop()
 
 	var transport thrift.TTransport
 	transport, err = thrift.NewTSocket(fmt.Sprintf("127.0.0.1:%d", server.Port))
-	assert.NoError(t, err)
+	assert.NoError(b, err)
 
-	transportFactory := thrift.NewTTransportFactory()
+	transportFactory := thrift.NewTBufferedTransportFactory(thrift_buffer)
 	transport = transportFactory.GetTransport(transport)
 
 	err = transport.Open()
-	assert.NoError(t, err)
+	assert.NoError(b, err)
 	defer transport.Close()
 
 	protoFactory := thrift.NewTBinaryProtocolFactoryDefault()
-
 	client := srv.NewTSrvClientFactory(transport, protoFactory)
 
-	t.ResetTimer()
-	for i := 0; i < t.N; i++ {
-		t.StartTimer()
-		req := srv.TestRep{
-			ID: "test",
-			Data: []byte("mama myla ramy"),
-		}
-		res, err := client.Test(&req)
-		t.StopTimer()
-		assert.NoError(t, err)
-		assert.EqualValues(t, req, *res)
+	b.Log(server.Port, b.N)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+			b.StartTimer()
+			req := srv.TestRep{
+				ID: fmt.Sprintf("%d", i),
+				Data: []byte("mama myla ramy"),
+			}
+			res, err := client.Test(&req)
+			b.StopTimer()
+			assert.NoError(b, err)
+			assert.EqualValues(b, req, *res)
+			b.SetBytes(int64(len(req.Data) * 2))
 	}
 }
 
-func Benchmark_Proto_Thrift_Large(t *testing.B) {
+func Benchmark_Proto_Thrift_Buffered_Large(b *testing.B) {
 	server := &TServer{}
-	err := server.Start()
-	assert.NoError(t, err)
+	err := server.Start(thrift.NewTBufferedTransportFactory(thrift_buffer))
+	assert.NoError(b, err)
 	defer server.Server.Stop()
 
 	var transport thrift.TTransport
 	transport, err = thrift.NewTSocket(fmt.Sprintf("127.0.0.1:%d", server.Port))
-	assert.NoError(t, err)
+	assert.NoError(b, err)
 
-	transportFactory := thrift.NewTTransportFactory()
+	transportFactory := thrift.NewTBufferedTransportFactory(thrift_buffer)
 	transport = transportFactory.GetTransport(transport)
 
 	err = transport.Open()
-	assert.NoError(t, err)
+	assert.NoError(b, err)
 	defer transport.Close()
 
 	protoFactory := thrift.NewTBinaryProtocolFactoryDefault()
-
 	client := srv.NewTSrvClientFactory(transport, protoFactory)
 
-	t.ResetTimer()
-	for i := 0; i < t.N; i++ {
-		t.StartTimer()
-		req := srv.TestRep{
-			ID: "test",
-			Data: []byte(strings.Repeat("0", 1024 * 1024)),
-		}
-		res, err := client.Test(&req)
-		t.StopTimer()
-		assert.NoError(t, err)
-		assert.EqualValues(t, req, *res)
+	b.Log(server.Port, b.N)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+			b.StartTimer()
+			req := srv.TestRep{
+				ID: fmt.Sprintf("%d", i),
+				Data: []byte(strings.Repeat("0", 1024 * 1024)),
+			}
+			res, err := client.Test(&req)
+			b.StopTimer()
+			assert.NoError(b, err)
+			assert.EqualValues(b, req, *res)
+			b.SetBytes(int64(len(req.Data) * 2))
 	}
 }
