@@ -65,8 +65,8 @@ type Bar interface {
 	GetFetch(ids [][]byte) (r []*Manifest, err error)
 	// Parameters:
 	//  - BlobID
-	//  - ChunkID
-	FetchChunk(blobID ID, chunkID ID) (r []byte, err error)
+	//  - Chunk
+	FetchChunk(blobID ID, chunk *Chunk) (r []byte, err error)
 	// Parameters:
 	//  - Spec
 	UploadSpec(spec *Spec) (err error)
@@ -772,15 +772,15 @@ func (p *BarClient) recvGetFetch() (value []*Manifest, err error) {
 
 // Parameters:
 //  - BlobID
-//  - ChunkID
-func (p *BarClient) FetchChunk(blobID ID, chunkID ID) (r []byte, err error) {
-	if err = p.sendFetchChunk(blobID, chunkID); err != nil {
+//  - Chunk
+func (p *BarClient) FetchChunk(blobID ID, chunk *Chunk) (r []byte, err error) {
+	if err = p.sendFetchChunk(blobID, chunk); err != nil {
 		return
 	}
 	return p.recvFetchChunk()
 }
 
-func (p *BarClient) sendFetchChunk(blobID ID, chunkID ID) (err error) {
+func (p *BarClient) sendFetchChunk(blobID ID, chunk *Chunk) (err error) {
 	oprot := p.OutputProtocol
 	if oprot == nil {
 		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -791,8 +791,8 @@ func (p *BarClient) sendFetchChunk(blobID ID, chunkID ID) (err error) {
 		return
 	}
 	args := BarFetchChunkArgs{
-		BlobID:  blobID,
-		ChunkID: chunkID,
+		BlobID: blobID,
+		Chunk:  chunk,
 	}
 	if err = args.Write(oprot); err != nil {
 		return
@@ -1468,7 +1468,7 @@ func (p *barProcessorFetchChunk) Process(seqId int32, iprot, oprot thrift.TProto
 	result := BarFetchChunkResult{}
 	var retval []byte
 	var err2 error
-	if retval, err2 = p.handler.FetchChunk(args.BlobID, args.ChunkID); err2 != nil {
+	if retval, err2 = p.handler.FetchChunk(args.BlobID, args.Chunk); err2 != nil {
 		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing FetchChunk: "+err2.Error())
 		oprot.WriteMessageBegin("FetchChunk", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
@@ -3464,10 +3464,10 @@ func (p *BarGetFetchResult) String() string {
 
 // Attributes:
 //  - BlobID
-//  - ChunkID
+//  - Chunk
 type BarFetchChunkArgs struct {
-	BlobID  ID `thrift:"blobID,1" json:"blobID"`
-	ChunkID ID `thrift:"chunkID,2" json:"chunkID"`
+	BlobID ID     `thrift:"blobID,1" json:"blobID"`
+	Chunk  *Chunk `thrift:"chunk,2" json:"chunk"`
 }
 
 func NewBarFetchChunkArgs() *BarFetchChunkArgs {
@@ -3478,9 +3478,18 @@ func (p *BarFetchChunkArgs) GetBlobID() ID {
 	return p.BlobID
 }
 
-func (p *BarFetchChunkArgs) GetChunkID() ID {
-	return p.ChunkID
+var BarFetchChunkArgs_Chunk_DEFAULT *Chunk
+
+func (p *BarFetchChunkArgs) GetChunk() *Chunk {
+	if !p.IsSetChunk() {
+		return BarFetchChunkArgs_Chunk_DEFAULT
+	}
+	return p.Chunk
 }
+func (p *BarFetchChunkArgs) IsSetChunk() bool {
+	return p.Chunk != nil
+}
+
 func (p *BarFetchChunkArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -3529,11 +3538,9 @@ func (p *BarFetchChunkArgs) readField1(iprot thrift.TProtocol) error {
 }
 
 func (p *BarFetchChunkArgs) readField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
-		return thrift.PrependError("error reading field 2: ", err)
-	} else {
-		temp := ID(v)
-		p.ChunkID = temp
+	p.Chunk = &Chunk{}
+	if err := p.Chunk.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Chunk), err)
 	}
 	return nil
 }
@@ -3571,14 +3578,14 @@ func (p *BarFetchChunkArgs) writeField1(oprot thrift.TProtocol) (err error) {
 }
 
 func (p *BarFetchChunkArgs) writeField2(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("chunkID", thrift.STRING, 2); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:chunkID: ", p), err)
+	if err := oprot.WriteFieldBegin("chunk", thrift.STRUCT, 2); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:chunk: ", p), err)
 	}
-	if err := oprot.WriteBinary(p.ChunkID); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T.chunkID (2) field write error: ", p), err)
+	if err := p.Chunk.Write(oprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Chunk), err)
 	}
 	if err := oprot.WriteFieldEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:chunkID: ", p), err)
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:chunk: ", p), err)
 	}
 	return err
 }

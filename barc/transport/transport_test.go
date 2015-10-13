@@ -113,7 +113,7 @@ func Test_GetFetch(t *testing.T) {
 
 func Test_Download(t *testing.T) {
 	root := "Download"
-	endpoint, _, stop := fixtures.RunServer(t, root)
+	endpoint, rpcEP, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
 
@@ -123,7 +123,7 @@ func Test_Download(t *testing.T) {
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
+	tr := transport.NewTransport(mod, endpoint, rpcEP, 16)
 	defer tr.Close()
 
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)

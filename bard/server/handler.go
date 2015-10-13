@@ -3,6 +3,7 @@ import (
 	"github.com/akaspin/bar/proto/bar"
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/bard/storage"
+	"bytes"
 )
 
 type BardTHandler struct {
@@ -11,7 +12,7 @@ type BardTHandler struct {
 }
 
 func NewBardTHandler(options *BardServerOptions) *BardTHandler {
-	return &BardTHandler{options.Info, options.StoragePool}
+	return &BardTHandler{options.Info, options.Storage}
 }
 
 func (h *BardTHandler) GetInfo() (r *bar.ServerInfo, err error) {
@@ -58,7 +59,12 @@ func (h *BardTHandler) GetFetch(ids [][]byte) (r []*bar.Manifest, err error) {
 	return
 }
 
-func (h *BardTHandler) FetchChunk(blobID bar.ID, chunkID bar.ID) (r []byte, err error) {
+func (h *BardTHandler) FetchChunk(blobID bar.ID, chunk *bar.Chunk) (r []byte, err error) {
+	w := new(bytes.Buffer)
+	if err = h.Storage.ReadChunkFromBlob(blobID, chunk.Info.Size, chunk.Offset, w); err != nil {
+		return
+	}
+	r = w.Bytes()
 	return
 }
 

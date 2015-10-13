@@ -11,12 +11,15 @@ import (
 	"github.com/akaspin/bar/parmap"
 	"bytes"
 	"strings"
+	"encoding/hex"
+	"github.com/akaspin/bar/proto/bar"
 )
 
 // Common transport with pooled connections
 type Transport struct {
 	model *model.Model
 	rpcPool *RPCPool
+	tPool *TPool
 	pool *parmap.ParMap
 }
 
@@ -26,6 +29,7 @@ func NewTransport(mod *model.Model, endpoint string, rpcEndpoints string, n int)
 	res = &Transport{
 		model: mod,
 		rpcPool: NewRPCPool(n, time.Hour, endpoint, rpcEP),
+		tPool: NewTPool(strings.Split(rpcEndpoints, ","), 1024 * 1024 * 8,  n, time.Hour),
 		pool: parmap.NewWorkerPool(n),
 	}
 	return
@@ -33,6 +37,7 @@ func NewTransport(mod *model.Model, endpoint string, rpcEndpoints string, n int)
 
 func (t *Transport) Close() {
 	t.rpcPool.Close()
+	t.tPool.Close()
 }
 
 func (t *Transport) Ping() (res proto.Info, err error) {
@@ -178,7 +183,7 @@ func (t *Transport) UploadChunk(name string, blobID string, chunk manifest.Chunk
 func (t *Transport) Download(blobs lists.Links) (err error) {
 
 	fetch, err := t.GetFetch(blobs.IDMap().IDs())
-	logx.Debug("fetching blobs %s", blobs.IDMap())
+	logx.Debugf("fetching blobs %s", blobs.IDMap())
 
 	// little funny, but all chunks are equal - flatten them
 	chunkMap := map[string]interface{}{}
@@ -198,20 +203,44 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 	_, err = t.model.Pool.RunBatch(parmap.Task{
 		Map: chunkMap,
 		Fn: func(id string, arg interface{}) (res interface{}, err error) {
-			cli, err := t.rpcPool.Take()
+//			cli, err := t.rpcPool.Take()
+//			if err != nil {
+//				return
+//			}
+//			defer cli.Release()
+
+			tclient, err := t.tPool.Take()
 			if err != nil {
 				return
 			}
-			defer cli.Release()
+			defer tclient.Release()
 
 			ci := arg.(proto.ChunkInfo)
 
-			var data proto.ChunkData
-			if err = cli.Call("Service.FetchChunk", &ci, &data); err != nil {
+//			var data proto.ChunkData
+//			if err = cli.Call("Service.FetchChunk", &ci, &data); err != nil {
+//				return
+//			}
+			var blobId, chunkId []byte
+			if blobId, err = hex.DecodeString(ci.BlobID); err != nil {
+				return
+			}
+			if chunkId, err = hex.DecodeString(ci.ID); err != nil {
+				return
+			}
+			chunk := &bar.Chunk{
+				&bar.DataInfo{
+					chunkId, ci.Size,
+				},
+				ci.Offset,
+			}
+
+			data, err := tclient.FetchChunk(blobId, chunk)
+			if err != nil {
 				return
 			}
 
-			err = a.StoreChunk(bytes.NewReader(data.Data), ci.ID)
+			err = a.StoreChunk(bytes.NewReader(data), ci.ID)
 			return
 		},
 		IgnoreErrors: true,

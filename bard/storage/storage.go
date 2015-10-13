@@ -36,6 +36,9 @@ type Storage interface {
 	// Read chunk from storage to given writer
 	ReadChunk(chunk proto.ChunkInfo, w io.Writer) (err error)
 
+	// Read Chunk from blob by size and offset
+	ReadChunkFromBlob(blobID []byte, size, offset int64, w io.Writer) (err error)
+
 	// Destroy blob
 	DestroyBLOB(id string) (err error)
 }

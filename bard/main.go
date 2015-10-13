@@ -8,6 +8,7 @@ import (
 	"github.com/akaspin/bar/bard/server"
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/proto"
+	"strings"
 )
 
 var logLevel string
@@ -15,14 +16,14 @@ var logLevel string
 var httpAddr string
 var rpcAddr string
 
-var chunkSize int64
 var poolConns int
 
-var rpcEndpoint string
-var httpEndpoint string
 var barExe string
 
 var storageType string
+
+var serverInfo proto.Info
+var rpcEndpoints string
 
 var blockStorageOptions storage.BlockStorageOptions
 
@@ -33,13 +34,14 @@ func init() {
 	flag.StringVar(&rpcAddr, "bind-rpc", ":3000", "RPC bind addr")
 
 
-	flag.Int64Var(&chunkSize, "chunk", 1024*1024*2, "preferred chunk size")
-	flag.IntVar(&poolConns, "conns", 16,
-		"preferred conns from one client")
-	flag.StringVar(&httpEndpoint, "http", "http://localhost:3000/v1",
+	flag.StringVar(&serverInfo.HTTPEndpoint, "http", "http://localhost:3000/v1",
 		"HTTP endpoint")
-	flag.StringVar(&rpcEndpoint, "rpc", "http://localhost:3000/v1",
-		"RPC endpoint")
+	flag.StringVar(&rpcEndpoints, "rpc", "localhost:3001", "RPC endpoints")
+	flag.Int64Var(&serverInfo.ChunkSize, "chunk", 1024 * 1024 * 2, "preferred chunk size")
+	flag.IntVar(&serverInfo.PoolSize, "conns", 16,
+		"preferred conns from one client")
+	flag.IntVar(&serverInfo.BufferSize, "buffer", 1024 * 1024 * 8, "thrift buffer size")
+
 	flag.StringVar(&barExe, "barc-exe", "",
 		"path to windows barc executable")
 
@@ -65,16 +67,11 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
+	serverInfo.RPCEndpoints = strings.Split(rpcEndpoints, ",")
 	srv, err := server.NewBardServer(&server.BardServerOptions{
 		HttpBind: httpAddr,
 		RPCBind: rpcAddr,
-		Info: &proto.Info{
-			HTTPEndpoint: httpEndpoint,
-			RPCEndpoints: []string{rpcEndpoint},
-			ChunkSize: chunkSize,
-			PoolSize: poolConns,
-			BufferSize: 1024 * 1024 * 8,
-		},
+		Info: &serverInfo,
 		Storage: pool,
 		BarExe: barExe,
 	})

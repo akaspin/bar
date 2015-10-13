@@ -11,6 +11,7 @@ import (
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/parmap"
 	"time"
+	"encoding/hex"
 )
 
 const (
@@ -246,6 +247,12 @@ func (s *BlockStorage) finishChunk(base string, info manifest.Chunk, w io.Writer
 }
 
 func (s *BlockStorage) ReadChunk(chunk proto.ChunkInfo, w io.Writer) (err error) {
+	lock, err := s.FDLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Release()
+
 	f, err := os.Open(s.filePath(blob_ns, chunk.BlobID))
 	if err != nil {
 		return
@@ -263,6 +270,37 @@ func (s *BlockStorage) ReadChunk(chunk proto.ChunkInfo, w io.Writer) (err error)
 	if written != chunk.Size {
 		err = fmt.Errorf("bad size for chunk %s %d != %s", chunk.ID, chunk.Size, written)
 	}
+	return
+}
+
+func (s *BlockStorage) ReadChunkFromBlob(blobID []byte, size, offset int64, w io.Writer) (err error) {
+	lock, err := s.FDLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Release()
+
+	blobIDstr := hex.EncodeToString(blobID)
+
+	f, err := os.Open(s.filePath(blob_ns, blobIDstr))
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	if _, err = f.Seek(offset, 0); err != nil {
+		return
+	}
+
+	written, err := io.CopyN(w, f, size)
+	if err != nil {
+		return
+	}
+	if written != size {
+		err = fmt.Errorf("bad size for chunk %s (offset %d) %d != %d",
+			blobIDstr, offset, size, written)
+	}
+
 	return
 }
 

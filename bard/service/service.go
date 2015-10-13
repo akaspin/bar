@@ -97,17 +97,6 @@ func (s *Service) GetFetch(req *[]string, res *[]manifest.Manifest) (err error) 
 	return
 }
 
-func (s *Service) FetchChunk(req *proto.ChunkInfo, res *proto.ChunkData) (err error) {
-
-	buf := new(bytes.Buffer)
-	err = s.Storage.ReadChunk(*req, buf)
-
-	readed := &proto.ChunkData{*req, buf.Bytes()}
-	*res = *readed
-
-	return
-}
-
 // Upload spec
 func (s *Service) UploadSpec(spec *proto.Spec, res *struct{}) (err error) {
 

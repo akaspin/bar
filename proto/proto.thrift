@@ -125,9 +125,15 @@ service Bar {
         1: list<ID> ids,
     )
 
+    /**
+    * Fetch chunk from bard
+    **/
     binary FetchChunk (
+        /** Blob ID */
         1: ID blobID,
-        2: ID chunkID,
+
+        /** Chunk spec */
+        2: Chunk chunk,
     )
 
 ////
