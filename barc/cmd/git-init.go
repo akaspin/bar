@@ -7,6 +7,7 @@ import (
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/model"
 	"github.com/akaspin/bar/proto/manifest"
+	"strings"
 )
 
 const hook  = `#!/bin/sh
@@ -41,8 +42,8 @@ type GitInitCmd struct {
 
 func NewGitInitCmd(s *BaseSubCommand) SubCommand {
 	c := &GitInitCmd{BaseSubCommand: s}
-	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
-		"bard endpoint")
+	c.FS.StringVar(&c.endpoint, "http", "http://localhost:3000/v1",
+		"bard http endpoint")
 	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
 		"bard rpc endpoints separated by comma")
 	c.FS.StringVar(&c.log, "log", "WARNING", "barc logging level")
@@ -61,7 +62,6 @@ func (c *GitInitCmd) Do() (err error) {
 		err = c.uninstall()
 		return
 	}
-
 
 	c.transport = transport.NewTransport(mod, c.endpoint, c.rpcEndpoints, 10)
 	defer c.transport.Close()
@@ -88,6 +88,7 @@ func (c *GitInitCmd) Do() (err error) {
 }
 
 func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
+	rpc := strings.Join(info.RPCEndpoints, ",")
 	return map[string]string{
 //		"diff.bar.command": fmt.Sprintf(
 //			"barc -log-level=%s git-diff -chunk=%d", c.log, info.ChunkSize),
@@ -95,26 +96,26 @@ func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
 			"barc -log-level=%s git-clean -chunk=%d -pool=%d %%f",
 			c.log, info.ChunkSize, info.PoolSize),
 		"filter.bar.smudge": fmt.Sprintf(
-			"barc -log-level=%s git-smudge -endpoint=%s -chunk=%d -pool=%d %%f",
-			c.log, info.Endpoint, info.ChunkSize, info.PoolSize),
+			"barc -log-level=%s git-smudge -http=%s -rpc=%s -chunk=%d -pool=%d %%f",
+			c.log, info.HTTPEndpoint, rpc, info.ChunkSize, info.PoolSize),
 		"alias.bar-squash": fmt.Sprintf(
-			"!barc -log-level=%s up -squash -endpoint=%s -chunk=%d -pool=%d -git",
-			c.log, info.Endpoint, info.ChunkSize, info.PoolSize),
+			"!barc -log-level=%s up -squash -http=%s -rpc=%s -chunk=%d -pool=%d -git",
+			c.log, info.HTTPEndpoint, rpc, info.ChunkSize, info.PoolSize),
 		"alias.bar-up": fmt.Sprintf(
-			"!barc -log-level=%s up -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, info.Endpoint, info.ChunkSize, info.PoolSize),
+			"!barc -log-level=%s up -http=%s -rpc=%s -git -chunk=%d -pool=%d",
+			c.log, info.HTTPEndpoint, rpc, info.ChunkSize, info.PoolSize),
 		"alias.bar-down": fmt.Sprintf(
-			"!barc -log-level=%s down -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, info.Endpoint, info.ChunkSize, info.PoolSize),
+			"!barc -log-level=%s down -http=%s -rpc=%s -git -chunk=%d -pool=%d",
+			c.log, info.HTTPEndpoint, rpc, info.ChunkSize, info.PoolSize),
 		"alias.bar-ls": fmt.Sprintf(
-			"!barc -log-level=%s ls -endpoint=%s -git -pool=%d",
-			c.log, info.Endpoint, info.PoolSize),
+			"!barc -log-level=%s ls -http=%s -rpc=%s -git -pool=%d",
+			c.log, info.HTTPEndpoint, rpc, info.PoolSize),
 		"alias.bar-export": fmt.Sprintf(
-			"!barc -log-level=%s spec-export -upload -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, info.Endpoint, info.ChunkSize, info.PoolSize),
+			"!barc -log-level=%s spec-export -upload -http=%s -rpc=%s -git -chunk=%d -pool=%d",
+			c.log, info.HTTPEndpoint, rpc, info.ChunkSize, info.PoolSize),
 		"alias.bar-import": fmt.Sprintf(
-			"!barc -log-level=%s spec-import -endpoint=%s -git -chunk=%d -pool=%d",
-			c.log, info.Endpoint, info.ChunkSize, info.PoolSize),
+			"!barc -log-level=%s spec-import -http=%s -rpc=%s -git -chunk=%d -pool=%d",
+			c.log, info.HTTPEndpoint, rpc, info.ChunkSize, info.PoolSize),
 	}
 }
 

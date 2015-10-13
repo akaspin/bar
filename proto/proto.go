@@ -10,13 +10,16 @@ type Info struct {
 	HTTPEndpoint string
 
 	// RPC Endpoint
-	Endpoint string
+	RPCEndpoints []string
 
 	// Preferred chunk size
 	ChunkSize int64
 
 	// Preferred number of connections from client
 	PoolSize int
+
+	// Thrift rpc buffer size
+	BufferSize int
 }
 
 type ChunkInfo struct {

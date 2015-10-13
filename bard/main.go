@@ -17,8 +17,9 @@ var httpAddr string
 var rpcAddr string
 
 var chunkSize int64
-var clientConns int
-var endpoint string
+var poolConns int
+
+var rpcEndpoint string
 var httpEndpoint string
 var barExe string
 
@@ -36,12 +37,12 @@ func init() {
 
 
 	flag.Int64Var(&chunkSize, "chunk", 1024*1024*2, "preferred chunk size")
-	flag.IntVar(&clientConns, "conns", 16,
+	flag.IntVar(&poolConns, "conns", 16,
 		"preferred conns from one client")
-	flag.StringVar(&endpoint, "endpoint", "http://localhost:3000/v1",
-		"RPC endpoint")
-	flag.StringVar(&httpEndpoint, "http-endpoint", "http://localhost:3000/v1",
+	flag.StringVar(&httpEndpoint, "http", "http://localhost:3000/v1",
 		"HTTP endpoint")
+	flag.StringVar(&rpcEndpoint, "rpc", "http://localhost:3000/v1",
+		"RPC endpoint")
 	flag.StringVar(&barExe, "barc-exe", "",
 		"path to windows barc executable")
 
@@ -65,11 +66,17 @@ func main() {
 		os.Exit(2)
 	}
 	srv, err := server.NewBardServer(&server.BardServerOptions{
-		httpAddr,
-		rpcAddr,
-		&proto.Info{httpEndpoint, endpoint, chunkSize, clientConns},
-		pool,
-		barExe,
+		HttpBind: httpAddr,
+		RPCBind: rpcAddr,
+		Info: &proto.Info{
+			HTTPEndpoint: httpEndpoint,
+			RPCEndpoints: []string{rpcEndpoint},
+			ChunkSize: chunkSize,
+			PoolSize: poolConns,
+			BufferSize: 1024 * 1024 * 8,
+		},
+		StoragePool: pool,
+		BarExe: barExe,
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

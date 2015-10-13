@@ -8,10 +8,11 @@ import (
 
 
 type BardServerOptions struct  {
+	// Client info
 	Info *proto.Info
 	HttpBind string
 	RPCBind string
-	StoragePool *storage.StoragePool
+	*storage.StoragePool
 	BarExe string
 }
 

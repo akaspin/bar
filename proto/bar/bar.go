@@ -15,6 +15,7 @@ var _ = fmt.Printf
 var _ = bytes.Equal
 
 type Bar interface {
+	GetInfo() (r *ServerInfo, err error)
 	// Creates new upload on bard and returns missing chunks.
 	//
 	//
@@ -100,6 +101,79 @@ func NewBarClientProtocol(t thrift.TTransport, iprot thrift.TProtocol, oprot thr
 	}
 }
 
+func (p *BarClient) GetInfo() (r *ServerInfo, err error) {
+	if err = p.sendGetInfo(); err != nil {
+		return
+	}
+	return p.recvGetInfo()
+}
+
+func (p *BarClient) sendGetInfo() (err error) {
+	oprot := p.OutputProtocol
+	if oprot == nil {
+		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
+		p.OutputProtocol = oprot
+	}
+	p.SeqId++
+	if err = oprot.WriteMessageBegin("GetInfo", thrift.CALL, p.SeqId); err != nil {
+		return
+	}
+	args := BarGetInfoArgs{}
+	if err = args.Write(oprot); err != nil {
+		return
+	}
+	if err = oprot.WriteMessageEnd(); err != nil {
+		return
+	}
+	return oprot.Flush()
+}
+
+func (p *BarClient) recvGetInfo() (value *ServerInfo, err error) {
+	iprot := p.InputProtocol
+	if iprot == nil {
+		iprot = p.ProtocolFactory.GetProtocol(p.Transport)
+		p.InputProtocol = iprot
+	}
+	method, mTypeId, seqId, err := iprot.ReadMessageBegin()
+	if err != nil {
+		return
+	}
+	if method != "GetInfo" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "GetInfo failed: wrong method name")
+		return
+	}
+	if p.SeqId != seqId {
+		err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "GetInfo failed: out of sequence response")
+		return
+	}
+	if mTypeId == thrift.EXCEPTION {
+		error5 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error6 error
+		error6, err = error5.Read(iprot)
+		if err != nil {
+			return
+		}
+		if err = iprot.ReadMessageEnd(); err != nil {
+			return
+		}
+		err = error6
+		return
+	}
+	if mTypeId != thrift.REPLY {
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "GetInfo failed: invalid message type")
+		return
+	}
+	result := BarGetInfoResult{}
+	if err = result.Read(iprot); err != nil {
+		return
+	}
+	if err = iprot.ReadMessageEnd(); err != nil {
+		return
+	}
+	value = result.GetSuccess()
+	return
+}
+
 // Creates new upload on bard and returns missing chunks.
 //
 //
@@ -155,16 +229,16 @@ func (p *BarClient) recvCreateUpload() (value []*DataInfo, err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error5 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error6 error
-		error6, err = error5.Read(iprot)
+		error7 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error8 error
+		error8, err = error7.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error6
+		err = error8
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -239,16 +313,16 @@ func (p *BarClient) recvUploadChunk() (err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error7 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error8 error
-		error8, err = error7.Read(iprot)
+		error9 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error10 error
+		error10, err = error9.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error8
+		err = error10
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -322,16 +396,16 @@ func (p *BarClient) recvFinishUploadBlob() (err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error9 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error10 error
-		error10, err = error9.Read(iprot)
+		error11 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error12 error
+		error12, err = error11.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error10
+		err = error12
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -438,16 +512,16 @@ func (p *BarClient) recvTagBlobs() (err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error11 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error12 error
-		error12, err = error11.Read(iprot)
+		error13 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error14 error
+		error14, err = error13.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error12
+		err = error14
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -516,16 +590,16 @@ func (p *BarClient) recvUntagBlobs() (err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error13 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error14 error
-		error14, err = error13.Read(iprot)
+		error15 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error16 error
+		error16, err = error15.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error14
+		err = error16
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -592,16 +666,16 @@ func (p *BarClient) recvIsBlobExists() (value [][]byte, err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error15 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error16 error
-		error16, err = error15.Read(iprot)
+		error17 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error18 error
+		error18, err = error17.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error16
+		err = error18
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -669,16 +743,16 @@ func (p *BarClient) recvGetFetch() (value []*Manifest, err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error17 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error18 error
-		error18, err = error17.Read(iprot)
+		error19 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error20 error
+		error20, err = error19.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error18
+		err = error20
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -748,16 +822,16 @@ func (p *BarClient) recvFetchChunk() (value []byte, err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error19 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error20 error
-		error20, err = error19.Read(iprot)
+		error21 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error22 error
+		error22, err = error21.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error20
+		err = error22
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -825,16 +899,16 @@ func (p *BarClient) recvUploadSpec() (err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error21 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error22 error
-		error22, err = error21.Read(iprot)
+		error23 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error24 error
+		error24, err = error23.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error22
+		err = error24
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -901,16 +975,16 @@ func (p *BarClient) recvFetchSpec() (value *Spec, err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error23 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error24 error
-		error24, err = error23.Read(iprot)
+		error25 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error26 error
+		error26, err = error25.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error24
+		err = error26
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -948,19 +1022,20 @@ func (p *BarProcessor) ProcessorMap() map[string]thrift.TProcessorFunction {
 
 func NewBarProcessor(handler Bar) *BarProcessor {
 
-	self25 := &BarProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
-	self25.processorMap["CreateUpload"] = &barProcessorCreateUpload{handler: handler}
-	self25.processorMap["UploadChunk"] = &barProcessorUploadChunk{handler: handler}
-	self25.processorMap["FinishUploadBlob"] = &barProcessorFinishUploadBlob{handler: handler}
-	self25.processorMap["FinishUpload"] = &barProcessorFinishUpload{handler: handler}
-	self25.processorMap["TagBlobs"] = &barProcessorTagBlobs{handler: handler}
-	self25.processorMap["UntagBlobs"] = &barProcessorUntagBlobs{handler: handler}
-	self25.processorMap["IsBlobExists"] = &barProcessorIsBlobExists{handler: handler}
-	self25.processorMap["GetFetch"] = &barProcessorGetFetch{handler: handler}
-	self25.processorMap["FetchChunk"] = &barProcessorFetchChunk{handler: handler}
-	self25.processorMap["UploadSpec"] = &barProcessorUploadSpec{handler: handler}
-	self25.processorMap["FetchSpec"] = &barProcessorFetchSpec{handler: handler}
-	return self25
+	self27 := &BarProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
+	self27.processorMap["GetInfo"] = &barProcessorGetInfo{handler: handler}
+	self27.processorMap["CreateUpload"] = &barProcessorCreateUpload{handler: handler}
+	self27.processorMap["UploadChunk"] = &barProcessorUploadChunk{handler: handler}
+	self27.processorMap["FinishUploadBlob"] = &barProcessorFinishUploadBlob{handler: handler}
+	self27.processorMap["FinishUpload"] = &barProcessorFinishUpload{handler: handler}
+	self27.processorMap["TagBlobs"] = &barProcessorTagBlobs{handler: handler}
+	self27.processorMap["UntagBlobs"] = &barProcessorUntagBlobs{handler: handler}
+	self27.processorMap["IsBlobExists"] = &barProcessorIsBlobExists{handler: handler}
+	self27.processorMap["GetFetch"] = &barProcessorGetFetch{handler: handler}
+	self27.processorMap["FetchChunk"] = &barProcessorFetchChunk{handler: handler}
+	self27.processorMap["UploadSpec"] = &barProcessorUploadSpec{handler: handler}
+	self27.processorMap["FetchSpec"] = &barProcessorFetchSpec{handler: handler}
+	return self27
 }
 
 func (p *BarProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -973,13 +1048,61 @@ func (p *BarProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err
 	}
 	iprot.Skip(thrift.STRUCT)
 	iprot.ReadMessageEnd()
-	x26 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
+	x28 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
 	oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
-	x26.Write(oprot)
+	x28.Write(oprot)
 	oprot.WriteMessageEnd()
 	oprot.Flush()
-	return false, x26
+	return false, x28
 
+}
+
+type barProcessorGetInfo struct {
+	handler Bar
+}
+
+func (p *barProcessorGetInfo) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := BarGetInfoArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("GetInfo", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush()
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	result := BarGetInfoResult{}
+	var retval *ServerInfo
+	var err2 error
+	if retval, err2 = p.handler.GetInfo(); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing GetInfo: "+err2.Error())
+		oprot.WriteMessageBegin("GetInfo", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush()
+		return true, err2
+	} else {
+		result.Success = retval
+	}
+	if err2 = oprot.WriteMessageBegin("GetInfo", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
 }
 
 type barProcessorCreateUpload struct {
@@ -1468,6 +1591,160 @@ func (p *barProcessorFetchSpec) Process(seqId int32, iprot, oprot thrift.TProtoc
 
 // HELPER FUNCTIONS AND STRUCTURES
 
+type BarGetInfoArgs struct {
+}
+
+func NewBarGetInfoArgs() *BarGetInfoArgs {
+	return &BarGetInfoArgs{}
+}
+
+func (p *BarGetInfoArgs) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		if err := iprot.Skip(fieldTypeId); err != nil {
+			return err
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *BarGetInfoArgs) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("GetInfo_args"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *BarGetInfoArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("BarGetInfoArgs(%+v)", *p)
+}
+
+// Attributes:
+//  - Success
+type BarGetInfoResult struct {
+	Success *ServerInfo `thrift:"success,0" json:"success,omitempty"`
+}
+
+func NewBarGetInfoResult() *BarGetInfoResult {
+	return &BarGetInfoResult{}
+}
+
+var BarGetInfoResult_Success_DEFAULT *ServerInfo
+
+func (p *BarGetInfoResult) GetSuccess() *ServerInfo {
+	if !p.IsSetSuccess() {
+		return BarGetInfoResult_Success_DEFAULT
+	}
+	return p.Success
+}
+func (p *BarGetInfoResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *BarGetInfoResult) Read(iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 0:
+			if err := p.readField0(iprot); err != nil {
+				return err
+			}
+		default:
+			if err := iprot.Skip(fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *BarGetInfoResult) readField0(iprot thrift.TProtocol) error {
+	p.Success = &ServerInfo{}
+	if err := p.Success.Read(iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Success), err)
+	}
+	return nil
+}
+
+func (p *BarGetInfoResult) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("GetInfo_result"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if err := p.writeField0(oprot); err != nil {
+		return err
+	}
+	if err := oprot.WriteFieldStop(); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *BarGetInfoResult) writeField0(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSuccess() {
+		if err := oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err)
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Success), err)
+		}
+		if err := oprot.WriteFieldEnd(); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err)
+		}
+	}
+	return err
+}
+
+func (p *BarGetInfoResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("BarGetInfoResult(%+v)", *p)
+}
+
 // Attributes:
 //  - Id: upload id
 //  - Manifests: requested manifests
@@ -1541,11 +1818,11 @@ func (p *BarCreateUploadArgs) readField2(iprot thrift.TProtocol) error {
 	tSlice := make([]*Manifest, 0, size)
 	p.Manifests = tSlice
 	for i := 0; i < size; i++ {
-		_elem27 := &Manifest{}
-		if err := _elem27.Read(iprot); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem27), err)
+		_elem29 := &Manifest{}
+		if err := _elem29.Read(iprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem29), err)
 		}
-		p.Manifests = append(p.Manifests, _elem27)
+		p.Manifests = append(p.Manifests, _elem29)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -1673,11 +1950,11 @@ func (p *BarCreateUploadResult) readField0(iprot thrift.TProtocol) error {
 	tSlice := make([]*DataInfo, 0, size)
 	p.Success = tSlice
 	for i := 0; i < size; i++ {
-		_elem28 := &DataInfo{}
-		if err := _elem28.Read(iprot); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem28), err)
+		_elem30 := &DataInfo{}
+		if err := _elem30.Read(iprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem30), err)
 		}
-		p.Success = append(p.Success, _elem28)
+		p.Success = append(p.Success, _elem30)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -2047,13 +2324,13 @@ func (p *BarFinishUploadBlobArgs) readField3(iprot thrift.TProtocol) error {
 	tSlice := make([][]byte, 0, size)
 	p.Tags = tSlice
 	for i := 0; i < size; i++ {
-		var _elem29 []byte
+		var _elem31 []byte
 		if v, err := iprot.ReadBinary(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_elem29 = v
+			_elem31 = v
 		}
-		p.Tags = append(p.Tags, _elem29)
+		p.Tags = append(p.Tags, _elem31)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -2345,13 +2622,13 @@ func (p *BarTagBlobsArgs) readField1(iprot thrift.TProtocol) error {
 	tSlice := make([][]byte, 0, size)
 	p.Ids = tSlice
 	for i := 0; i < size; i++ {
-		var _elem30 []byte
+		var _elem32 []byte
 		if v, err := iprot.ReadBinary(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_elem30 = v
+			_elem32 = v
 		}
-		p.Ids = append(p.Ids, _elem30)
+		p.Ids = append(p.Ids, _elem32)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -2367,13 +2644,13 @@ func (p *BarTagBlobsArgs) readField2(iprot thrift.TProtocol) error {
 	tSlice := make([][]byte, 0, size)
 	p.Tags = tSlice
 	for i := 0; i < size; i++ {
-		var _elem31 []byte
+		var _elem33 []byte
 		if v, err := iprot.ReadBinary(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_elem31 = v
+			_elem33 = v
 		}
-		p.Tags = append(p.Tags, _elem31)
+		p.Tags = append(p.Tags, _elem33)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -2566,13 +2843,13 @@ func (p *BarUntagBlobsArgs) readField1(iprot thrift.TProtocol) error {
 	tSlice := make([][]byte, 0, size)
 	p.Ids = tSlice
 	for i := 0; i < size; i++ {
-		var _elem32 []byte
+		var _elem34 []byte
 		if v, err := iprot.ReadBinary(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_elem32 = v
+			_elem34 = v
 		}
-		p.Ids = append(p.Ids, _elem32)
+		p.Ids = append(p.Ids, _elem34)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -2588,13 +2865,13 @@ func (p *BarUntagBlobsArgs) readField2(iprot thrift.TProtocol) error {
 	tSlice := make([][]byte, 0, size)
 	p.Tags = tSlice
 	for i := 0; i < size; i++ {
-		var _elem33 []byte
+		var _elem35 []byte
 		if v, err := iprot.ReadBinary(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_elem33 = v
+			_elem35 = v
 		}
-		p.Tags = append(p.Tags, _elem33)
+		p.Tags = append(p.Tags, _elem35)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -2777,13 +3054,13 @@ func (p *BarIsBlobExistsArgs) readField1(iprot thrift.TProtocol) error {
 	tSlice := make([][]byte, 0, size)
 	p.Ids = tSlice
 	for i := 0; i < size; i++ {
-		var _elem34 []byte
+		var _elem36 []byte
 		if v, err := iprot.ReadBinary(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_elem34 = v
+			_elem36 = v
 		}
-		p.Ids = append(p.Ids, _elem34)
+		p.Ids = append(p.Ids, _elem36)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -2895,13 +3172,13 @@ func (p *BarIsBlobExistsResult) readField0(iprot thrift.TProtocol) error {
 	tSlice := make([][]byte, 0, size)
 	p.Success = tSlice
 	for i := 0; i < size; i++ {
-		var _elem35 []byte
+		var _elem37 []byte
 		if v, err := iprot.ReadBinary(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_elem35 = v
+			_elem37 = v
 		}
-		p.Success = append(p.Success, _elem35)
+		p.Success = append(p.Success, _elem37)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -3009,13 +3286,13 @@ func (p *BarGetFetchArgs) readField1(iprot thrift.TProtocol) error {
 	tSlice := make([][]byte, 0, size)
 	p.Ids = tSlice
 	for i := 0; i < size; i++ {
-		var _elem36 []byte
+		var _elem38 []byte
 		if v, err := iprot.ReadBinary(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_elem36 = v
+			_elem38 = v
 		}
-		p.Ids = append(p.Ids, _elem36)
+		p.Ids = append(p.Ids, _elem38)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -3127,11 +3404,11 @@ func (p *BarGetFetchResult) readField0(iprot thrift.TProtocol) error {
 	tSlice := make([]*Manifest, 0, size)
 	p.Success = tSlice
 	for i := 0; i < size; i++ {
-		_elem37 := &Manifest{}
-		if err := _elem37.Read(iprot); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem37), err)
+		_elem39 := &Manifest{}
+		if err := _elem39.Read(iprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem39), err)
 		}
-		p.Success = append(p.Success, _elem37)
+		p.Success = append(p.Success, _elem39)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)

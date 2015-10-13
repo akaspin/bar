@@ -29,7 +29,7 @@ func RunServer(t *testing.T, root string) (endpoint string, stop func() error)  
 //		RPCAddr: fmt.Sprintf(":%d", ports[0]),
 		Info: &proto.Info{
 			HTTPEndpoint: fmt.Sprintf("http://localhost:%d/v1", ports[0]),
-			Endpoint: fmt.Sprintf("http://localhost:%d/v1", ports[0]),
+			RPCEndpoints: []string{fmt.Sprintf("http://localhost:%d/v1", ports[0])},
 			ChunkSize: 1024 * 1024 * 2,
 			PoolSize: 16,
 		},

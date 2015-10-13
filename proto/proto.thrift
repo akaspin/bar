@@ -55,6 +55,8 @@ struct Spec {
 
 service Bar {
 
+    ServerInfo GetInfo(),
+
 ////
 
     /**
@@ -76,7 +78,7 @@ service Bar {
         /** upload id */
         1: ID uploadId,
         2: DataInfo info,
-        3: binary Body,
+        3: binary body,
     ),
 
     /**
