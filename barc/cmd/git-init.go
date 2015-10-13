@@ -14,7 +14,7 @@ const hook  = `#!/bin/sh
 # bar pre-commit hook
 set -e
 
-barc -log-level=%s git-pre-commit -endpoint=%s -chunk=%d -pool=%d
+barc -log-level=%s git-pre-commit -http=%s -rpc=%s -chunk=%d -pool=%d
 `
 
 /*
@@ -31,7 +31,7 @@ This command installs git infrastructure to use with bar:
 */
 type GitInitCmd struct {
 	*BaseSubCommand
-	endpoint string
+	httpEndpoint string
 	rpcEndpoints string
 	log string
 	clean bool
@@ -42,9 +42,9 @@ type GitInitCmd struct {
 
 func NewGitInitCmd(s *BaseSubCommand) SubCommand {
 	c := &GitInitCmd{BaseSubCommand: s}
-	c.FS.StringVar(&c.endpoint, "http", "http://localhost:3000/v1",
+	c.FS.StringVar(&c.httpEndpoint, "http", "http://localhost:3000/v1",
 		"bard http endpoint")
-	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
+	c.FS.StringVar(&c.rpcEndpoints, "rpc", "http://localhost:3000/v1",
 		"bard rpc endpoints separated by comma")
 	c.FS.StringVar(&c.log, "log", "WARNING", "barc logging level")
 	c.FS.BoolVar(&c.clean, "clean", false, "uninstall bar")
@@ -63,7 +63,7 @@ func (c *GitInitCmd) Do() (err error) {
 		return
 	}
 
-	c.transport = transport.NewTransport(mod, c.endpoint, c.rpcEndpoints, 10)
+	c.transport = transport.NewTransport(mod, c.httpEndpoint, c.rpcEndpoints, 10)
 	defer c.transport.Close()
 
 	var opts proto.Info
@@ -73,7 +73,8 @@ func (c *GitInitCmd) Do() (err error) {
 
 	if err = c.git.SetHook("pre-commit",
 		fmt.Sprintf(hook,
-			c.log, c.endpoint, opts.ChunkSize, opts.PoolSize)); err != nil {
+			c.log, c.httpEndpoint, strings.Join(opts.RPCEndpoints, ","),
+			opts.ChunkSize, opts.PoolSize)); err != nil {
 		return
 	}
 	logx.Infof("pre-commit hook installed to %s",
@@ -96,8 +97,8 @@ func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
 			"barc -log-level=%s git-clean -chunk=%d -pool=%d %%f",
 			c.log, info.ChunkSize, info.PoolSize),
 		"filter.bar.smudge": fmt.Sprintf(
-			"barc -log-level=%s git-smudge -http=%s -rpc=%s -chunk=%d -pool=%d %%f",
-			c.log, info.HTTPEndpoint, rpc, info.ChunkSize, info.PoolSize),
+			"barc -log-level=%s git-smudge -chunk=%d -pool=%d %%f",
+			c.log, info.ChunkSize, info.PoolSize),
 		"alias.bar-squash": fmt.Sprintf(
 			"!barc -log-level=%s up -squash -http=%s -rpc=%s -chunk=%d -pool=%d -git",
 			c.log, info.HTTPEndpoint, rpc, info.ChunkSize, info.PoolSize),
@@ -121,7 +122,7 @@ func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
 
 // Prepare to install. Check endpoint, pre-commit hook
 func (c *GitInitCmd) precheck() (res proto.Info, err error) {
-	logx.Debugf("requesting endpoint %s", c.endpoint)
+	logx.Debugf("requesting endpoint %s", c.httpEndpoint)
 	if res, err = c.transport.Ping(); err != nil {
 		return
 	}

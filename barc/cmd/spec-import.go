@@ -23,7 +23,8 @@ Import spec from bard and populate manifests
 type SpecImportCmd struct  {
 	*BaseSubCommand
 
-	endpoint string
+	httpEndpoint string
+	rpcEndpoints string
 	useGit bool
 	chunkSize int64
 	pool int
@@ -34,8 +35,10 @@ type SpecImportCmd struct  {
 
 func NewSpecImportCmd(s *BaseSubCommand) SubCommand  {
 	c := &SpecImportCmd{BaseSubCommand: s}
-	s.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
-		"bard endpoint")
+	c.FS.StringVar(&c.httpEndpoint, "http", "http://localhost:3000/v1",
+		"bard http endpoint")
+	c.FS.StringVar(&c.rpcEndpoints, "rpc", "http://localhost:3000/v1",
+		"bard rpc endpoints separated by comma")
 	s.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 	s.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
 	s.FS.IntVar(&c.pool, "pool", 16, "pool sizes")
@@ -51,7 +54,7 @@ func (c *SpecImportCmd) Do() (err error) {
 	if err != nil {
 		return
 	}
-	trans := transport.NewTransport(mod, c.endpoint, c.endpoint, c.pool)
+	trans := transport.NewTransport(mod, c.httpEndpoint, c.rpcEndpoints, c.pool)
 
 	if c.raw {
 		if err = json.NewDecoder(c.Stdin).Decode(&spec); err != nil {

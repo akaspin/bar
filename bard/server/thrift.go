@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/apache/thrift/lib/go/thrift"
-	"github.com/akaspin/bar/proto/bar"
 )
 
 type ThriftServer struct  {
@@ -11,8 +10,9 @@ type ThriftServer struct  {
 }
 
 func (s *ThriftServer) Start() {
-	processor := bar.NewBarProcessor()
-	go s.start()
+//
+//	processor := bar.NewBarProcessor()
+//	go s.start()
 }
 
 func (s *ThriftServer) start(processor thrift.TProcessor) (err error) {

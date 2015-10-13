@@ -28,7 +28,7 @@ git pre-commit hook MUST be registered:
 type GitPreCommitCmd struct {
 	*BaseSubCommand
 
-	endpoint string
+	httpEndpoint string
 	rpcEndpoints string
 	chunkSize int64
 	pool int
@@ -38,9 +38,9 @@ type GitPreCommitCmd struct {
 
 func NewGitPreCommitCmd(s *BaseSubCommand) SubCommand {
 	c := &GitPreCommitCmd{BaseSubCommand: s}
-	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
-		"bard endpoint")
-	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
+	c.FS.StringVar(&c.httpEndpoint, "http", "http://localhost:3000/v1",
+		"bard http endpoint")
+	c.FS.StringVar(&c.rpcEndpoints, "rpc", "http://localhost:3000/v1",
 		"bard rpc endpoints separated by comma")
 	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
 	c.FS.IntVar(&c.pool, "pool", 16, "pool size")
@@ -71,7 +71,7 @@ func (c *GitPreCommitCmd) Do() (err error) {
 		return
 	}
 
-	trans := transport.NewTransport(c.model, c.endpoint, c.rpcEndpoints, c.pool)
+	trans := transport.NewTransport(c.model, c.httpEndpoint, c.rpcEndpoints, c.pool)
 	err = trans.Upload(blobs)
 
 	return

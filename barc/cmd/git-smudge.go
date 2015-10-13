@@ -24,15 +24,13 @@ is BLOB - it will be uploaded to bard.
 type GitSmudgeCmd struct {
 	*BaseSubCommand
 
-	endpoint string
 	chunkSize int64
 	maxConn int
 }
 
 func NewGitSmudgeCmd(s *BaseSubCommand) SubCommand {
 	c := &GitSmudgeCmd{BaseSubCommand: s}
-	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
-		"bard endpoint")
+
 	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
 	c.FS.IntVar(&c.maxConn, "pool", 16, "pool size")
 	return c

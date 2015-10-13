@@ -19,7 +19,9 @@ Export spec to bard
 type SpecExportCmd struct {
 	*BaseSubCommand
 
-	endpoint string
+	httpEndpoint string
+	rpcEndpoints string
+
 	useGit bool
 	chunkSize int64
 	pool int
@@ -31,8 +33,10 @@ type SpecExportCmd struct {
 
 func NewSpecExportCmd(s *BaseSubCommand) SubCommand  {
 	c := &SpecExportCmd{BaseSubCommand: s}
-	s.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
-		"bard endpoint")
+	c.FS.StringVar(&c.httpEndpoint, "http", "http://localhost:3000/v1",
+		"bard http endpoint")
+	c.FS.StringVar(&c.rpcEndpoints, "rpc", "http://localhost:3000/v1",
+		"bard rpc endpoints separated by comma")
 	s.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 	s.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
 	s.FS.IntVar(&c.pool, "pool", 16, "pool sizes")
@@ -101,7 +105,7 @@ func (c *SpecExportCmd) Do() (err error) {
 		return
 	}
 
-	trans := transport.NewTransport(mod, c.endpoint, c.endpoint, c.pool)
+	trans := transport.NewTransport(mod, c.httpEndpoint, c.rpcEndpoints, c.pool)
 	if err = trans.UploadSpec(spec); err != nil {
 		return
 	}

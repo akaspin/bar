@@ -20,8 +20,8 @@ IF %ERRORLEVEL% NEQ 0 (
 	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"{{.HTTPEndpoint}}/win/barc.exe\", \"barc.exe\")"
 )
 
-barc -log-level=DEBUG up -endpoint={{.Endpoint}} -chunk={{.ChunkSize}} -pool={{.PoolSize}} !bar*.bat !bar-spec*.json !barc.exe !desktop.ini
-for /f %%i in ('barc -log-level=DEBUG spec-export -endpoint={{.Endpoint}} -chunk={{.ChunkSize}} -pool={{.PoolSize}} -upload -cc !bar*.bat !bar-spec*.json !barc.exe !desktop.ini') do set VAR=%%i
+barc -log-level=DEBUG up -http={{.HTTPEndpoint}} -rpc={{.JoinRPCEndpoints}} -chunk={{.ChunkSize}} -pool={{.PoolSize}} !bar*.bat !bar-spec*.json !barc.exe !desktop.ini
+for /f %%i in ('barc -log-level=DEBUG spec-export -http={{.HTTPEndpoint}} -rpc={{.JoinRPCEndpoints}} -chunk={{.ChunkSize}} -pool={{.PoolSize}} -upload -cc !bar*.bat !bar-spec*.json !barc.exe !desktop.ini') do set VAR=%%i
 
 start {{.HTTPEndpoint}}/spec/%VAR%
 
@@ -38,8 +38,8 @@ IF %ERRORLEVEL% NEQ 0 (
 	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"{{.Info.HTTPEndpoint}}/win/barc.exe\", \"barc.exe\")"
 )
 
-for /f %%i in ('barc -log-level=DEBUG spec-import -endpoint={{.Info.Endpoint}} -chunk={{.Info.ChunkSize}} -pool={{.Info.PoolSize}} {{.ID}}') do set VAR=%%i
-barc -log-level=DEBUG down -endpoint={{.Info.Endpoint}} -chunk={{.Info.ChunkSize}} -pool={{.Info.PoolSize}} %VAR%
+for /f %%i in ('barc -log-level=DEBUG spec-import -http={{.Info.HTTPEndpoint}} -rpc={{.Info.JoinRPCEndpoints}} -chunk={{.Info.ChunkSize}} -pool={{.Info.PoolSize}} {{.ID}}') do set VAR=%%i
+barc -log-level=DEBUG down -http={{.Info.HTTPEndpoint}} -rpc={{.Info.JoinRPCEndpoints}} -chunk={{.Info.ChunkSize}} -pool={{.Info.PoolSize}} %VAR%
 
 echo press any key...
 pause >nul
@@ -52,11 +52,13 @@ type ExportBatHandler struct {
 func (h *ExportBatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	bat_template, err := template.New("bat_template").Parse(export_bat_tpl)
 	if err != nil {
+		logx.Error(err)
 		return
 	}
 	buf := new(bytes.Buffer)
 
 	if err = bat_template.Execute(buf, h.Info); err != nil {
+		logx.Error(err)
 		return
 	}
 	body := string(buf.Bytes())

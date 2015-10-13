@@ -24,10 +24,11 @@ List bar blobs
 type LsCmd struct {
 	*BaseSubCommand
 
-	useGit bool
-	endpoint string
+	httpEndpoint string
 	rpcEndpoints string
 	pool int
+
+	useGit bool
 
 	noHeader bool
 	fullID bool
@@ -43,12 +44,13 @@ type LsCmd struct {
 
 func NewLsCmd(s *BaseSubCommand) SubCommand {
 	c := &LsCmd{BaseSubCommand: s}
-	c.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
-	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
-		"bard endpoint")
-	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
+	c.FS.StringVar(&c.httpEndpoint, "http", "http://localhost:3000/v1",
+		"bard http endpoint")
+	c.FS.StringVar(&c.rpcEndpoints, "rpc", "http://localhost:3000/v1",
 		"bard rpc endpoints separated by comma")
 	c.FS.IntVar(&c.pool, "pool", 16, "pools size")
+
+	c.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 
 	c.FS.BoolVar(&c.noHeader, "no-header", false, "do not print header")
 	c.FS.BoolVar(&c.fullID, "full-id", false, "print full BLOB IDs")
@@ -102,7 +104,7 @@ func (c *LsCmd) Do() (err error) {
 	onRemote := map[string]struct{}{}
 	if !c.noRemote {
 		var exists []string
-		trans := transport.NewTransport(mod, c.endpoint, c.rpcEndpoints, c.pool)
+		trans := transport.NewTransport(mod, c.httpEndpoint, c.rpcEndpoints, c.pool)
 		if exists, err = trans.Check(blobs.IDMap().IDs()); err != nil {
 			return
 		}

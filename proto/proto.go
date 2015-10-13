@@ -1,6 +1,7 @@
 package proto
 import (
 	"github.com/akaspin/bar/proto/manifest"
+	"strings"
 )
 
 // Server info
@@ -20,6 +21,10 @@ type Info struct {
 
 	// Thrift rpc buffer size
 	BufferSize int
+}
+
+func (i *Info) JoinRPCEndpoints() string {
+	return strings.Join(i.RPCEndpoints, ",")
 }
 
 type ChunkInfo struct {

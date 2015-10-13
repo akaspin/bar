@@ -30,7 +30,7 @@ type Bar interface {
 	//  - UploadId: upload id
 	//  - Info
 	//  - Body
-	UploadChunk(uploadId ID, info *DataInfo, Body []byte) (err error)
+	UploadChunk(uploadId ID, info *DataInfo, body []byte) (err error)
 	// Finish upload BLOB
 	//
 	//
@@ -263,14 +263,14 @@ func (p *BarClient) recvCreateUpload() (value []*DataInfo, err error) {
 //  - UploadId: upload id
 //  - Info
 //  - Body
-func (p *BarClient) UploadChunk(uploadId ID, info *DataInfo, Body []byte) (err error) {
-	if err = p.sendUploadChunk(uploadId, info, Body); err != nil {
+func (p *BarClient) UploadChunk(uploadId ID, info *DataInfo, body []byte) (err error) {
+	if err = p.sendUploadChunk(uploadId, info, body); err != nil {
 		return
 	}
 	return p.recvUploadChunk()
 }
 
-func (p *BarClient) sendUploadChunk(uploadId ID, info *DataInfo, Body []byte) (err error) {
+func (p *BarClient) sendUploadChunk(uploadId ID, info *DataInfo, body []byte) (err error) {
 	oprot := p.OutputProtocol
 	if oprot == nil {
 		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -283,7 +283,7 @@ func (p *BarClient) sendUploadChunk(uploadId ID, info *DataInfo, Body []byte) (e
 	args := BarUploadChunkArgs{
 		UploadId: uploadId,
 		Info:     info,
-		Body:     Body,
+		Body:     body,
 	}
 	if err = args.Write(oprot); err != nil {
 		return
@@ -2015,7 +2015,7 @@ func (p *BarCreateUploadResult) String() string {
 type BarUploadChunkArgs struct {
 	UploadId ID        `thrift:"uploadId,1" json:"uploadId"`
 	Info     *DataInfo `thrift:"info,2" json:"info"`
-	Body     []byte    `thrift:"Body,3" json:"Body"`
+	Body     []byte    `thrift:"body,3" json:"body"`
 }
 
 func NewBarUploadChunkArgs() *BarUploadChunkArgs {
@@ -2159,14 +2159,14 @@ func (p *BarUploadChunkArgs) writeField2(oprot thrift.TProtocol) (err error) {
 }
 
 func (p *BarUploadChunkArgs) writeField3(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("Body", thrift.STRING, 3); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:Body: ", p), err)
+	if err := oprot.WriteFieldBegin("body", thrift.STRING, 3); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:body: ", p), err)
 	}
 	if err := oprot.WriteBinary(p.Body); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T.Body (3) field write error: ", p), err)
+		return thrift.PrependError(fmt.Sprintf("%T.body (3) field write error: ", p), err)
 	}
 	if err := oprot.WriteFieldEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field end error 3:Body: ", p), err)
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 3:body: ", p), err)
 	}
 	return err
 }
