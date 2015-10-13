@@ -28,7 +28,7 @@ type DownCmd struct {
 
 func NewDownCmd(s *BaseSubCommand) SubCommand {
 	c := &DownCmd{BaseSubCommand: s}
-	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
+	c.FS.StringVar(&c.endpoint, "http", "http://localhost:3000/v1",
 		"bard endpoint")
 	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
 		"bard rpc endpoints separated by comma")

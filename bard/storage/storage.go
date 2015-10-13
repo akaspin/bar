@@ -39,6 +39,8 @@ type Storage interface {
 	// Read Chunk from blob by size and offset
 	ReadChunkFromBlob(blobID []byte, size, offset int64, w io.Writer) (err error)
 
+//	GetManifests(ids [][]byte, )
+
 	// Destroy blob
 	DestroyBLOB(id string) (err error)
 }

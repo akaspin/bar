@@ -35,7 +35,7 @@ func NewSpecExportCmd(s *BaseSubCommand) SubCommand  {
 	c := &SpecExportCmd{BaseSubCommand: s}
 	c.FS.StringVar(&c.httpEndpoint, "http", "http://localhost:3000/v1",
 		"bard http endpoint")
-	c.FS.StringVar(&c.rpcEndpoints, "rpc", "http://localhost:3000/v1",
+	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
 		"bard rpc endpoints separated by comma")
 	s.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 	s.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")

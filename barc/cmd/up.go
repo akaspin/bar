@@ -17,8 +17,10 @@ This command upload BLOBs to bard and replaces them with shadows.
 type UpCmd struct {
 	*BaseSubCommand
 
+	httpEndpoint string
+	rpcEndpoints string
+
 	useGit bool
-	endpoint string
 	poolSize int
 	squash bool
 	chunkSize int64
@@ -28,8 +30,12 @@ type UpCmd struct {
 
 func NewUpCmd(s *BaseSubCommand) SubCommand {
 	c := &UpCmd{BaseSubCommand: s}
-	c.FS.StringVar(&c.endpoint, "endpoint", "http://localhost:3000/v1",
-		"bard endpoint")
+
+	c.FS.StringVar(&c.httpEndpoint, "http", "http://localhost:3000/v1",
+		"bard http endpoint")
+	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
+		"bard rpc endpoints separated by comma")
+
 	c.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 	c.FS.BoolVar(&c.squash, "squash", false,
 		"replace local BLOBs with shadows after upload")
@@ -66,7 +72,7 @@ func (c *UpCmd) Do() (err error) {
 
 	logx.Debugf("collected blobs %s", blobs.IDMap())
 
-	trans := transport.NewTransport(c.model, c.endpoint, c.endpoint, c.poolSize)
+	trans := transport.NewTransport(c.model, c.httpEndpoint, c.rpcEndpoints, c.poolSize)
 
 	err = trans.Upload(blobs)
 	if err != nil {

@@ -60,12 +60,18 @@ type Bar interface {
 	// Parameters:
 	//  - Ids
 	IsBlobExists(ids [][]byte) (r [][]byte, err error)
+	// Get manifests by ids
+	//
+	//
 	// Parameters:
 	//  - Ids
-	GetFetch(ids [][]byte) (r []*Manifest, err error)
+	GetManifests(ids [][]byte) (r []*Manifest, err error)
+	// Fetch chunk from bard
+	//
+	//
 	// Parameters:
-	//  - BlobID
-	//  - Chunk
+	//  - BlobID: Blob ID
+	//  - Chunk: Chunk spec
 	FetchChunk(blobID ID, chunk *Chunk) (r []byte, err error)
 	// Parameters:
 	//  - Spec
@@ -693,26 +699,29 @@ func (p *BarClient) recvIsBlobExists() (value [][]byte, err error) {
 	return
 }
 
+// Get manifests by ids
+//
+//
 // Parameters:
 //  - Ids
-func (p *BarClient) GetFetch(ids [][]byte) (r []*Manifest, err error) {
-	if err = p.sendGetFetch(ids); err != nil {
+func (p *BarClient) GetManifests(ids [][]byte) (r []*Manifest, err error) {
+	if err = p.sendGetManifests(ids); err != nil {
 		return
 	}
-	return p.recvGetFetch()
+	return p.recvGetManifests()
 }
 
-func (p *BarClient) sendGetFetch(ids [][]byte) (err error) {
+func (p *BarClient) sendGetManifests(ids [][]byte) (err error) {
 	oprot := p.OutputProtocol
 	if oprot == nil {
 		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
 		p.OutputProtocol = oprot
 	}
 	p.SeqId++
-	if err = oprot.WriteMessageBegin("GetFetch", thrift.CALL, p.SeqId); err != nil {
+	if err = oprot.WriteMessageBegin("GetManifests", thrift.CALL, p.SeqId); err != nil {
 		return
 	}
-	args := BarGetFetchArgs{
+	args := BarGetManifestsArgs{
 		Ids: ids,
 	}
 	if err = args.Write(oprot); err != nil {
@@ -724,7 +733,7 @@ func (p *BarClient) sendGetFetch(ids [][]byte) (err error) {
 	return oprot.Flush()
 }
 
-func (p *BarClient) recvGetFetch() (value []*Manifest, err error) {
+func (p *BarClient) recvGetManifests() (value []*Manifest, err error) {
 	iprot := p.InputProtocol
 	if iprot == nil {
 		iprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -734,12 +743,12 @@ func (p *BarClient) recvGetFetch() (value []*Manifest, err error) {
 	if err != nil {
 		return
 	}
-	if method != "GetFetch" {
-		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "GetFetch failed: wrong method name")
+	if method != "GetManifests" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "GetManifests failed: wrong method name")
 		return
 	}
 	if p.SeqId != seqId {
-		err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "GetFetch failed: out of sequence response")
+		err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "GetManifests failed: out of sequence response")
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
@@ -756,10 +765,10 @@ func (p *BarClient) recvGetFetch() (value []*Manifest, err error) {
 		return
 	}
 	if mTypeId != thrift.REPLY {
-		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "GetFetch failed: invalid message type")
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "GetManifests failed: invalid message type")
 		return
 	}
-	result := BarGetFetchResult{}
+	result := BarGetManifestsResult{}
 	if err = result.Read(iprot); err != nil {
 		return
 	}
@@ -770,9 +779,12 @@ func (p *BarClient) recvGetFetch() (value []*Manifest, err error) {
 	return
 }
 
+// Fetch chunk from bard
+//
+//
 // Parameters:
-//  - BlobID
-//  - Chunk
+//  - BlobID: Blob ID
+//  - Chunk: Chunk spec
 func (p *BarClient) FetchChunk(blobID ID, chunk *Chunk) (r []byte, err error) {
 	if err = p.sendFetchChunk(blobID, chunk); err != nil {
 		return
@@ -1031,7 +1043,7 @@ func NewBarProcessor(handler Bar) *BarProcessor {
 	self27.processorMap["TagBlobs"] = &barProcessorTagBlobs{handler: handler}
 	self27.processorMap["UntagBlobs"] = &barProcessorUntagBlobs{handler: handler}
 	self27.processorMap["IsBlobExists"] = &barProcessorIsBlobExists{handler: handler}
-	self27.processorMap["GetFetch"] = &barProcessorGetFetch{handler: handler}
+	self27.processorMap["GetManifests"] = &barProcessorGetManifests{handler: handler}
 	self27.processorMap["FetchChunk"] = &barProcessorFetchChunk{handler: handler}
 	self27.processorMap["UploadSpec"] = &barProcessorUploadSpec{handler: handler}
 	self27.processorMap["FetchSpec"] = &barProcessorFetchSpec{handler: handler}
@@ -1400,16 +1412,16 @@ func (p *barProcessorIsBlobExists) Process(seqId int32, iprot, oprot thrift.TPro
 	return true, err
 }
 
-type barProcessorGetFetch struct {
+type barProcessorGetManifests struct {
 	handler Bar
 }
 
-func (p *barProcessorGetFetch) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
-	args := BarGetFetchArgs{}
+func (p *barProcessorGetManifests) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := BarGetManifestsArgs{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
 		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
-		oprot.WriteMessageBegin("GetFetch", thrift.EXCEPTION, seqId)
+		oprot.WriteMessageBegin("GetManifests", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush()
@@ -1417,12 +1429,12 @@ func (p *barProcessorGetFetch) Process(seqId int32, iprot, oprot thrift.TProtoco
 	}
 
 	iprot.ReadMessageEnd()
-	result := BarGetFetchResult{}
+	result := BarGetManifestsResult{}
 	var retval []*Manifest
 	var err2 error
-	if retval, err2 = p.handler.GetFetch(args.Ids); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing GetFetch: "+err2.Error())
-		oprot.WriteMessageBegin("GetFetch", thrift.EXCEPTION, seqId)
+	if retval, err2 = p.handler.GetManifests(args.Ids); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing GetManifests: "+err2.Error())
+		oprot.WriteMessageBegin("GetManifests", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush()
@@ -1430,7 +1442,7 @@ func (p *barProcessorGetFetch) Process(seqId int32, iprot, oprot thrift.TProtoco
 	} else {
 		result.Success = retval
 	}
-	if err2 = oprot.WriteMessageBegin("GetFetch", thrift.REPLY, seqId); err2 != nil {
+	if err2 = oprot.WriteMessageBegin("GetManifests", thrift.REPLY, seqId); err2 != nil {
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -3234,18 +3246,18 @@ func (p *BarIsBlobExistsResult) String() string {
 
 // Attributes:
 //  - Ids
-type BarGetFetchArgs struct {
+type BarGetManifestsArgs struct {
 	Ids [][]byte `thrift:"ids,1" json:"ids"`
 }
 
-func NewBarGetFetchArgs() *BarGetFetchArgs {
-	return &BarGetFetchArgs{}
+func NewBarGetManifestsArgs() *BarGetManifestsArgs {
+	return &BarGetManifestsArgs{}
 }
 
-func (p *BarGetFetchArgs) GetIds() [][]byte {
+func (p *BarGetManifestsArgs) GetIds() [][]byte {
 	return p.Ids
 }
-func (p *BarGetFetchArgs) Read(iprot thrift.TProtocol) error {
+func (p *BarGetManifestsArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
 	}
@@ -3278,7 +3290,7 @@ func (p *BarGetFetchArgs) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarGetFetchArgs) readField1(iprot thrift.TProtocol) error {
+func (p *BarGetManifestsArgs) readField1(iprot thrift.TProtocol) error {
 	_, size, err := iprot.ReadListBegin()
 	if err != nil {
 		return thrift.PrependError("error reading list begin: ", err)
@@ -3300,8 +3312,8 @@ func (p *BarGetFetchArgs) readField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarGetFetchArgs) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("GetFetch_args"); err != nil {
+func (p *BarGetManifestsArgs) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("GetManifests_args"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if err := p.writeField1(oprot); err != nil {
@@ -3316,7 +3328,7 @@ func (p *BarGetFetchArgs) Write(oprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarGetFetchArgs) writeField1(oprot thrift.TProtocol) (err error) {
+func (p *BarGetManifestsArgs) writeField1(oprot thrift.TProtocol) (err error) {
 	if err := oprot.WriteFieldBegin("ids", thrift.LIST, 1); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:ids: ", p), err)
 	}
@@ -3337,33 +3349,33 @@ func (p *BarGetFetchArgs) writeField1(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
-func (p *BarGetFetchArgs) String() string {
+func (p *BarGetManifestsArgs) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("BarGetFetchArgs(%+v)", *p)
+	return fmt.Sprintf("BarGetManifestsArgs(%+v)", *p)
 }
 
 // Attributes:
 //  - Success
-type BarGetFetchResult struct {
+type BarGetManifestsResult struct {
 	Success []*Manifest `thrift:"success,0" json:"success,omitempty"`
 }
 
-func NewBarGetFetchResult() *BarGetFetchResult {
-	return &BarGetFetchResult{}
+func NewBarGetManifestsResult() *BarGetManifestsResult {
+	return &BarGetManifestsResult{}
 }
 
-var BarGetFetchResult_Success_DEFAULT []*Manifest
+var BarGetManifestsResult_Success_DEFAULT []*Manifest
 
-func (p *BarGetFetchResult) GetSuccess() []*Manifest {
+func (p *BarGetManifestsResult) GetSuccess() []*Manifest {
 	return p.Success
 }
-func (p *BarGetFetchResult) IsSetSuccess() bool {
+func (p *BarGetManifestsResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
 
-func (p *BarGetFetchResult) Read(iprot thrift.TProtocol) error {
+func (p *BarGetManifestsResult) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
 	}
@@ -3396,7 +3408,7 @@ func (p *BarGetFetchResult) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarGetFetchResult) readField0(iprot thrift.TProtocol) error {
+func (p *BarGetManifestsResult) readField0(iprot thrift.TProtocol) error {
 	_, size, err := iprot.ReadListBegin()
 	if err != nil {
 		return thrift.PrependError("error reading list begin: ", err)
@@ -3416,8 +3428,8 @@ func (p *BarGetFetchResult) readField0(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarGetFetchResult) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("GetFetch_result"); err != nil {
+func (p *BarGetManifestsResult) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("GetManifests_result"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if err := p.writeField0(oprot); err != nil {
@@ -3432,7 +3444,7 @@ func (p *BarGetFetchResult) Write(oprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarGetFetchResult) writeField0(oprot thrift.TProtocol) (err error) {
+func (p *BarGetManifestsResult) writeField0(oprot thrift.TProtocol) (err error) {
 	if p.IsSetSuccess() {
 		if err := oprot.WriteFieldBegin("success", thrift.LIST, 0); err != nil {
 			return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err)
@@ -3455,16 +3467,16 @@ func (p *BarGetFetchResult) writeField0(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
-func (p *BarGetFetchResult) String() string {
+func (p *BarGetManifestsResult) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("BarGetFetchResult(%+v)", *p)
+	return fmt.Sprintf("BarGetManifestsResult(%+v)", *p)
 }
 
 // Attributes:
-//  - BlobID
-//  - Chunk
+//  - BlobID: Blob ID
+//  - Chunk: Chunk spec
 type BarFetchChunkArgs struct {
 	BlobID ID     `thrift:"blobID,1" json:"blobID"`
 	Chunk  *Chunk `thrift:"chunk,2" json:"chunk"`

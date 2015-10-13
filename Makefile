@@ -69,7 +69,7 @@ run-server: ${INSTALL_DIR}/bard dist/windows/barc.exe
 		-bind-http=:3000 \
 		-bind-rpc=:3001 \
 		-storage-block-root=testdata \
-		-rpc=http://${HOSTNAME}:3000/v1 \
+		-rpc=${HOSTNAME}:3001 \
 		-http=http://${HOSTNAME}:3000/v1 \
 		-barc-exe=dist/windows/barc.exe
 

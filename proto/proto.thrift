@@ -121,7 +121,10 @@ service Bar {
 
 ////
 
-    list<Manifest> GetFetch (
+    /**
+    * Get manifests by their ids
+    **/
+    list<Manifest> GetManifests (
         1: list<ID> ids,
     )
 

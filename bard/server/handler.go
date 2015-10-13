@@ -55,7 +55,7 @@ func (h *BardTHandler) IsBlobExists(ids [][]byte) (r [][]byte, err error) {
 	return
 }
 
-func (h *BardTHandler) GetFetch(ids [][]byte) (r []*bar.Manifest, err error) {
+func (h *BardTHandler) GetManifests(ids [][]byte) (r []*bar.Manifest, err error) {
 	return
 }
 
