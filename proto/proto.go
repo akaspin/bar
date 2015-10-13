@@ -1,6 +1,6 @@
 package proto
 import (
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"strings"
 )
 

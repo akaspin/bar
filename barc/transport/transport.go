@@ -2,7 +2,7 @@ package transport
 import (
 	"github.com/akaspin/bar/proto"
 	"time"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"sync"
 	"github.com/tamtam-im/logx"
 	"fmt"
@@ -221,21 +221,23 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 //			if err = cli.Call("Service.FetchChunk", &ci, &data); err != nil {
 //				return
 //			}
-			var blobId, chunkId []byte
+			var blobId []byte
 			if blobId, err = hex.DecodeString(ci.BlobID); err != nil {
 				return
 			}
-			if chunkId, err = hex.DecodeString(ci.ID); err != nil {
+			var chunk bar.Chunk
+			chunk, err = ci.Chunk.MarshalThrift()
+			if err != nil {
 				return
 			}
-			chunk := &bar.Chunk{
-				&bar.DataInfo{
-					chunkId, ci.Size,
-				},
-				ci.Offset,
-			}
+//			chunk := &bar.Chunk{
+//				&bar.DataInfo{
+//					chunkId, ci.Size,
+//				},
+//				ci.Offset,
+//			}
 
-			data, err := tclient.FetchChunk(blobId, chunk)
+			data, err := tclient.FetchChunk(blobId, &chunk)
 			if err != nil {
 				return
 			}

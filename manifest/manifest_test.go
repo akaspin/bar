@@ -1,7 +1,7 @@
 package manifest_test
 import (
 	"testing"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/fixtures"
 	"golang.org/x/crypto/sha3"
@@ -34,10 +34,9 @@ func Test_Shadow_ToStringFull(t *testing.T) {
 		`)
 
 	sh := &manifest.Manifest{
-		id,
-		1234,
+		manifest.Data{id, 1234},
 		[]manifest.Chunk{
-			manifest.Chunk{id, 1234, 0},
+			manifest.Chunk{manifest.Data{id, 1234}, 0},
 		},
 	}
 

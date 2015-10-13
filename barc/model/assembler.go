@@ -9,7 +9,7 @@ import (
 	"os"
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/parmap"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"strings"
 )
 

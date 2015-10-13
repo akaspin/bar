@@ -3,7 +3,7 @@ import (
 	"io"
 	"fmt"
 	"github.com/akaspin/bar/barc/git"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"github.com/tamtam-im/logx"
 )
 

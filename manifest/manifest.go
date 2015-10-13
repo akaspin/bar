@@ -8,6 +8,7 @@ import (
 	"hash"
 	"strings"
 	"encoding/hex"
+	"github.com/akaspin/bar/proto/bar"
 )
 
 const (
@@ -15,8 +16,7 @@ const (
 )
 
 type Manifest struct {
-	ID string
-	Size int64
+	Data
 	Chunks []Chunk
 }
 
@@ -66,19 +66,19 @@ func NewFromAny(in io.Reader, chunkSize int64) (res *Manifest, err error) {
 // Make shadow from manifest
 func NewFromManifest(in io.Reader) (res *Manifest, err error) {
 	res = &Manifest{}
-	err = res.parseManifest(in)
+	err = res.ParseManifest(in)
 	return
 }
 
 // Make shadow from BLOB
 func NewFromBLOB(in io.Reader, chunkSize int64) (res *Manifest, err error) {
 	res = &Manifest{}
-	err = res.parseBlob(in, chunkSize)
+	err = res.ParseBlob(in, chunkSize)
 	return
 }
 
 // Parse manifest
-func (s *Manifest) parseManifest(in io.Reader) (err error) {
+func (s *Manifest) ParseManifest(in io.Reader) (err error) {
 	var buf []byte
 	var data string
 
@@ -180,7 +180,7 @@ func (s *Manifest) parseManifest(in io.Reader) (err error) {
 }
 
 // Initialize manifest from BLOB
-func (s *Manifest) parseBlob(in io.Reader, chunkSize int64) (err error) {
+func (s *Manifest) ParseBlob(in io.Reader, chunkSize int64) (err error) {
 	var chunkHasher hash.Hash
 	var w io.Writer
 	var chunk Chunk
@@ -216,5 +216,10 @@ func (s *Manifest) nextLine(in *bufio.Reader, buf []byte) (res string, err error
 		return
 	}
 	res = strings.TrimSpace(string(buf))
+	return
+}
+
+func (s Manifest) MarshalThrift() (res bar.Manifest, err error) {
+
 	return
 }

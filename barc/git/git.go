@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"io/ioutil"
 	"github.com/akaspin/bar/barc/lists"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"github.com/tamtam-im/logx"
 )
 

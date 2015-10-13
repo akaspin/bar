@@ -1,6 +1,6 @@
 package cmd
 import (
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"fmt"
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/barc/model"

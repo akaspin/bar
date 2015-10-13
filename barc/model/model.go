@@ -2,7 +2,7 @@ package model
 import (
 	"github.com/akaspin/bar/barc/git"
 	"io"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"os"
 	"github.com/tamtam-im/logx"
 	"path/filepath"

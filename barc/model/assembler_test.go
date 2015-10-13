@@ -4,7 +4,7 @@ import (
 	"github.com/akaspin/bar/barc/model"
 	"os"
 	"path/filepath"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/sha3"
 	"encoding/hex"

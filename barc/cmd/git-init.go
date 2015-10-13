@@ -6,7 +6,7 @@ import (
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/model"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"strings"
 )
 

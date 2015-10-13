@@ -1,7 +1,7 @@
 package proto_test
 import (
 	"testing"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"github.com/akaspin/bar/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/proto"

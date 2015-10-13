@@ -2,7 +2,7 @@ package service
 import (
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/bard/storage"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"bytes"
 	"github.com/tamtam-im/logx"
 	"fmt"

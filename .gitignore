@@ -2,6 +2,7 @@
 /transport/fix_*
 /dist
 !cmd
+!/manifest
 
 # fixtures
 testdata*

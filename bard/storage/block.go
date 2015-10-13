@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"golang.org/x/crypto/sha3"
 	"github.com/akaspin/go-contentaddressable"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"encoding/json"
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/parmap"

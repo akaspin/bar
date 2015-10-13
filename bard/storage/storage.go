@@ -1,7 +1,7 @@
 package storage
 import (
 	"io"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 	"github.com/akaspin/bar/proto"
 )
 

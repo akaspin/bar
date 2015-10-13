@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 	"github.com/stretchr/testify/assert"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 )
 
 // Make temporary BLOB

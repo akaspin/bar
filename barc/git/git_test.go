@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"github.com/akaspin/bar/barc/lists"
-	"github.com/akaspin/bar/proto/manifest"
+	"github.com/akaspin/bar/manifest"
 )
 
 func Test_DirtyFiles(t *testing.T) {
@@ -127,20 +127,24 @@ func Test_ParseDiff2(t *testing.T) {
 
 	assert.EqualValues(t, lists.Links{
 		"../../fix/aa.txt": manifest.Manifest{
-			ID:"f627c8f9355399ef45e1a6b6e5a9e6a3abcb3e1b6255603357bffa9f2211ba7e",
-			Size:6,
-			Chunks: []manifest.Chunk{
+			manifest.Data{
+				"f627c8f9355399ef45e1a6b6e5a9e6a3abcb3e1b6255603357bffa9f2211ba7e",
+				6},
+			[]manifest.Chunk{
 				manifest.Chunk{
-					ID:"f627c8f9355399ef45e1a6b6e5a9e6a3abcb3e1b6255603357bffa9f2211ba7e",
-					Size:6,
-					Offset:0}}},
+					manifest.Data{
+						"f627c8f9355399ef45e1a6b6e5a9e6a3abcb3e1b6255603357bffa9f2211ba7e",
+						6},
+					0}}},
 		"../../fix/aa21.txt":manifest.Manifest{
-			ID:"f627c8f9355399ef45e1a6b6e5a9e6a3abcb3e1b6255603357bffa9f2211ba7e",
-			Size:6,
-			Chunks:[]manifest.Chunk{
+			manifest.Data{
+				"f627c8f9355399ef45e1a6b6e5a9e6a3abcb3e1b6255603357bffa9f2211ba7e",
+				6},
+			[]manifest.Chunk{
 				manifest.Chunk{
-					ID:"f627c8f9355399ef45e1a6b6e5a9e6a3abcb3e1b6255603357bffa9f2211ba7e",
-					Size:6,
-					Offset:0}}}},
+					manifest.Data{
+						"f627c8f9355399ef45e1a6b6e5a9e6a3abcb3e1b6255603357bffa9f2211ba7e",
+						6},
+					0}}}},
 		res)
 }
