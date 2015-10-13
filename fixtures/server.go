@@ -12,7 +12,7 @@ import (
 	"os"
 )
 
-func RunServer(t *testing.T, root string) (endpoint string, stop func() error)  {
+func RunServer(t *testing.T, root string) (httpEndpoint string, rpcEndpoints []string, stop func() error)  {
 	logx.SetLevel(logx.DEBUG)
 
 	wd, _ := os.Getwd()
@@ -20,16 +20,17 @@ func RunServer(t *testing.T, root string) (endpoint string, stop func() error)  
 	os.RemoveAll(rt)
 
 	p := storage.NewStoragePool(storage.NewBlockStorageFactory(rt, 2), 200, time.Minute)
-	ports, err := GetOpenPorts(1)
+	ports, err := GetOpenPorts(2)
 	assert.NoError(t, err)
 
-	endpoint = fmt.Sprintf("http://127.0.0.1:%d/v1", ports[0])
+	httpEndpoint = fmt.Sprintf("http://127.0.0.1:%d/v1", ports[0])
+	rpcEndpoints = []string{fmt.Sprintf("localhost:%d", ports[1])}
 	srv, err := server.NewBardServer(&server.BardServerOptions{
 		HttpBind: fmt.Sprintf(":%d", ports[0]),
-//		RPCAddr: fmt.Sprintf(":%d", ports[0]),
+		RPCBind: fmt.Sprintf(":%d", ports[1]),
 		Info: &proto.Info{
 			HTTPEndpoint: fmt.Sprintf("http://localhost:%d/v1", ports[0]),
-			RPCEndpoints: []string{fmt.Sprintf("http://localhost:%d/v1", ports[0])},
+			RPCEndpoints: []string{fmt.Sprintf("localhost:%d", ports[1])},
 			ChunkSize: 1024 * 1024 * 2,
 			PoolSize: 16,
 		},

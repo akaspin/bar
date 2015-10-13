@@ -14,7 +14,7 @@ import (
 
 func Test_Ping(t *testing.T) {
 	root := "testdata-Ping"
-	endpoint, stop := fixtures.RunServer(t, root)
+	endpoint, _, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
 
@@ -30,7 +30,7 @@ func Test_Ping(t *testing.T) {
 
 func Test_DeclareUpload(t *testing.T) {
 	root := "testdata-DeclareUpload"
-	endpoint, stop := fixtures.RunServer(t, root)
+	endpoint, _, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
 
@@ -58,7 +58,7 @@ func Test_DeclareUpload(t *testing.T) {
 
 func Test_Upload(t *testing.T) {
 	root := "testdata-Upload"
-	endpoint, stop := fixtures.RunServer(t, root)
+	endpoint, _, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
 
@@ -84,7 +84,7 @@ func Test_Upload(t *testing.T) {
 
 func Test_GetFetch(t *testing.T) {
 	root := "testdata-GetFetch"
-	endpoint, stop := fixtures.RunServer(t, root)
+	endpoint, _, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
 
@@ -113,7 +113,7 @@ func Test_GetFetch(t *testing.T) {
 
 func Test_Download(t *testing.T) {
 	root := "Download"
-	endpoint, stop := fixtures.RunServer(t, root)
+	endpoint, _, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
 
@@ -150,7 +150,7 @@ func Test_Download(t *testing.T) {
 
 func Test_Check(t *testing.T) {
 	root := "Check"
-	endpoint, stop := fixtures.RunServer(t, root)
+	endpoint, _, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
 
@@ -184,7 +184,7 @@ func Test_Check(t *testing.T) {
 
 func Test_Spec(t *testing.T) {
 	root := "Spec"
-	endpoint, stop := fixtures.RunServer(t, root)
+	endpoint, _, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
 

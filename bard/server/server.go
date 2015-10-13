@@ -19,6 +19,7 @@ type BardServerOptions struct  {
 type BardServer struct {
 	*BardServerOptions
 	*BardHttpServer
+	*ThriftServer
 	service *rpc.Server
 }
 
@@ -36,8 +37,13 @@ func NewBardServer(opts *BardServerOptions) (res *BardServer, err error) {
 
 func (s *BardServer) Start() (err error) {
 	s.BardHttpServer = NewBardHttpServer(s.BardServerOptions, s.service)
+	s.ThriftServer =NewThriftServer(s.BardServerOptions)
 
 	errChan := make(chan error, 1)
+
+	go func() {
+		errChan <- s.ThriftServer.Start()
+	}()
 
 	go func() {
 		errChan <- s.BardHttpServer.Start()
@@ -50,5 +56,6 @@ func (s *BardServer) Start() (err error) {
 
 func (s *BardServer) Stop() (err error) {
 	s.BardHttpServer.Stop()
+	s.ThriftServer.Stop()
 	return
 }

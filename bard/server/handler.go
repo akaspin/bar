@@ -10,6 +10,10 @@ type BardTHandler struct {
 	*storage.StoragePool
 }
 
+func NewBardTHandler(options *BardServerOptions) *BardTHandler {
+	return &BardTHandler{options.Info, options.StoragePool}
+}
+
 func (h *BardTHandler) GetInfo() (r *bar.ServerInfo, err error) {
 	r = &bar.ServerInfo{
 		HttpEndpoint: h.Info.HTTPEndpoint,
@@ -22,6 +26,7 @@ func (h *BardTHandler) GetInfo() (r *bar.ServerInfo, err error) {
 }
 
 func (h *BardTHandler) CreateUpload(id []byte, manifests []*bar.Manifest) (r []*bar.DataInfo, err error) {
+	
 	return
 }
 

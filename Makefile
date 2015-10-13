@@ -32,10 +32,10 @@ distclean:
 clean:
 	-find . -type d -name testdata* -exec rm -rf '{}' ';'
 
-dist/bar-${V}-windows-amd64.zip: dist/windows/barc.exe dist/windows/bard.exe
+dist/bar-${V}-windows-amd64.zip: dist/windows/barc.exe
 	zip -r -j -D $@ ${<D}
 
-dist/bar-${V}-windows-amd64.tar.gz: dist/windows/barc.exe dist/windows/bard.exe
+dist/bar-${V}-windows-amd64.tar.gz: dist/windows/barc.exe
 	tar -czf $@ -C ${<D} .
 
 dist/bar-${V}-%-amd64.tar.gz: dist/%/barc dist/%/bard
