@@ -19,7 +19,7 @@ func RunServer(t *testing.T, root string) (endpoint string, stop func() error)  
 	rt := filepath.Join(wd, "testdata", root + "srv")
 	os.RemoveAll(rt)
 
-	p := storage.NewStoragePool(storage.NewBlockStorageFactory(rt, 2), 200, time.Minute)
+	p := storage.NewBlockStorage(&storage.BlockStorageOptions{rt, 2, 32, 32})
 	ports, err := GetOpenPorts(1)
 	assert.NoError(t, err)
 
@@ -33,7 +33,7 @@ func RunServer(t *testing.T, root string) (endpoint string, stop func() error)  
 			ChunkSize: 1024 * 1024 * 2,
 			PoolSize: 16,
 		},
-		StoragePool: p,
+		Storage: p,
 		BarExe: "",
 	})
 	if err != nil {

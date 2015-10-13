@@ -7,7 +7,7 @@ import (
 
 type BardTHandler struct {
 	*proto.Info
-	*storage.StoragePool
+	storage.Storage
 }
 
 func (h *BardTHandler) GetInfo() (r *bar.ServerInfo, err error) {

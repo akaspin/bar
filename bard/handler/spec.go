@@ -34,23 +34,18 @@ download <code>barc.exe</code> if it is not found and download spec and BLOBs fr
 `
 
 type SpecHandler struct {
-	Storage *storage.StoragePool
+	storage.Storage
 	Info *proto.Info
 	BarExe string
 }
 
 func (h *SpecHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	store, err := h.Storage.Take()
-	if err != nil {
-		return
-	}
-	defer h.Storage.Release(store)
 
 	id := strings.TrimPrefix(r.URL.Path, "/v1/spec/")
 
 	logx.Debugf("serving spec %s", id)
 
-	spec, err := store.IsSpecExists(id)
+	spec, err := h.Storage.IsSpecExists(id)
 	if err != nil {
 		logx.Errorf("bad spec id %s", id)
 		w.WriteHeader(404)

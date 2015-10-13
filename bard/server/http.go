@@ -30,7 +30,7 @@ func (s *BardHttpServer) Start() (err error) {
 	mux.Handle("/v1/win/bar-import/", &handler.ImportBatHandler{s.Info})
 	mux.Handle("/v1/win/barc.exe", &handler.ExeHandler{s.BarExe})
 	mux.Handle("/v1/spec/", &handler.SpecHandler{
-		s.StoragePool, s.Info, s.BarExe})
+		s.Storage, s.Info, s.BarExe})
 	mux.Handle("/v1/rpc", s.service)
 	logx.Debugf("bard http serving at http://%s/v1", s.HttpBind)
 	srv := &http.Server{Handler:mux}
