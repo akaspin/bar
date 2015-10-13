@@ -5,17 +5,15 @@ import (
 	"github.com/akaspin/bar/proto"
 )
 
-type StorageFactory interface {
-	GetStorage() (StorageDriver, error)
-}
-
 // All operations in storage driver are independent to each other
-type StorageDriver interface {
+type Storage interface {
 	io.Closer
 
 	IsSpecExists(id string) (ok bool, err error)
 
 	IsBLOBExists(id string) (ok bool, err error)
+
+//	CheckBLOBS(ids []string) (map[string]bool, error)
 
 	// Write spec
 	WriteSpec(s proto.Spec) (err error)

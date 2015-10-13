@@ -9,6 +9,8 @@ import (
 	"github.com/akaspin/bar/proto/manifest"
 	"encoding/json"
 	"github.com/akaspin/bar/proto"
+	"github.com/akaspin/bar/parmap"
+	"time"
 )
 
 const (
@@ -18,32 +20,36 @@ const (
 	upload_ns = "uploads"
 )
 
-
-type BlockStorageFactory struct {
-	root string
-	split int
-}
-
-func NewBlockStorageFactory(root string, split int) *BlockStorageFactory {
-	return &BlockStorageFactory{root, split}
-}
-
-func (f *BlockStorageFactory) GetStorage() (StorageDriver, error)  {
-	return NewBlockStorage(f.root, f.split), nil
-}
-
-// Simple block device storage
-type BlockStorage struct {
-
+type BlockStorageOptions struct {
 	// Storage root
 	Root string
 
 	// Split factor
 	Split int
+
+	MaxFiles int
+	PoolSize int
 }
 
-func NewBlockStorage(root string, split int) *BlockStorage {
-	return &BlockStorage{root, split}
+
+// Simple block device storage
+type BlockStorage struct {
+
+	*BlockStorageOptions
+
+	// Max Open files locker
+	FDLocks *parmap.LocksPool
+
+	// Operation pool
+	Pool *parmap.ParMap
+}
+
+func NewBlockStorage(options *BlockStorageOptions) *BlockStorage {
+	return &BlockStorage{
+		BlockStorageOptions: options,
+		FDLocks: parmap.NewLockPool(options.MaxFiles, time.Hour),
+		Pool: parmap.NewWorkerPool(options.PoolSize),
+	}
 }
 
 func (s *BlockStorage) IsSpecExists(id string) (ok bool, err error) {
@@ -57,6 +63,12 @@ func (s *BlockStorage) IsBLOBExists(id string) (ok bool, err error) {
 }
 
 func (s *BlockStorage) isExists(ns string, id string) (ok bool, err error) {
+	lock, err := s.FDLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Release()
+
 	_, err = os.Stat(s.filePath(ns, id))
 	if os.IsNotExist(err) {
 		return false, nil
@@ -69,6 +81,12 @@ func (s *BlockStorage) isExists(ns string, id string) (ok bool, err error) {
 }
 
 func (s *BlockStorage) WriteSpec(in proto.Spec) (err error) {
+	lock, err := s.FDLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Release()
+
 	specName := s.filePath(spec_ns, in.ID + ".json")
 	if err = os.MkdirAll(filepath.Dir(specName), 0755); err != nil {
 		return
@@ -84,6 +102,12 @@ func (s *BlockStorage) WriteSpec(in proto.Spec) (err error) {
 }
 
 func (s *BlockStorage) ReadSpec(id string) (res proto.Spec, err error) {
+	lock, err := s.FDLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Release()
+
 	r, err := os.Open(s.filePath(spec_ns, id + ".json"))
 	if err != nil {
 		return
@@ -95,6 +119,12 @@ func (s *BlockStorage) ReadSpec(id string) (res proto.Spec, err error) {
 }
 
 func (s *BlockStorage) ReadManifest(id string) (res manifest.Manifest, err error) {
+	lock, err := s.FDLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Release()
+
 	r, err := os.Open(s.filePath(manifests_ns, id))
 	if err != nil {
 		return
@@ -106,6 +136,12 @@ func (s *BlockStorage) ReadManifest(id string) (res manifest.Manifest, err error
 }
 
 func (s *BlockStorage) DeclareUpload(m manifest.Manifest) (err error) {
+	lock, err := s.FDLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Release()
+
 	base := s.filePath(upload_ns, m.ID)
 	if err = os.MkdirAll(base, 0755); err != nil {
 		return
@@ -122,6 +158,12 @@ func (s *BlockStorage) DeclareUpload(m manifest.Manifest) (err error) {
 }
 
 func (s *BlockStorage) WriteChunk(blobID, chunkID string, size int64, r io.Reader) (err error) {
+	lock, err := s.FDLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Release()
+
 	n := filepath.Join(s.filePath(upload_ns, blobID), chunkID)
 	w, err := s.getCAFile(n)
 	if err != nil {

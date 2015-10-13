@@ -7,7 +7,7 @@ import (
 
 type BardTHandler struct {
 	*proto.Info
-	*storage.StoragePool
+	storage.Storage
 }
 
 func NewBardTHandler(options *BardServerOptions) *BardTHandler {

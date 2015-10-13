@@ -4,7 +4,6 @@ import (
 	"github.com/tamtam-im/flags"
 	"os"
 	"github.com/akaspin/bar/bard/storage"
-	"time"
 	"fmt"
 	"github.com/akaspin/bar/bard/server"
 	"github.com/tamtam-im/logx"
@@ -24,10 +23,8 @@ var httpEndpoint string
 var barExe string
 
 var storageType string
-var storageWorkers int
 
-var storageBlockRoot string
-var storageBlockSplit int
+var blockStorageOptions storage.BlockStorageOptions
 
 func init() {
 	flag.StringVar(&logLevel, "log-level", logx.ERROR, "logging level")
@@ -47,20 +44,23 @@ func init() {
 		"path to windows barc executable")
 
 	flag.StringVar(&storageType, "storage-type", "block", "storage type")
-	flag.IntVar(&storageWorkers, "storage-workers", 128, "storage workers")
 
 	// block storage options
-	flag.StringVar(&storageBlockRoot, "storage-block-root", "data",
+	flag.StringVar(&blockStorageOptions.Root, "storage-block-root", "data",
 		"block storage root")
-	flag.IntVar(&storageBlockSplit, "storage-block-split", 2,
+	flag.IntVar(&blockStorageOptions.Split, "storage-block-split", 2,
 		"block storage split factor")
+	flag.IntVar(&blockStorageOptions.MaxFiles, "storage-block-max-files", 32,
+		"block storage max open files (ulimit -n)")
+	flag.IntVar(&blockStorageOptions.PoolSize, "storage-block-pool", 32,
+		"block storage pool size")
 }
 
 func main() {
 	flags.New(flag.CommandLine).Boot(os.Args)
 	logx.SetLevel(logLevel)
 
-	pool, err := storagePool(storageType)
+	pool, err := newStorage(storageType)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
@@ -75,7 +75,7 @@ func main() {
 			PoolSize: poolConns,
 			BufferSize: 1024 * 1024 * 8,
 		},
-		StoragePool: pool,
+		Storage: pool,
 		BarExe: barExe,
 	})
 	if err != nil {
@@ -88,10 +88,7 @@ func main() {
 	}
 }
 
-func storagePool(kind string) (res *storage.StoragePool, err error) {
-	res = storage.NewStoragePool(
-		storage.NewBlockStorageFactory(storageBlockRoot, storageBlockSplit),
-		storageWorkers, time.Minute * 5)
-
+func newStorage(kind string) (res storage.Storage, err error) {
+	res = storage.NewBlockStorage(&blockStorageOptions)
 	return
 }

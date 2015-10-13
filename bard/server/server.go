@@ -12,7 +12,7 @@ type BardServerOptions struct  {
 	Info *proto.Info
 	HttpBind string
 	RPCBind string
-	*storage.StoragePool
+	storage.Storage
 	BarExe string
 }
 
@@ -27,7 +27,7 @@ func NewBardServer(opts *BardServerOptions) (res *BardServer, err error) {
 	res = &BardServer{BardServerOptions: opts}
 
 	res.service = rpc.NewServer()
-	rpcService := &service.Service{res.Info, res.StoragePool}
+	rpcService := &service.Service{res.Info, res.Storage}
 	if err = res.service.Register(rpcService); err != nil {
 		return
 	}

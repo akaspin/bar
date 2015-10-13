@@ -19,8 +19,8 @@ func RunServer(t *testing.T, root string) (httpEndpoint string, rpcEndpoints []s
 	rt := filepath.Join(wd, "testdata", root + "srv")
 	os.RemoveAll(rt)
 
-	p := storage.NewStoragePool(storage.NewBlockStorageFactory(rt, 2), 200, time.Minute)
-	ports, err := GetOpenPorts(2)
+	p := storage.NewBlockStorage(&storage.BlockStorageOptions{rt, 2, 32, 32})
+	ports, err := GetOpenPorts(1)
 	assert.NoError(t, err)
 
 	httpEndpoint = fmt.Sprintf("http://127.0.0.1:%d/v1", ports[0])
@@ -34,7 +34,7 @@ func RunServer(t *testing.T, root string) (httpEndpoint string, rpcEndpoints []s
 			ChunkSize: 1024 * 1024 * 2,
 			PoolSize: 16,
 		},
-		StoragePool: p,
+		Storage: p,
 		BarExe: "",
 	})
 	if err != nil {
