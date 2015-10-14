@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/akaspin/bar/barc/lists"
 	"github.com/akaspin/bar/barc/model"
-	"github.com/akaspin/bar/parmap"
 	"bytes"
 	"strings"
 	"github.com/akaspin/bar/proto/bar"
@@ -21,7 +20,7 @@ type Transport struct {
 	model *model.Model
 	rpcPool *RPCPool
 	tPool *TPool
-	pool *parmap.ParMap
+	*concurrent.BatchPool
 }
 
 // New RPC pool with default endpoint
@@ -31,7 +30,7 @@ func NewTransport(mod *model.Model, endpoint string, rpcEndpoints string, n int)
 		model: mod,
 		rpcPool: NewRPCPool(n, time.Hour, endpoint, rpcEP),
 		tPool: NewTPool(strings.Split(rpcEndpoints, ","), 1024 * 1024 * 8,  n, time.Hour),
-		pool: parmap.NewWorkerPool(n),
+		BatchPool: concurrent.NewPool(n),
 	}
 	return
 }
@@ -123,21 +122,39 @@ func (t *Transport) UploadBlob(name string, info manifest.Manifest) (err error) 
 
 	logx.Debugf("uploading %s %s (%d chunks)", name, info.ID, len(info.Chunks))
 
-	req := map[string]interface{}{}
-	for _, chunk := range info.Chunks {
-		req[chunk.ID.String()] = chunk
+	var req, res []interface{}
+	for _, v := range info.Chunks {
+		req = append(req, v)
 	}
 
-	_, err = t.pool.RunBatch(parmap.Task{
-		Map: req,
-		Fn: func(id string, v interface{}) (res interface{}, err error) {
-			err = t.UploadChunk(name, info.ID, v.(manifest.Chunk))
+	err = t.BatchPool.Do(
+		func(ctx context.Context, in interface{}) (out interface{}, err error) {
+			err = t.UploadChunk(name, info.ID, in.(manifest.Chunk))
 			return
-		},
-	})
-
+		}, &req, &res, concurrent.DefaultBatchOptions(),
+	)
 	return
 }
+
+//func (t *Transport) UploadBlob(name string, info manifest.Manifest) (err error) {
+//
+//	logx.Debugf("uploading %s %s (%d chunks)", name, info.ID, len(info.Chunks))
+//
+//	req := map[string]interface{}{}
+//	for _, chunk := range info.Chunks {
+//		req[chunk.ID.String()] = chunk
+//	}
+//
+//	_, err = t.pool.RunBatch(parmap.Task{
+//		Map: req,
+//		Fn: func(id string, v interface{}) (res interface{}, err error) {
+//			err = t.UploadChunk(name, info.ID, v.(manifest.Chunk))
+//			return
+//		},
+//	})
+//
+//	return
+//}
 
 // Finish BLOB upload
 func (t *Transport) FinishUpload(id manifest.ID) (err error) {

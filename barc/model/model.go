@@ -24,9 +24,9 @@ type Model struct {
 func New(wd string, useGit bool, chunkSize int64, pool int) (res *Model, err error) {
 	res = &Model{
 		WD: wd,
-		BatchPool: concurrent.NewPool(pool * 64),
+		BatchPool: concurrent.NewPool(pool * 32),
 		chunkSize: chunkSize,
-		FdLocks: concurrent.NewLockPool(pool, time.Hour),
+		FdLocks: concurrent.NewLockPool(pool, time.Minute * 5),
 	}
 	if useGit {
 		res.Git, err = git.NewGit(wd)
@@ -53,7 +53,7 @@ func (m *Model) ReadChunk(name string, chunk manifest.Chunk, res []byte) (err er
 	if err != nil {
 		return
 	}
-	defer lock.Release()
+	defer lock.Close()
 
 	f, err := os.Open(filepath.Join(m.WD, name))
 	if err != nil {
@@ -101,7 +101,7 @@ func (m *Model) getManifest(name string, blobs, manifests bool) (res *manifest.M
 	if err != nil {
 		return
 	}
-	defer lock.Release()
+	defer lock.Close()
 
 	f, err := os.Open(filepath.Join(m.WD, name))
 	if err != nil {
@@ -148,7 +148,7 @@ func (m *Model) IsBlobs(names ...string) (res map[string]bool, err error) {
 			if err != nil {
 				return
 			}
-			defer lock.Release()
+			defer lock.Close()
 
 			f, err := os.Open(filepath.Join(m.WD, in.(string)))
 			if err != nil {
@@ -188,7 +188,7 @@ func (m *Model) SquashBlobs(blobs lists.Links) (err error) {
 			if err != nil {
 				return
 			}
-			defer lock.Release()
+			defer lock.Close()
 
 			absname := filepath.Join(m.WD, r.Name)
 			backName := absname + ".bar-backup"

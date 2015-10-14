@@ -6,12 +6,14 @@ import (
 
 type Lock struct {
 	pool *LocksPool
+	IsClosed bool
 }
 
-func (l *Lock) Close() {}
-
-func (l *Lock) Release() {
-	l.pool.pool.Put(l)
+func (l *Lock) Close() {
+	if !l.IsClosed {
+		l.IsClosed = true
+		l.pool.pool.Put(nil)
+	}
 }
 
 type LocksPool struct {
@@ -33,10 +35,17 @@ func (p *LocksPool) Take() (res *Lock, err error) {
 		return
 	}
 	res = r.(*Lock)
+//	go func() {
+//		select {
+//		case <-time.After(p.timeout):
+//			res.Close()
+//		}
+//	}()
+
 	return
 }
 
 func (p *LocksPool) factory() (res pools.Resource, err error) {
-	res = &Lock{p}
+	res = &Lock{p, false}
 	return
 }

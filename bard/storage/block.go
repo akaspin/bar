@@ -47,7 +47,7 @@ type BlockStorage struct {
 func NewBlockStorage(options *BlockStorageOptions) *BlockStorage {
 	return &BlockStorage{
 		BlockStorageOptions: options,
-		FDLocks: concurrent.NewLockPool(options.MaxFiles, time.Hour),
+		FDLocks: concurrent.NewLockPool(options.MaxFiles, time.Minute * 5),
 		BatchPool: concurrent.NewPool(options.PoolSize),
 	}
 }
@@ -67,7 +67,7 @@ func (s *BlockStorage) isExists(ns string, id manifest.ID) (ok bool, err error) 
 	if err != nil {
 		return
 	}
-	defer lock.Release()
+	defer lock.Close()
 
 	_, err = os.Stat(s.idPath(ns, id))
 	if os.IsNotExist(err) {
@@ -85,7 +85,7 @@ func (s *BlockStorage) WriteSpec(in proto.Spec) (err error) {
 	if err != nil {
 		return
 	}
-	defer lock.Release()
+	defer lock.Close()
 
 	specName := s.idPath(spec_ns, in.ID) + ".json"
 	if err = os.MkdirAll(filepath.Dir(specName), 0755); err != nil {
@@ -106,7 +106,7 @@ func (s *BlockStorage) ReadSpec(id manifest.ID) (res proto.Spec, err error) {
 	if err != nil {
 		return
 	}
-	defer lock.Release()
+	defer lock.Close()
 
 	r, err := os.Open(s.idPath(spec_ns, id) + ".json")
 	if err != nil {
@@ -123,7 +123,7 @@ func (s *BlockStorage) ReadManifest(id manifest.ID) (res *manifest.Manifest, err
 	if err != nil {
 		return
 	}
-	defer lock.Release()
+	defer lock.Close()
 
 	r, err := os.Open(s.idPath(manifests_ns, id))
 	if err != nil {
@@ -167,7 +167,7 @@ func (s *BlockStorage) DeclareUpload(m manifest.Manifest) (err error) {
 	if err != nil {
 		return
 	}
-	defer lock.Release()
+	defer lock.Close()
 
 	base := s.idPath(upload_ns, m.ID)
 	if err = os.MkdirAll(base, 0755); err != nil {
@@ -189,7 +189,7 @@ func (s *BlockStorage) WriteChunk(blobID, chunkID manifest.ID, size int64, r io.
 	if err != nil {
 		return
 	}
-	defer lock.Release()
+	defer lock.Close()
 
 	n := filepath.Join(s.idPath(upload_ns, blobID), chunkID.String())
 	w, err := s.getCAFile(n)
@@ -277,7 +277,7 @@ func (s *BlockStorage) ReadChunk(chunk proto.ChunkInfo, w io.Writer) (err error)
 	if err != nil {
 		return
 	}
-	defer lock.Release()
+	defer lock.Close()
 
 	f, err := os.Open(s.idPath(blob_ns, chunk.BlobID))
 	if err != nil {
@@ -304,7 +304,7 @@ func (s *BlockStorage) ReadChunkFromBlob(blobID manifest.ID, size, offset int64,
 	if err != nil {
 		return
 	}
-	defer lock.Release()
+	defer lock.Close()
 
 	f, err := os.Open(s.idPath(blob_ns, blobID))
 	if err != nil {
