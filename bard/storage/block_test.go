@@ -55,7 +55,7 @@ func Test_BlockDriver_WriteBLOB(t *testing.T) {
 
 	// check stored file manifest
 	m2, err := fixtures.NewShadowFromFile(filepath.Join(
-		"testdata/blobs/26", m.ID))
+		"testdata/blobs/26", m.ID.String()))
 	assert.NoError(t, err)
 
 	assert.Equal(t, m.String(), m2.String())

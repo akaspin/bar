@@ -11,7 +11,6 @@ import (
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/parmap"
 	"time"
-	"encoding/hex"
 )
 
 const (
@@ -53,24 +52,24 @@ func NewBlockStorage(options *BlockStorageOptions) *BlockStorage {
 	}
 }
 
-func (s *BlockStorage) IsSpecExists(id string) (ok bool, err error) {
-	ok, err = s.isExists(spec_ns, id + ".json")
+func (s *BlockStorage) IsSpecExists(id manifest.ID) (ok bool, err error) {
+	ok, err = s.isExists(spec_ns, manifest.ID(id.String() + ".json"))
 	return
 }
 
-func (s *BlockStorage) IsBLOBExists(id string) (ok bool, err error) {
+func (s *BlockStorage) IsBLOBExists(id manifest.ID) (ok bool, err error) {
 	ok, err = s.isExists(blob_ns, id)
 	return
 }
 
-func (s *BlockStorage) isExists(ns string, id string) (ok bool, err error) {
+func (s *BlockStorage) isExists(ns string, id manifest.ID) (ok bool, err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
 		return
 	}
 	defer lock.Release()
 
-	_, err = os.Stat(s.filePath(ns, id))
+	_, err = os.Stat(s.idPath(ns, id))
 	if os.IsNotExist(err) {
 		return false, nil
 	}
@@ -88,7 +87,7 @@ func (s *BlockStorage) WriteSpec(in proto.Spec) (err error) {
 	}
 	defer lock.Release()
 
-	specName := s.filePath(spec_ns, in.ID + ".json")
+	specName := s.idPath(spec_ns, in.ID) + ".json"
 	if err = os.MkdirAll(filepath.Dir(specName), 0755); err != nil {
 		return
 	}
@@ -102,14 +101,14 @@ func (s *BlockStorage) WriteSpec(in proto.Spec) (err error) {
 	return
 }
 
-func (s *BlockStorage) ReadSpec(id string) (res proto.Spec, err error) {
+func (s *BlockStorage) ReadSpec(id manifest.ID) (res proto.Spec, err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
 		return
 	}
 	defer lock.Release()
 
-	r, err := os.Open(s.filePath(spec_ns, id + ".json"))
+	r, err := os.Open(s.idPath(spec_ns, id) + ".json")
 	if err != nil {
 		return
 	}
@@ -119,20 +118,26 @@ func (s *BlockStorage) ReadSpec(id string) (res proto.Spec, err error) {
 	return
 }
 
-func (s *BlockStorage) ReadManifest(id string) (res manifest.Manifest, err error) {
+func (s *BlockStorage) ReadManifest(id manifest.ID) (res manifest.Manifest, err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
 		return
 	}
 	defer lock.Release()
 
-	r, err := os.Open(s.filePath(manifests_ns, id))
+	r, err := os.Open(s.idPath(manifests_ns, id))
 	if err != nil {
 		return
 	}
 	defer r.Close()
 	res = manifest.Manifest{}
 	err = json.NewDecoder(r).Decode(&res)
+	return
+}
+
+func (s *BlockStorage) GetManifests(ids []manifest.ID) (res []*manifest.Manifest, err error) {
+
+
 	return
 }
 
@@ -143,7 +148,7 @@ func (s *BlockStorage) DeclareUpload(m manifest.Manifest) (err error) {
 	}
 	defer lock.Release()
 
-	base := s.filePath(upload_ns, m.ID)
+	base := s.idPath(upload_ns, m.ID)
 	if err = os.MkdirAll(base, 0755); err != nil {
 		return
 	}
@@ -158,14 +163,14 @@ func (s *BlockStorage) DeclareUpload(m manifest.Manifest) (err error) {
 	return
 }
 
-func (s *BlockStorage) WriteChunk(blobID, chunkID string, size int64, r io.Reader) (err error) {
+func (s *BlockStorage) WriteChunk(blobID, chunkID manifest.ID, size int64, r io.Reader) (err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
 		return
 	}
 	defer lock.Release()
 
-	n := filepath.Join(s.filePath(upload_ns, blobID), chunkID)
+	n := filepath.Join(s.idPath(upload_ns, blobID), chunkID.String())
 	w, err := s.getCAFile(n)
 	if err != nil {
 		return
@@ -186,9 +191,9 @@ func (s *BlockStorage) WriteChunk(blobID, chunkID string, size int64, r io.Reade
 	return
 }
 
-func (s *BlockStorage) FinishUpload(id string) (err error) {
+func (s *BlockStorage) FinishUpload(id manifest.ID) (err error) {
 
-	base := s.filePath(upload_ns, id)
+	base := s.idPath(upload_ns, id)
 	manifestName := filepath.Join(base, "manifest.json")
 
 	mr, err := os.Open(manifestName)
@@ -203,7 +208,7 @@ func (s *BlockStorage) FinishUpload(id string) (err error) {
 		return
 	}
 
-	w, err := s.getCAFile(s.filePath(blob_ns, id))
+	w, err := s.getCAFile(s.idPath(blob_ns, id))
 	if err != nil {
 		return
 	}
@@ -219,7 +224,7 @@ func (s *BlockStorage) FinishUpload(id string) (err error) {
 	}
 
 	// Relocate manifest
-	targetManifest := s.filePath(manifests_ns, id)
+	targetManifest := s.idPath(manifests_ns, id)
 	os.MkdirAll(filepath.Dir(targetManifest), 0755)
 	err = os.Rename(manifestName, targetManifest)
 
@@ -228,7 +233,7 @@ func (s *BlockStorage) FinishUpload(id string) (err error) {
 }
 
 func (s *BlockStorage) finishChunk(base string, info manifest.Chunk, w io.Writer) (err error) {
-	name := filepath.Join(base, info.ID)
+	name := filepath.Join(base, string(info.ID))
 	r, err := os.Open(name)
 	if err != nil {
 		return
@@ -253,7 +258,7 @@ func (s *BlockStorage) ReadChunk(chunk proto.ChunkInfo, w io.Writer) (err error)
 	}
 	defer lock.Release()
 
-	f, err := os.Open(s.filePath(blob_ns, chunk.BlobID))
+	f, err := os.Open(s.idPath(blob_ns, chunk.BlobID))
 	if err != nil {
 		return
 	}
@@ -273,16 +278,14 @@ func (s *BlockStorage) ReadChunk(chunk proto.ChunkInfo, w io.Writer) (err error)
 	return
 }
 
-func (s *BlockStorage) ReadChunkFromBlob(blobID []byte, size, offset int64, w io.Writer) (err error) {
+func (s *BlockStorage) ReadChunkFromBlob(blobID manifest.ID, size, offset int64, w io.Writer) (err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
 		return
 	}
 	defer lock.Release()
 
-	blobIDstr := hex.EncodeToString(blobID)
-
-	f, err := os.Open(s.filePath(blob_ns, blobIDstr))
+	f, err := os.Open(s.idPath(blob_ns, blobID))
 	if err != nil {
 		return
 	}
@@ -298,19 +301,19 @@ func (s *BlockStorage) ReadChunkFromBlob(blobID []byte, size, offset int64, w io
 	}
 	if written != size {
 		err = fmt.Errorf("bad size for chunk %s (offset %d) %d != %d",
-			blobIDstr, offset, size, written)
+			blobID, offset, size, written)
 	}
 
 	return
 }
 
-func (s *BlockStorage) DestroyBLOB(id string) (err error) {
-	err = os.Remove(s.filePath(blob_ns, id))
+func (s *BlockStorage) Close() (err error) {
 	return
 }
 
-func (s *BlockStorage) Close() (err error) {
-	return
+func (s *BlockStorage) idPath(ns string, id manifest.ID) string {
+	ids := id.String()
+	return filepath.Join(s.Root, ns, ids[:s.Split], ids)
 }
 
 // Make filename

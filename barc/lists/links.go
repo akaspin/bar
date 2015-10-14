@@ -5,9 +5,9 @@ import (
 )
 
 // Reverse mapping from id to names
-type IDMap map[string][]string
+type IDMap map[manifest.ID][]string
 
-func (i IDMap) IDs() (res []string) {
+func (i IDMap) IDs() (res []manifest.ID) {
 	for id, _ := range i {
 		res = append(res, id)
 	}

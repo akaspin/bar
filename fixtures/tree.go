@@ -43,7 +43,7 @@ func (f *Tree) Populate() (err error) {
 			}
 		}
 	}
-	time.Sleep(time.Millisecond * 100)
+//	time.Sleep(time.Millisecond * 100)
 	return
 }
 
@@ -57,7 +57,7 @@ func (f *Tree) PopulateN(size int64, n int) (err error) {
 		}
 	}
 
-	time.Sleep(time.Millisecond * 100)
+//	time.Sleep(time.Millisecond * 100)
 	return
 }
 

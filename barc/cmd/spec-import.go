@@ -62,7 +62,7 @@ func (c *SpecImportCmd) Do() (err error) {
 		}
 	} else {
 		// tree spec types
-		id := c.FS.Arg(0)
+		id := manifest.ID(c.FS.Arg(0))
 
 		if spec, err = trans.GetSpec(id); err != nil {
 			logx.Debug(spec, err)

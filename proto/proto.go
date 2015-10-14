@@ -28,7 +28,7 @@ func (i *Info) JoinRPCEndpoints() string {
 }
 
 type ChunkInfo struct {
-	BlobID string
+	BlobID manifest.ID
 	manifest.Chunk
 }
 

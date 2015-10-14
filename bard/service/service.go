@@ -24,12 +24,12 @@ func (s *Service) Ping(req *struct{}, res *proto.Info) (err error) {
 }
 
 // Check BLOBs
-func (s *Service) Check(req *[]string, res *[]string) (err error) {
+func (s *Service) Check(req *[]manifest.ID, res *[]manifest.ID) (err error) {
 
 
 	logx.Debugf("checking %s", *req)
 
-	var res1 []string
+	var res1 []manifest.ID
 	for _, id := range *req {
 		exists, err := s.Storage.IsBLOBExists(id)
 		if err == nil && exists {
@@ -61,7 +61,7 @@ func (s *Service) NewUpload(req *[]manifest.Manifest, res *[]manifest.Manifest) 
 }
 
 // Finish upload with ID
-func (s *Service) CommitUpload(id *string, res *struct{}) (err error) {
+func (s *Service) CommitUpload(id *manifest.ID, res *struct{}) (err error) {
 	if err = s.Storage.FinishUpload(*id); err != nil {
 		return
 	}
@@ -83,7 +83,7 @@ func (s *Service) UploadChunk(chunk *proto.ChunkData, res *struct{}) (err error)
 }
 
 // Get manifests for download blobs
-func (s *Service) GetFetch(req *[]string, res *[]manifest.Manifest) (err error) {
+func (s *Service) GetFetch(req *[]manifest.ID, res *[]manifest.Manifest) (err error) {
 	var feed []manifest.Manifest
 
 	for _, id := range *req {
@@ -127,7 +127,7 @@ func (s *Service) UploadSpec(spec *proto.Spec, res *struct{}) (err error) {
 }
 
 // Get all links by spec-id
-func (s *Service) GetSpec(id *string, res *lists.Links) (err error) {
+func (s *Service) GetSpec(id *manifest.ID, res *lists.Links) (err error) {
 
 	spec, err := s.Storage.ReadSpec(*id)
 	if err != nil {
@@ -141,7 +141,7 @@ func (s *Service) GetSpec(id *string, res *lists.Links) (err error) {
 
 	for name, manifestID := range spec.BLOBs {
 		wg.Add(1)
-		go func(n, mID string) {
+		go func(n string, mID manifest.ID) {
 			defer wg.Done()
 
 			var err1 error

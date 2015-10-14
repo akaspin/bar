@@ -21,7 +21,7 @@ func Test_SHA3(t *testing.T) {
 }
 
 func Test_Shadow_ToStringFull(t *testing.T) {
-	id := "ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c"
+	id := manifest.ID("ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c")
 	expect := fixtures.FixStream(`BAR:MANIFEST
 
 		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c

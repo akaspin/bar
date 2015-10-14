@@ -11,7 +11,6 @@ import (
 	"github.com/akaspin/bar/parmap"
 	"bytes"
 	"strings"
-	"encoding/hex"
 	"github.com/akaspin/bar/proto/bar"
 )
 
@@ -124,7 +123,7 @@ func (t *Transport) UploadBlob(name string, info manifest.Manifest) (err error) 
 
 	req := map[string]interface{}{}
 	for _, chunk := range info.Chunks {
-		req[chunk.ID] = chunk
+		req[chunk.ID.String()] = chunk
 	}
 
 	_, err = t.pool.RunBatch(parmap.Task{
@@ -139,7 +138,7 @@ func (t *Transport) UploadBlob(name string, info manifest.Manifest) (err error) 
 }
 
 // Finish BLOB upload
-func (t *Transport) FinishUpload(id string) (err error) {
+func (t *Transport) FinishUpload(id manifest.ID) (err error) {
 	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
@@ -155,7 +154,7 @@ func (t *Transport) FinishUpload(id string) (err error) {
 }
 
 // Upload chunk
-func (t *Transport) UploadChunk(name string, blobID string, chunk manifest.Chunk) (err error) {
+func (t *Transport) UploadChunk(name string, blobID manifest.ID, chunk manifest.Chunk) (err error) {
 	logx.Tracef("uploading chunk %s (size: %d, offset %d) for BLOB %s:%s",
 		chunk.ID, chunk.Size, chunk.Offset, name, blobID)
 
@@ -183,16 +182,16 @@ func (t *Transport) UploadChunk(name string, blobID string, chunk manifest.Chunk
 func (t *Transport) Download(blobs lists.Links) (err error) {
 
 	fetch, err := t.GetFetch(blobs.IDMap().IDs())
-	logx.Debugf("fetching blobs %s", blobs.IDMap())
+	logx.Tracef("fetching blobs %s", blobs.IDMap())
 
 	// little funny, but all chunks are equal - flatten them
 	chunkMap := map[string]interface{}{}
-	fetchIds := map[string]struct{}{}
+	fetchIds := map[manifest.ID]struct{}{}
 
 	for _, mt := range fetch {
 		fetchIds[mt.ID] = struct{}{}
 		for _, ch := range mt.Chunks    {
-			chunkMap[ch.ID] = proto.ChunkInfo{mt.ID, ch}
+			chunkMap[ch.ID.String()] = proto.ChunkInfo{mt.ID, ch}
 		}
 	}
 
@@ -203,12 +202,6 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 	_, err = t.model.Pool.RunBatch(parmap.Task{
 		Map: chunkMap,
 		Fn: func(id string, arg interface{}) (res interface{}, err error) {
-//			cli, err := t.rpcPool.Take()
-//			if err != nil {
-//				return
-//			}
-//			defer cli.Release()
-
 			tclient, err := t.tPool.Take()
 			if err != nil {
 				return
@@ -217,12 +210,8 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 
 			ci := arg.(proto.ChunkInfo)
 
-//			var data proto.ChunkData
-//			if err = cli.Call("Service.FetchChunk", &ci, &data); err != nil {
-//				return
-//			}
-			var blobId []byte
-			if blobId, err = hex.DecodeString(ci.BlobID); err != nil {
+			var blobID bar.ID
+			if blobID, err = ci.BlobID.MarshalThrift(); err != nil {
 				return
 			}
 			var chunk bar.Chunk
@@ -230,14 +219,7 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 			if err != nil {
 				return
 			}
-//			chunk := &bar.Chunk{
-//				&bar.DataInfo{
-//					chunkId, ci.Size,
-//				},
-//				ci.Offset,
-//			}
-
-			data, err := tclient.FetchChunk(blobId, &chunk)
+			data, err := tclient.FetchChunk(blobID, &chunk)
 			if err != nil {
 				return
 			}
@@ -262,7 +244,7 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 	return
 }
 
-func (t *Transport) GetFetch(ids []string) (res []manifest.Manifest, err error) {
+func (t *Transport) GetFetch(ids []manifest.ID) (res []manifest.Manifest, err error) {
 	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
@@ -272,7 +254,7 @@ func (t *Transport) GetFetch(ids []string) (res []manifest.Manifest, err error) 
 	return
 }
 
-func (t *Transport) Check(ids []string) (res []string, err error) {
+func (t *Transport) Check(ids []manifest.ID) (res []manifest.ID, err error) {
 	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
@@ -299,7 +281,7 @@ func (t *Transport) UploadSpec(spec proto.Spec) (err error) {
 	return
 }
 
-func (t *Transport) GetSpec(id string) (res lists.Links, err error) {
+func (t *Transport) GetSpec(id manifest.ID) (res lists.Links, err error) {
 	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return

@@ -9,6 +9,7 @@ import (
 	"github.com/akaspin/bar/barc/lists"
 	"github.com/akaspin/bar/parmap"
 	"time"
+	"github.com/akaspin/bar/concurrent"
 )
 
 
@@ -17,13 +18,15 @@ type Model struct {
 	Git *git.Git
 	Pool *parmap.ParMap
 	FdLocks *parmap.LocksPool
+	WPool *concurrent.Pool
 	chunkSize int64
 }
 
 func New(wd string, useGit bool, chunkSize int64, pool int) (res *Model, err error) {
 	res = &Model{
 		WD: wd,
-		Pool: parmap.NewWorkerPool(pool * 32),
+		Pool: parmap.NewWorkerPool(pool * 64),
+		WPool: concurrent.NewPool(pool * 64),
 		chunkSize: chunkSize,
 		FdLocks: parmap.NewLockPool(pool, time.Hour),
 	}
@@ -65,27 +68,34 @@ func (m *Model) ReadChunk(name string, chunk manifest.Chunk, res []byte) (err er
 }
 
 func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (res lists.Links, err error) {
-	req := map[string]interface{}{}
-	res = lists.Links{}
-
+	var req, res1 []interface{}
 	for _, n := range names {
-		req[n] = struct{}{}
+		req = append(req, n)
 	}
-	res1, err := m.Pool.RunBatch(parmap.Task{
-		Map: req,
-		Fn: func(name string, trail interface{}) (res interface{}, err error) {
-			res, err = m.getManifest(name, blobs, manifests)
+
+	err = m.WPool.Do(
+		func(in interface{}) (out interface{}, err error) {
+			res2, err := m.getManifest(in.(string), blobs, manifests)
+			if err != nil {
+				return nil, err
+			}
+			out = struct{
+				name string
+				manifest *manifest.Manifest
+			}{in.(string), res2}
 			return
 		},
-		IgnoreErrors: !strict,
-	})
-
-	for k, v := range res1 {
-		if v.(*manifest.Manifest) != nil {
-			res[k] = *(v.(*manifest.Manifest))
-		}
+		&req, &res1,
+		!strict, !strict,
+	)
+	res = lists.Links{}
+	for _, r := range res1 {
+		r1 := r.(struct{
+			name string
+			manifest *manifest.Manifest
+		})
+		res[r1.name] = *r1.manifest
 	}
-
 	return
 }
 
@@ -129,24 +139,21 @@ func (m *Model) getManifest(name string, blobs, manifests bool) (res *manifest.M
 }
 
 func (m *Model) IsBlobs(names ...string) (res map[string]bool, err error) {
-	req := map[string]interface{}{}
-	res = make(map[string]bool)
-
+	res = map[string]bool{}
+	var req, res1 []interface{}
 	for _, n := range names {
-		req[n] = struct{}{}
+		req = append(req, n)
 	}
 
-	logx.Tracef("collecting states %s", names)
-	res1, err := m.Pool.RunBatch(parmap.Task{
-		Map: req,
-		Fn: func(name string, trail interface{}) (res interface{}, err error) {
+	err = m.WPool.Do(
+		func(in interface{}) (out interface{}, err error) {
 			lock, err := m.FdLocks.Take()
 			if err != nil {
 				return
 			}
 			defer lock.Release()
 
-			f, err := os.Open(filepath.Join(m.WD, name))
+			f, err := os.Open(filepath.Join(m.WD, in.(string)))
 			if err != nil {
 				return
 			}
@@ -155,17 +162,16 @@ func (m *Model) IsBlobs(names ...string) (res map[string]bool, err error) {
 			if err != nil {
 				return
 			}
-			res = !isManifest
+			out = struct{name string; isBlob bool}{in.(string), !isManifest}
 			return
 		},
-	})
-	if err != nil {
-		return
-	}
-	for k, v := range res1 {
-		res[k] = v.(bool)
-	}
+		&req, &res1, false, false,
+	)
 
+	for _, r := range res1 {
+		r1 := r.(struct{name string; isBlob bool})
+		res[r1.name] = r1.isBlob
+	}
 	return
 }
 

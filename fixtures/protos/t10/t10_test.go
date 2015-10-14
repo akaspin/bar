@@ -39,12 +39,13 @@ func (s *TServer) Start(transportFactory thrift.TTransportFactory) (err error) {
 	s.Server = thrift.NewTSimpleServer4(processor, transport,
 		transportFactory, protoFactory)
 	go s.Server.Serve()
-	time.Sleep(time.Second)
+	time.Sleep(time.Millisecond * 100)
 	return
 }
 
 
 func Test_Proto_Thrift(t *testing.T) {
+	t.Skip()
 	server := &TServer{}
 	err := server.Start(thrift.NewTTransportFactory())
 	assert.NoError(t, err)
@@ -74,6 +75,7 @@ func Test_Proto_Thrift(t *testing.T) {
 }
 
 func Benchmark_Proto_Thrift_Buffered(b *testing.B) {
+	b.Skip()
 	server := &TServer{}
 	err := server.Start(thrift.NewTBufferedTransportFactory(thrift_buffer))
 	assert.NoError(b, err)
@@ -111,6 +113,7 @@ func Benchmark_Proto_Thrift_Buffered(b *testing.B) {
 }
 
 func Benchmark_Proto_Thrift_Buffered_Large(b *testing.B) {
+	b.Skip()
 	server := &TServer{}
 	err := server.Start(thrift.NewTBufferedTransportFactory(thrift_buffer))
 	assert.NoError(b, err)

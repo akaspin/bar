@@ -74,7 +74,7 @@ func (c *SpecExportCmd) Do() (err error) {
 	}
 
 	// make specmap
-	nameMap := map[string]string{}
+	nameMap := map[string]manifest.ID{}
 	for name, m := range blobs {
 		nameMap[name] = m.ID
 	}
@@ -109,6 +109,6 @@ func (c *SpecExportCmd) Do() (err error) {
 	if err = trans.UploadSpec(spec); err != nil {
 		return
 	}
-	fmt.Fprintf(c.Stdout, spec.ID)
+	fmt.Fprint(c.Stdout, spec.ID)
 	return
 }

@@ -64,6 +64,9 @@ func Test_ParMap_Nils(t *testing.T)  {
 	assert.Len(t, res, 10)
 }
 
+
+
+
 func Benchmark_ParMapWorkerPool(b *testing.B) {
 	n := 1000000
 	var v string

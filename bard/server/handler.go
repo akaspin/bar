@@ -4,6 +4,7 @@ import (
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/bard/storage"
 	"bytes"
+	"github.com/akaspin/bar/manifest"
 )
 
 type BardTHandler struct {
@@ -56,12 +57,17 @@ func (h *BardTHandler) IsBlobExists(ids [][]byte) (r [][]byte, err error) {
 }
 
 func (h *BardTHandler) GetManifests(ids [][]byte) (r []*bar.Manifest, err error) {
+
 	return
 }
 
 func (h *BardTHandler) FetchChunk(blobID bar.ID, chunk *bar.Chunk) (r []byte, err error) {
 	w := new(bytes.Buffer)
-	if err = h.Storage.ReadChunkFromBlob(blobID, chunk.Info.Size, chunk.Offset, w); err != nil {
+	var id manifest.ID
+	if err = (&id).UnmarshalThrift(blobID); err != nil {
+		return
+	}
+	if err = h.Storage.ReadChunkFromBlob(id, chunk.Info.Size, chunk.Offset, w); err != nil {
 		return
 	}
 	r = w.Bytes()

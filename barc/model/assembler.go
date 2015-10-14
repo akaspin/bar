@@ -28,7 +28,7 @@ func NewAssembler(m *Model) (res *Assembler, err error) {
 }
 
 // Store chunk in assemble
-func (a *Assembler) StoreChunk(r io.Reader, id string) (err error) {
+func (a *Assembler) StoreChunk(r io.Reader, id manifest.ID) (err error) {
 	lock, err := a.model.FdLocks.Take()
 	if err != nil {
 		return
@@ -39,7 +39,7 @@ func (a *Assembler) StoreChunk(r io.Reader, id string) (err error) {
 	caOpts.Hasher = sha3.New256()
 
 	w, err := contentaddressable.NewFileWithOptions(
-		filepath.Join(a.Where, id), caOpts)
+		filepath.Join(a.Where, id.String()), caOpts)
 	if os.IsExist(err) {
 		err = nil
 		return
@@ -73,7 +73,7 @@ func (a *Assembler) StoredChunks() (res []string, err error) {
 
 // Assemble target files from stored chunks
 func (a *Assembler) Done(what lists.Links) (err error) {
-	logx.Debugf("assembling %s", what.Names())
+	logx.Tracef("assembling %s", what.Names())
 
 	req := map[string]interface{}{}
 	for k, v := range what {
@@ -90,7 +90,7 @@ func (a *Assembler) Done(what lists.Links) (err error) {
 			defer lock.Release()
 
 			man := arg.(manifest.Manifest)
-			w, err := os.Create(filepath.Join(a.model.WD, k + man.ID))
+			w, err := os.Create(filepath.Join(a.model.WD, k + man.ID.String()))
 			if err != nil {
 				return
 			}
@@ -122,9 +122,9 @@ func (a *Assembler) Done(what lists.Links) (err error) {
 	return
 }
 
-func (a *Assembler) commitBlob(name string, id string) (err error) {
+func (a *Assembler) commitBlob(name string, id manifest.ID) (err error) {
 	dst := filepath.Join(a.model.WD, name)
-	src := dst + id
+	src := dst + id.String()
 	bak := dst + ".bak"
 
 	os.Rename(dst, bak)
@@ -137,14 +137,14 @@ func (a *Assembler) commitBlob(name string, id string) (err error) {
 	return
 }
 
-func (a *Assembler) writeChunkTo(w io.Writer, id string) (err error) {
+func (a *Assembler) writeChunkTo(w io.Writer, id manifest.ID) (err error) {
 	lock, err := a.model.FdLocks.Take()
 	if err != nil {
 		return
 	}
 	defer lock.Release()
 
-	name := filepath.Join(a.Where, id)
+	name := filepath.Join(a.Where, id.String())
 	r, err := os.Open(name)
 	if err != nil {
 		return

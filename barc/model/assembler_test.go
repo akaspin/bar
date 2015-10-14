@@ -23,7 +23,7 @@ func Test_Assembler_StoreChunk(t *testing.T) {
 	data := []byte("mama myla ramu")
 	hasher := sha3.New256()
 	_, err = hasher.Write([]byte(data))
-	id := hex.EncodeToString(hasher.Sum(nil))
+	id := manifest.ID(hex.EncodeToString(hasher.Sum(nil)))
 
 	a, err := model.NewAssembler(m)
 	assert.NoError(t, err)
@@ -33,10 +33,10 @@ func Test_Assembler_StoreChunk(t *testing.T) {
 	assert.NoError(t, err)
 
 	// check stored chunk
-	f, err := os.Open(filepath.Join(a.Where, id))
+	f, err := os.Open(filepath.Join(a.Where, id.String()))
 	assert.NoError(t, err)
 	defer f.Close()
-	defer os.Remove(filepath.Join(a.Where, id))
+	defer os.Remove(filepath.Join(a.Where, id.String()))
 
 	r2, err := ioutil.ReadAll(f)
 	assert.NoError(t, err)

@@ -35,7 +35,7 @@ func Test_Spec1(t *testing.T) {
 	`))
 	assert.NoError(t, err)
 
-	spec, err := proto.NewSpec(time.Now().UnixNano(), map[string]string{
+	spec, err := proto.NewSpec(time.Now().UnixNano(), map[string]manifest.ID{
 		"file/1": m1.ID,
 		"file/2": m2.ID,
 	}, []string{})
@@ -47,7 +47,9 @@ func Test_Spec1(t *testing.T) {
 	sorted.Sort()
 
 	hasher := sha3.New256()
-	id, err := hex.DecodeString(m1.ID)
+	var id []byte
+
+	err = m1.ID.Decode(id)
 	assert.NoError(t, err)
 
 	_, err = hasher.Write([]byte(sorted[0]))
@@ -56,5 +58,5 @@ func Test_Spec1(t *testing.T) {
 	_, err = hasher.Write([]byte(sorted[1]))
 	_, err = hasher.Write(id)
 
-	assert.Equal(t, spec.ID, hex.EncodeToString(hasher.Sum(nil)))
+	assert.Equal(t, spec.ID, manifest.ID(hex.EncodeToString(hasher.Sum(nil))))
 }

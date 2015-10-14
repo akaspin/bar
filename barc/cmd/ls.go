@@ -101,9 +101,9 @@ func (c *LsCmd) Do() (err error) {
 		return
 	}
 
-	onRemote := map[string]struct{}{}
+	onRemote := map[manifest.ID]struct{}{}
 	if !c.noRemote {
-		var exists []string
+		var exists []manifest.ID
 		trans := transport.NewTransport(mod, c.httpEndpoint, c.rpcEndpoints, c.pool)
 		if exists, err = trans.Check(blobs.IDMap().IDs()); err != nil {
 			return
@@ -188,9 +188,9 @@ func (c *LsCmd) Do() (err error) {
 		}
 		if !c.noID {
 			if !c.fullID {
-				toLine(blobs[name].ID[:12])
+				toLine(blobs[name].ID.String()[:12])
 			} else {
-				toLine(blobs[name].ID)
+				toLine(blobs[name].ID.String())
 			}
 		}
 		if !c.noSize {

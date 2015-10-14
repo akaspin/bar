@@ -13,6 +13,7 @@ else
 endif
 
 BENCH=.
+TESTS=.
 
 
 .PHONY: clean uninstall test bench
@@ -80,10 +81,10 @@ bench:
 	go test -run=XXX -bench=${BENCH} ./...
 
 test:
-	CGO_ENABLED=0 go test ./...
+	CGO_ENABLED=0 go test -run=${TESTS} ./...
 
 test-short:
-	CGO_ENABLED=0 go test -short ./...
+	CGO_ENABLED=0 go test -run=${TESTS} -short ./...
 
 stubs: proto/bar/ttypes.go
 

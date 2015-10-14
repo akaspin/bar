@@ -4,6 +4,7 @@ import (
 	"sort"
 	"encoding/hex"
 	"path/filepath"
+	"github.com/akaspin/bar/manifest"
 )
 
 
@@ -11,19 +12,19 @@ import (
 type Spec struct {
 
 	// Spec ID is SHA3-256 hash of sorted filepath:manifest-id + kills-filepaths
-	ID string
+	ID manifest.ID
 
 	// Spec timestamp
 	Timestamp int64
 
 	// BLOB links
-	BLOBs map[string]string
+	BLOBs map[string]manifest.ID
 
 	// Deleted filenames (not implemented)
 	Remove []string
 }
 
-func NewSpec(timestamp int64, in map[string]string, kill []string) (res Spec, err error) {
+func NewSpec(timestamp int64, in map[string]manifest.ID, kill []string) (res Spec, err error) {
 	hasher := sha3.New256()
 	var idBuf []byte
 
@@ -36,14 +37,14 @@ func NewSpec(timestamp int64, in map[string]string, kill []string) (res Spec, er
 	kills := sort.StringSlice(kill)
 	kills.Sort()
 
-	drop := map[string]string{}
+	drop := map[string]manifest.ID{}
 	var removalsDrop []string
 
 	for _, n := range names {
 		if _, err = hasher.Write([]byte(filepath.ToSlash(n))); err != nil {
 			return
 		}
-		if idBuf, err = hex.DecodeString(in[n]); err != nil {
+		if err = in[n].Decode(idBuf); err != nil {
 			return
 		}
 		if _, err = hasher.Write(idBuf); err != nil {
@@ -59,7 +60,7 @@ func NewSpec(timestamp int64, in map[string]string, kill []string) (res Spec, er
 	}
 
 	res = Spec{
-		hex.EncodeToString(hasher.Sum(nil)),
+		manifest.ID(hex.EncodeToString(hasher.Sum(nil))),
 		timestamp,
 		drop,
 		removalsDrop}

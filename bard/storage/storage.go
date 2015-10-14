@@ -9,9 +9,9 @@ import (
 type Storage interface {
 	io.Closer
 
-	IsSpecExists(id string) (ok bool, err error)
+	IsSpecExists(id manifest.ID) (ok bool, err error)
 
-	IsBLOBExists(id string) (ok bool, err error)
+	IsBLOBExists(id manifest.ID) (ok bool, err error)
 
 //	CheckBLOBS(ids []string) (map[string]bool, error)
 
@@ -19,30 +19,31 @@ type Storage interface {
 	WriteSpec(s proto.Spec) (err error)
 
 	// Read spec
-	ReadSpec(id string) (res proto.Spec, err error)
+	ReadSpec(id manifest.ID) (res proto.Spec, err error)
 
 	// Read manifest
-	ReadManifest(id string) (res manifest.Manifest, err error)
+	ReadManifest(id manifest.ID) (res manifest.Manifest, err error)
+
+	// Get manifests by it's ids
+	GetManifests(ids []manifest.ID) (res []*manifest.Manifest, err error)
 
 	// Declare new upload
 	DeclareUpload(m manifest.Manifest) (err error)
 
 	// Write chunk for declared blob from given reader
-	WriteChunk(blobID, chunkID string, size int64, r io.Reader) (err error)
+	WriteChunk(blobID, chunkID manifest.ID, size int64, r io.Reader) (err error)
 
 	// Finish upload
-	FinishUpload(id string) (err error)
+	FinishUpload(id manifest.ID) (err error)
 
 	// Read chunk from storage to given writer
 	ReadChunk(chunk proto.ChunkInfo, w io.Writer) (err error)
 
 	// Read Chunk from blob by size and offset
-	ReadChunkFromBlob(blobID []byte, size, offset int64, w io.Writer) (err error)
+	ReadChunkFromBlob(blobID manifest.ID, size, offset int64, w io.Writer) (err error)
 
 //	GetManifests(ids [][]byte, )
 
-	// Destroy blob
-	DestroyBLOB(id string) (err error)
 }
 
 

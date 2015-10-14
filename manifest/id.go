@@ -1,24 +1,26 @@
 package manifest
 import (
+	"github.com/akaspin/bar/proto/bar"
 	"encoding/hex"
-	"encoding/json"
 )
 
-type ID []byte
+// SHA3-256
+type ID string
 
-func (i ID) String() string  {
-	return hex.EncodeToString(i)
+func (i ID) String() string {
+	return string(i)
 }
 
-func (i ID) MarshalJSON() (res []byte, err error) {
-	return json.Marshal(hex.EncodeToString(i))
+func (i ID) Decode(data []byte) (err error) {
+	data, err = hex.DecodeString(i.String())
+	return
 }
 
-func (i *ID) UnmarshalJSON(b []byte) (err error) {
-	var j string
-	if err = json.Unmarshal(b, &j); err != nil {
-		return
-	}
-	*i, err = hex.DecodeString(j)
+func (i ID) MarshalThrift() (res bar.ID, err error) {
+	return hex.DecodeString(i.String())
+}
+
+func (i *ID) UnmarshalThrift(data bar.ID) (err error) {
+	*i = ID(hex.EncodeToString(data))
 	return
 }

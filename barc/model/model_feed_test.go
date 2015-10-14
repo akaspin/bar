@@ -46,7 +46,7 @@ func Test_Model_FeedManifests_Large(t *testing.T) {
 	defer tree.Squash()
 
 	assert.NoError(t, tree.Populate())
-	assert.NoError(t, tree.PopulateN(1024 * 1024 * 300, 1))
+	assert.NoError(t, tree.PopulateN(1024 * 1024 * 20, 1))
 
 	names := lists.NewFileList().ListDir(tree.CWD)
 
@@ -66,7 +66,7 @@ func Test_Model_FeedManifests_Many(t *testing.T) {
 	defer tree.Squash()
 
 	assert.NoError(t, tree.Populate())
-	assert.NoError(t, tree.PopulateN(10, 1000))
+	assert.NoError(t, tree.PopulateN(10, 300))
 
 	names := lists.NewFileList().ListDir(tree.CWD)
 
@@ -75,7 +75,7 @@ func Test_Model_FeedManifests_Many(t *testing.T) {
 	lx, err := m.FeedManifests(true, true, true, names...)
 	assert.NoError(t, err)
 
-	assert.Len(t, lx.Names(), 1016)
+	assert.Len(t, lx.Names(), 316)
 }
 
 func Benchmark_Model_FeedManifests_Many(b *testing.B)  {
@@ -93,9 +93,11 @@ func Benchmark_Model_FeedManifests_Many(b *testing.B)  {
 		m, err := model.New(tree.CWD, false, 1024 * 1024, 16)
 		assert.NoError(b, err)
 		lx, err := m.FeedManifests(true, true, true, names...)
-		b.Log(len(lx), err)
-		assert.NoError(b, err)
 		b.StopTimer()
+		assert.NoError(b, err)
+		for _, man := range lx {
+			b.SetBytes(man.Size)
+		}
 	}
 }
 
@@ -112,8 +114,11 @@ func Benchmark_Model_FeedManifests_Large(b *testing.B)  {
 		b.StartTimer()
 		m, err := model.New(tree.CWD, false, 1024 * 1024, 16)
 		assert.NoError(b, err)
-		_, err = m.FeedManifests(true, true, true, names...)
-		assert.NoError(b, err)
+		lx, err := m.FeedManifests(true, true, true, names...)
 		b.StopTimer()
+		assert.NoError(b, err)
+		for _, man := range lx {
+			b.SetBytes(man.Size)
+		}
 	}
 }

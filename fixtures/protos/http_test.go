@@ -23,6 +23,7 @@ func (s *httpTestServer) start() (err error) {
 }
 
 func Test_Proto_HTTP(t *testing.T)  {
+	t.Skip()
 	srv := &httpTestServer{&baseTestServer{}}
 	port, err := srv.listen()
 	assert.NoError(t, err)
@@ -45,6 +46,7 @@ func Test_Proto_HTTP(t *testing.T)  {
 }
 
 func Test_Proto_HTTP_Large(t *testing.T)  {
+	t.Skip()
 	srv := &httpTestServer{&baseTestServer{}}
 	port, err := srv.listen()
 	assert.NoError(t, err)
@@ -67,6 +69,7 @@ func Test_Proto_HTTP_Large(t *testing.T)  {
 }
 
 func Test_Proto_HTTP_Timeout(t *testing.T)  {
+	t.Skip()
 	srv := &httpTestServer{&baseTestServer{}}
 	port, err := srv.listen()
 	assert.NoError(t, err)
@@ -94,6 +97,7 @@ func Test_Proto_HTTP_Timeout(t *testing.T)  {
 }
 
 func Test_Proto_HTTP_Large_Timeout(t *testing.T)  {
+	t.Skip()
 	srv := &httpTestServer{&baseTestServer{}}
 	port, err := srv.listen()
 	assert.NoError(t, err)
@@ -121,7 +125,7 @@ func Test_Proto_HTTP_Large_Timeout(t *testing.T)  {
 }
 
 func Benchmark_Proto_HTTP(b *testing.B)  {
-	b.StopTimer()
+	b.Skip()
 	srv := &httpTestServer{&baseTestServer{}}
 	port, err := srv.listen()
 	assert.NoError(b, err)
@@ -152,6 +156,7 @@ func Benchmark_Proto_HTTP(b *testing.B)  {
 }
 
 func Benchmark_Proto_HTTP_Large(b *testing.B)  {
+	b.Skip()
 	srv := &httpTestServer{&baseTestServer{}}
 	port, err := srv.listen()
 	assert.NoError(b, err)

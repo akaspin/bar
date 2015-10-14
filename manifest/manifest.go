@@ -196,7 +196,7 @@ func (s *Manifest) ParseBlob(in io.Reader, chunkSize int64) (err error) {
 		written, err = io.CopyN(w, in, chunkSize)
 		s.Size += written
 		chunk.Size = written
-		chunk.ID = hex.EncodeToString(chunkHasher.Sum(nil))
+		chunk.ID = ID(hex.EncodeToString(chunkHasher.Sum(nil)))
 		s.Chunks = append(s.Chunks, chunk)
 
 		if err == io.EOF {
@@ -206,7 +206,7 @@ func (s *Manifest) ParseBlob(in io.Reader, chunkSize int64) (err error) {
 			return
 		}
 	}
-	s.ID = hex.EncodeToString(hasher.Sum(nil))
+	s.ID = ID(hex.EncodeToString(hasher.Sum(nil)))
 	return
 }
 
