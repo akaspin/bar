@@ -12,6 +12,8 @@ import (
 	"bytes"
 	"strings"
 	"github.com/akaspin/bar/proto/bar"
+	"golang.org/x/net/context"
+	"github.com/akaspin/bar/concurrent"
 )
 
 // Common transport with pooled connections
@@ -181,41 +183,45 @@ func (t *Transport) UploadChunk(name string, blobID manifest.ID, chunk manifest.
 
 func (t *Transport) Download(blobs lists.Links) (err error) {
 
-	fetch, err := t.GetFetch(blobs.IDMap().IDs())
 	logx.Tracef("fetching blobs %s", blobs.IDMap())
+	fetch, err := t.GetFetch(blobs.IDMap().IDs())
 
 	// little funny, but all chunks are equal - flatten them
-	chunkMap := map[string]interface{}{}
+	var req, res []interface{}
+	chunkMap := map[string]struct{manifest.ID; manifest.Chunk}{}
 	fetchIds := map[manifest.ID]struct{}{}
 
 	for _, mt := range fetch {
 		fetchIds[mt.ID] = struct{}{}
 		for _, ch := range mt.Chunks    {
-			chunkMap[ch.ID.String()] = proto.ChunkInfo{mt.ID, ch}
+			chunkMap[ch.ID.String()] = struct{manifest.ID; manifest.Chunk}{mt.ID, ch}
 		}
+	}
+	for _, v := range chunkMap {
+		req = append(req, v)
+
 	}
 
 	a, err := model.NewAssembler(t.model)
 	defer a.Close()
 
 	// Fetch all chunks
-	_, err = t.model.Pool.RunBatch(parmap.Task{
-		Map: chunkMap,
-		Fn: func(id string, arg interface{}) (res interface{}, err error) {
+	err = t.model.BatchPool.Do(
+		func (ctx context.Context, in interface{}) (out interface{}, err error) {
+			r := in.(struct{manifest.ID; manifest.Chunk})
+
 			tclient, err := t.tPool.Take()
 			if err != nil {
 				return
 			}
 			defer tclient.Release()
 
-			ci := arg.(proto.ChunkInfo)
-
 			var blobID bar.ID
-			if blobID, err = ci.BlobID.MarshalThrift(); err != nil {
+			if blobID, err = r.ID.MarshalThrift(); err != nil {
 				return
 			}
 			var chunk bar.Chunk
-			chunk, err = ci.Chunk.MarshalThrift()
+			chunk, err = r.Chunk.MarshalThrift()
 			if err != nil {
 				return
 			}
@@ -224,11 +230,10 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 				return
 			}
 
-			err = a.StoreChunk(bytes.NewReader(data), ci.ID)
+			err = a.StoreChunk(bytes.NewReader(data), r.Chunk.ID)
 			return
-		},
-		IgnoreErrors: true,
-	})
+		}, &req, &res, concurrent.DefaultBatchOptions().AllowErrors(),
+	)
 	logx.OnError(err)
 
 	// filter blobs

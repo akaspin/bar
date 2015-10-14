@@ -6,28 +6,27 @@ import (
 	"fmt"
 	"github.com/akaspin/bar/concurrent"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/context"
 )
 
 func Test_Concurrent_Pool1(t *testing.T) {
 	n := 100
 
-	var req []interface{}
-	var res []interface{}
+	var req, res []interface{}
 	for i := 0; i < n; i++ {
 		req = append(req, i)
 	}
 
 	pool := concurrent.NewPool(16)
 	defer pool.Close()
+
 	err := pool.Do(
-		func(in interface{}) (out interface{}, err error) {
+		func(ctx context.Context, in interface{}) (out interface{}, err error) {
 			out = fmt.Sprintf("%d", in.(int))
 			return
 		},
-		&req,
-		&res,
-		false,
-		false,
+		&req, &res,
+		concurrent.DefaultBatchOptions(),
 	)
 	assert.NoError(t, err)
 	assert.Len(t, res, 100)
@@ -45,7 +44,7 @@ func Test_Concurrent_Pool_Error(t *testing.T) {
 	pool := concurrent.NewPool(16)
 	defer pool.Close()
 	err := pool.Do(
-		func(in interface{}) (out interface{}, err error) {
+		func(ctx context.Context, in interface{}) (out interface{}, err error) {
 			if in.(int) >= 0 && in.(int) < 30 {
 				err = fmt.Errorf("test error")
 				return
@@ -55,8 +54,7 @@ func Test_Concurrent_Pool_Error(t *testing.T) {
 		},
 		&req,
 		&res,
-		false,
-		false,
+		concurrent.DefaultBatchOptions(),
 	)
 	assert.Error(t, err)
 	assert.NotEqual(t, len(res), 100)
@@ -74,7 +72,7 @@ func Test_Concurrent_Pool_IgnoreErrors(t *testing.T) {
 	pool := concurrent.NewPool(16)
 	defer pool.Close()
 	err := pool.Do(
-		func(in interface{}) (out interface{}, err error) {
+		func(ctx context.Context, in interface{}) (out interface{}, err error) {
 			if in.(int) >= 0 && in.(int) < 30 {
 				err = fmt.Errorf("test error")
 				return
@@ -84,60 +82,9 @@ func Test_Concurrent_Pool_IgnoreErrors(t *testing.T) {
 		},
 		&req,
 		&res,
-		true,
-		false,
+		concurrent.DefaultBatchOptions().AllowErrors(),
 	)
 	assert.Error(t, err)
-	assert.Equal(t, len(res), 70)
-}
-
-func Test_Concurrent_Pool_AcceptNils(t *testing.T) {
-	n := 100
-
-	var req []interface{}
-	var res []interface{}
-	for i := 0; i < n; i++ {
-		req = append(req, i)
-	}
-
-	pool := concurrent.NewPool(16)
-	defer pool.Close()
-	err := pool.Do(
-		func(in interface{}) (out interface{}, err error) {
-			if in.(int) >= 0 && in.(int) < 30 {
-				return nil, nil
-			}
-			out = fmt.Sprintf("%d", in.(int))
-			return
-		},
-		&req, &res, true, true,
-	)
-	assert.NoError(t, err)
-	assert.Equal(t, len(res), 100)
-}
-
-func Test_Concurrent_Pool_NotAcceptNils(t *testing.T) {
-	n := 100
-
-	var req []interface{}
-	var res []interface{}
-	for i := 0; i < n; i++ {
-		req = append(req, i)
-	}
-
-	pool := concurrent.NewPool(16)
-	defer pool.Close()
-	err := pool.Do(
-		func(in interface{}) (out interface{}, err error) {
-			if in.(int) >= 0 && in.(int) < 30 {
-				return nil, nil
-			}
-			out = fmt.Sprintf("%d", in.(int))
-			return
-		},
-		&req, &res, true, false,
-	)
-	assert.NoError(t, err)
 	assert.Equal(t, len(res), 70)
 }
 
@@ -153,19 +100,21 @@ func Test_Concurrent_Pool_Hangs(t *testing.T) {
 	pool := concurrent.NewPool(16)
 	defer pool.Close()
 	time.Sleep(time.Second)
-	t.Log(pool.Busy())
+	assert.Equal(t, 0, pool.Busy())
+
 	err := pool.Do(
-		func(in interface{}) (out interface{}, err error) {
+		func(ctx context.Context, in interface{}) (out interface{}, err error) {
 			if in.(int) == 90 {
-				time.Sleep(time.Second * 3)
+				time.Sleep(time.Second * 5)
 				return "ok", nil
 			}
 			return nil, fmt.Errorf("break it")
 		},
-		&req, &res, false, false,
+		&req, &res, concurrent.DefaultBatchOptions(),
 	)
+
 	time.Sleep(time.Second)
-	t.Log(pool.Busy())
+	assert.Equal(t, 0, pool.Busy())
 	assert.Error(t, err)
 	assert.Equal(t, len(res), 0)
 }

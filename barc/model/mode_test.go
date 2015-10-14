@@ -19,5 +19,4 @@ func Test_Model_IsBlobs(t *testing.T)  {
 
 	_, err = m.IsBlobs(names...)
 	assert.NoError(t, err)
-
 }

@@ -7,28 +7,26 @@ import (
 	"github.com/tamtam-im/logx"
 	"path/filepath"
 	"github.com/akaspin/bar/barc/lists"
-	"github.com/akaspin/bar/parmap"
 	"time"
 	"github.com/akaspin/bar/concurrent"
+	"golang.org/x/net/context"
 )
 
 
 type Model struct {
 	WD string
 	Git *git.Git
-	Pool *parmap.ParMap
-	FdLocks *parmap.LocksPool
-	WPool *concurrent.Pool
+	FdLocks *concurrent.LocksPool
+	*concurrent.BatchPool
 	chunkSize int64
 }
 
 func New(wd string, useGit bool, chunkSize int64, pool int) (res *Model, err error) {
 	res = &Model{
 		WD: wd,
-		Pool: parmap.NewWorkerPool(pool * 64),
-		WPool: concurrent.NewPool(pool * 64),
+		BatchPool: concurrent.NewPool(pool * 64),
 		chunkSize: chunkSize,
-		FdLocks: parmap.NewLockPool(pool, time.Hour),
+		FdLocks: concurrent.NewLockPool(pool, time.Hour),
 	}
 	if useGit {
 		res.Git, err = git.NewGit(wd)
@@ -73,8 +71,8 @@ func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (r
 		req = append(req, n)
 	}
 
-	err = m.WPool.Do(
-		func(in interface{}) (out interface{}, err error) {
+	err = m.BatchPool.Do(
+		func(ctx context.Context, in interface{}) (out interface{}, err error) {
 			res2, err := m.getManifest(in.(string), blobs, manifests)
 			if err != nil {
 				return nil, err
@@ -85,8 +83,7 @@ func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (r
 			}{in.(string), res2}
 			return
 		},
-		&req, &res1,
-		!strict, !strict,
+		&req, &res1, concurrent.DefaultBatchOptions().AllowErrors(),
 	)
 	res = lists.Links{}
 	for _, r := range res1 {
@@ -145,8 +142,8 @@ func (m *Model) IsBlobs(names ...string) (res map[string]bool, err error) {
 		req = append(req, n)
 	}
 
-	err = m.WPool.Do(
-		func(in interface{}) (out interface{}, err error) {
+	err = m.BatchPool.Do(
+		func(ctx context.Context, in interface{}) (out interface{}, err error) {
 			lock, err := m.FdLocks.Take()
 			if err != nil {
 				return
@@ -165,7 +162,7 @@ func (m *Model) IsBlobs(names ...string) (res map[string]bool, err error) {
 			out = struct{name string; isBlob bool}{in.(string), !isManifest}
 			return
 		},
-		&req, &res1, false, false,
+		&req, &res1, concurrent.DefaultBatchOptions(),
 	)
 
 	for _, r := range res1 {
@@ -178,22 +175,22 @@ func (m *Model) IsBlobs(names ...string) (res map[string]bool, err error) {
 func (m *Model) SquashBlobs(blobs lists.Links) (err error) {
 	logx.Tracef("squashing blobs %s", blobs.IDMap())
 
-	req := map[string]interface{}{}
-	for k, v := range blobs {
-		req[k] = v
+	var req, res []interface{}
+	for _, v := range blobs.ToSlice() {
+		req = append(req, v)
 	}
 
-	if _, err = m.Pool.RunBatch(parmap.Task{
-		Map: req,
-		Fn: func(name string, in interface{}) (res interface{}, err error) {
+	err = m.BatchPool.Do(
+		func(ctx context.Context, in interface{}) (out interface{}, err error) {
+			r := in.(lists.Link)
+
 			lock, err := m.FdLocks.Take()
 			if err != nil {
 				return
 			}
 			defer lock.Release()
 
-			man := in.(manifest.Manifest)
-			absname := filepath.Join(m.WD, name)
+			absname := filepath.Join(m.WD, r.Name)
 			backName := absname + ".bar-backup"
 			os.Rename(absname, absname + ".bar-backup")
 			os.MkdirAll(filepath.Dir(absname), 0755)
@@ -202,18 +199,19 @@ func (m *Model) SquashBlobs(blobs lists.Links) (err error) {
 			if err != nil {
 				return
 			}
-			err = man.Serialize(w)
+			err = r.Manifest.Serialize(w)
 			if err != nil {
 				os.Remove(absname)
 				os.Rename(backName, absname)
 				return
 			}
 			defer os.Remove(backName)
-			logx.Debugf("squashed %s", name)
+			logx.Debugf("squashed %s", r.Name)
 			return
 		},
-		IgnoreErrors: true,
-	}); err != nil {
+		&req, &res, concurrent.DefaultBatchOptions().AllowErrors(),
+	)
+	if err != nil {
 		return
 	}
 

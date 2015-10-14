@@ -8,9 +8,10 @@ import (
 	"github.com/akaspin/bar/barc/lists"
 	"os"
 	"github.com/tamtam-im/logx"
-	"github.com/akaspin/bar/parmap"
 	"github.com/akaspin/bar/manifest"
 	"strings"
+	"golang.org/x/net/context"
+	"github.com/akaspin/bar/concurrent"
 )
 
 type Assembler struct  {
@@ -75,50 +76,42 @@ func (a *Assembler) StoredChunks() (res []string, err error) {
 func (a *Assembler) Done(what lists.Links) (err error) {
 	logx.Tracef("assembling %s", what.Names())
 
-	req := map[string]interface{}{}
+	var req, res []interface{}
 	for k, v := range what {
-		req[k] = v
+		req = append(req, lists.Link{v, k})
 	}
 
-	_, err = a.model.Pool.RunBatch(parmap.Task{
-		Map: req,
-		Fn: func(k string, arg interface{}) (res interface{}, err error) {
+	err = a.model.BatchPool.Do(
+		func(ctx context.Context, in interface{}) (out interface{}, err error) {
+			r := in.(lists.Link)
+
 			lock, err := a.model.FdLocks.Take()
 			if err != nil {
 				return
 			}
 			defer lock.Release()
 
-			man := arg.(manifest.Manifest)
-			w, err := os.Create(filepath.Join(a.model.WD, k + man.ID.String()))
+			w, err := os.Create(filepath.Join(a.model.WD,
+				r.Name + r.Manifest.ID.String()))
 			if err != nil {
 				return
 			}
 			defer w.Close()
 
-			for _, chunk := range man.Chunks {
+			for _, chunk := range r.Manifest.Chunks {
 				if err = a.writeChunkTo(w, chunk.ID); err != nil {
 					return
 				}
 			}
+			err = a.commitBlob(r.Name, r.Manifest.ID)
+
 			return
-		},
-		IgnoreErrors: true,
-	})
+		}, &req, &res, concurrent.DefaultBatchOptions().AllowErrors(),
+	)
 	if err != nil {
 		return
 	}
 	defer a.Close()
-
-	_, err = a.model.Pool.RunBatch(parmap.Task{
-		Map: req,
-		Fn: func(k string, arg interface{}) (res interface{}, err error) {
-			man := arg.(manifest.Manifest)
-			err = a.commitBlob(k, man.ID)
-			return
-		},
-	})
-
 	return
 }
 

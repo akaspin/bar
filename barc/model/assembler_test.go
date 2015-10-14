@@ -44,7 +44,7 @@ func Test_Assembler_StoreChunk(t *testing.T) {
 	assert.Equal(t, data, r2)
 }
 
-func Test_Assembler(t *testing.T) {
+func Test_Assembler_Assemble(t *testing.T) {
 	tree := fixtures.NewTree("Assembler", "")
 	assert.NoError(t, tree.Populate())
 	defer tree.Squash()

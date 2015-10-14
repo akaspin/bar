@@ -9,8 +9,8 @@ import (
 	"github.com/akaspin/bar/manifest"
 	"encoding/json"
 	"github.com/akaspin/bar/proto"
-	"github.com/akaspin/bar/parmap"
 	"time"
+	"github.com/akaspin/bar/concurrent"
 )
 
 const (
@@ -38,17 +38,13 @@ type BlockStorage struct {
 	*BlockStorageOptions
 
 	// Max Open files locker
-	FDLocks *parmap.LocksPool
-
-	// Operation pool
-	Pool *parmap.ParMap
+	FDLocks *concurrent.LocksPool
 }
 
 func NewBlockStorage(options *BlockStorageOptions) *BlockStorage {
 	return &BlockStorage{
 		BlockStorageOptions: options,
-		FDLocks: parmap.NewLockPool(options.MaxFiles, time.Hour),
-		Pool: parmap.NewWorkerPool(options.PoolSize),
+		FDLocks: concurrent.NewLockPool(options.MaxFiles, time.Hour),
 	}
 }
 
