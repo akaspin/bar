@@ -85,7 +85,7 @@ func Test_Upload(t *testing.T) {
 
 func Test_GetFetch(t *testing.T) {
 	root := "testdata-GetFetch"
-	endpoint, _, stop := fixtures.RunServer(t, root)
+	endpoint, tEP, stop := fixtures.RunServer(t, root)
 	defer stop()
 	defer os.RemoveAll(root)
 
@@ -95,7 +95,7 @@ func Test_GetFetch(t *testing.T) {
 
 	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
+	tr := transport.NewTransport(mod, endpoint, tEP, 16)
 	defer tr.Close()
 
 	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
@@ -107,7 +107,7 @@ func Test_GetFetch(t *testing.T) {
 	err = tr.Upload(mx)
 	assert.NoError(t, err)
 
-	check, err := tr.GetFetch(mx.IDMap().IDs())
+	check, err := tr.GetManifests(mx.IDMap().IDs())
 	assert.NoError(t, err)
 	assert.Len(t, check, 3)
 }

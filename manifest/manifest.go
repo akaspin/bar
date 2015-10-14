@@ -220,6 +220,33 @@ func (s *Manifest) nextLine(in *bufio.Reader, buf []byte) (res string, err error
 }
 
 func (s Manifest) MarshalThrift() (res bar.Manifest, err error) {
+	var info bar.DataInfo
+	if info, err = s.Data.MarshalThrift(); err != nil {
+		return
+	}
+	res.Info = &info
+	for _, chunk := range s.Chunks {
+		var ch bar.Chunk
+		if ch, err = chunk.MarshalThrift(); err != nil {
+			return
+		}
+		res.Chunks = append(res.Chunks, &ch)
+	}
+	return
+}
+
+func (s *Manifest) UnmarshalThrift(data bar.Manifest) (err error) {
+	if err = (&s.Data).UnmarshalThrift(*data.Info); err != nil {
+		return
+	}
+	for _, tChunk := range data.Chunks {
+		var chunk Chunk
+		if err = (&chunk).UnmarshalThrift(*tChunk); err != nil {
+			return
+		}
+		s.Chunks = append(s.Chunks, chunk)
+	}
 
 	return
 }
+

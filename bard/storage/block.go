@@ -11,6 +11,7 @@ import (
 	"github.com/akaspin/bar/proto"
 	"time"
 	"github.com/akaspin/bar/concurrent"
+	"golang.org/x/net/context"
 )
 
 const (
@@ -39,12 +40,15 @@ type BlockStorage struct {
 
 	// Max Open files locker
 	FDLocks *concurrent.LocksPool
+
+	*concurrent.BatchPool
 }
 
 func NewBlockStorage(options *BlockStorageOptions) *BlockStorage {
 	return &BlockStorage{
 		BlockStorageOptions: options,
 		FDLocks: concurrent.NewLockPool(options.MaxFiles, time.Hour),
+		BatchPool: concurrent.NewPool(options.PoolSize),
 	}
 }
 
@@ -114,7 +118,7 @@ func (s *BlockStorage) ReadSpec(id manifest.ID) (res proto.Spec, err error) {
 	return
 }
 
-func (s *BlockStorage) ReadManifest(id manifest.ID) (res manifest.Manifest, err error) {
+func (s *BlockStorage) ReadManifest(id manifest.ID) (res *manifest.Manifest, err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
 		return
@@ -126,13 +130,30 @@ func (s *BlockStorage) ReadManifest(id manifest.ID) (res manifest.Manifest, err 
 		return
 	}
 	defer r.Close()
-	res = manifest.Manifest{}
+	res = &manifest.Manifest{}
 	err = json.NewDecoder(r).Decode(&res)
 	return
 }
 
 func (s *BlockStorage) GetManifests(ids []manifest.ID) (res []*manifest.Manifest, err error) {
+	var req, res1 []interface{}
+	for _, i := range ids {
+		req = append(req, i)
+	}
 
+	if err = s.BatchPool.Do(
+		func(ctx context.Context, in interface{}) (out interface{}, err error) {
+			r := in.(manifest.ID)
+			out, err = s.ReadManifest(r)
+			return
+		}, &req, &res1, concurrent.DefaultBatchOptions(),
+	); err != nil {
+		return
+	}
+
+	for _, v := range res1 {
+		res = append(res, v.(*manifest.Manifest))
+	}
 
 	return
 }
@@ -310,11 +331,6 @@ func (s *BlockStorage) Close() (err error) {
 func (s *BlockStorage) idPath(ns string, id manifest.ID) string {
 	ids := id.String()
 	return filepath.Join(s.Root, ns, ids[:s.Split], ids)
-}
-
-// Make filename
-func (s *BlockStorage) filePath(what, id string) string {
-	return filepath.Join(s.Root, what, id[:s.Split], id)
 }
 
 func (s *BlockStorage) getCAFile(name string) (w *contentaddressable.File, err error) {

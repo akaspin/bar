@@ -60,7 +60,7 @@ type Bar interface {
 	// Parameters:
 	//  - Ids
 	IsBlobExists(ids [][]byte) (r [][]byte, err error)
-	// Get manifests by ids
+	// Get manifests by their ids
 	//
 	//
 	// Parameters:
@@ -699,7 +699,7 @@ func (p *BarClient) recvIsBlobExists() (value [][]byte, err error) {
 	return
 }
 
-// Get manifests by ids
+// Get manifests by their ids
 //
 //
 // Parameters:

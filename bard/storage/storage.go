@@ -22,7 +22,7 @@ type Storage interface {
 	ReadSpec(id manifest.ID) (res proto.Spec, err error)
 
 	// Read manifest
-	ReadManifest(id manifest.ID) (res manifest.Manifest, err error)
+	ReadManifest(id manifest.ID) (res *manifest.Manifest, err error)
 
 	// Get manifests by it's ids
 	GetManifests(ids []manifest.ID) (res []*manifest.Manifest, err error)
@@ -35,9 +35,6 @@ type Storage interface {
 
 	// Finish upload
 	FinishUpload(id manifest.ID) (err error)
-
-	// Read chunk from storage to given writer
-	ReadChunk(chunk proto.ChunkInfo, w io.Writer) (err error)
 
 	// Read Chunk from blob by size and offset
 	ReadChunkFromBlob(blobID manifest.ID, size, offset int64, w io.Writer) (err error)

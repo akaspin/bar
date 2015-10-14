@@ -20,6 +20,8 @@ struct ServerInfo {
 /** SHA3-256 */
 typedef binary ID
 
+typedef list<ID> IDs
+
 /**
 * Info about data entity
 **/

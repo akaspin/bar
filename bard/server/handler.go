@@ -57,7 +57,28 @@ func (h *BardTHandler) IsBlobExists(ids [][]byte) (r [][]byte, err error) {
 }
 
 func (h *BardTHandler) GetManifests(ids [][]byte) (r []*bar.Manifest, err error) {
+	var req []manifest.ID
+	var res []*manifest.Manifest
 
+	for _, id := range ids {
+		var i manifest.ID
+		if err = (&i).UnmarshalThrift(id); err != nil {
+			return
+		}
+		req = append(req, i)
+	}
+
+	res, err = h.Storage.GetManifests(req)
+	if err != nil {
+		return
+	}
+	for _, m := range res {
+		var m1 bar.Manifest
+		if m1, err = m.MarshalThrift(); err != nil {
+			return
+		}
+		r = append(r, &m1)
+	}
 	return
 }
 

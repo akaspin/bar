@@ -184,7 +184,7 @@ func (t *Transport) UploadChunk(name string, blobID manifest.ID, chunk manifest.
 func (t *Transport) Download(blobs lists.Links) (err error) {
 
 	logx.Tracef("fetching blobs %s", blobs.IDMap())
-	fetch, err := t.GetFetch(blobs.IDMap().IDs())
+	fetch, err := t.GetManifests(blobs.IDMap().IDs())
 
 	// little funny, but all chunks are equal - flatten them
 	var req, res []interface{}
@@ -249,13 +249,32 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 	return
 }
 
-func (t *Transport) GetFetch(ids []manifest.ID) (res []manifest.Manifest, err error) {
-	cli, err := t.rpcPool.Take()
+func (t *Transport) GetManifests(ids []manifest.ID) (res []manifest.Manifest, err error) {
+	cli, err := t.tPool.Take()
 	if err != nil {
 		return
 	}
 	defer cli.Release()
-	err = cli.Call("Service.GetFetch", &ids, &res)
+
+	var req [][]byte
+	for _, i := range ids {
+		var i1 bar.ID
+		if i1, err = i.MarshalThrift(); err != nil {
+			return
+		}
+		req = append(req, []byte(i1))
+	}
+
+	res1, err := cli.GetManifests(req)
+
+	for _, tm := range res1 {
+		var m manifest.Manifest
+		if err = (&m).UnmarshalThrift(*tm); err != nil {
+			return
+		}
+		res = append(res, m)
+	}
+
 	return
 }
 

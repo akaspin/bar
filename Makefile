@@ -88,6 +88,9 @@ test-short:
 
 stubs: proto/bar/ttypes.go
 
+clean-stubs:
+	rm -rf proto/bar
+
 proto/bar/ttypes.go: proto/proto.thrift
 	mkdir -p ${@D}
 	thrift -strict -v -out proto --gen \

@@ -19,7 +19,7 @@ func RunServer(t *testing.T, root string) (httpEndpoint string, rpcEndpoints str
 	rt := filepath.Join(wd, "testdata", root + "srv")
 	os.RemoveAll(rt)
 
-	p := storage.NewBlockStorage(&storage.BlockStorageOptions{rt, 2, 32, 32})
+	p := storage.NewBlockStorage(&storage.BlockStorageOptions{rt, 2, 32, 64})
 	ports, err := GetOpenPorts(2)
 	assert.NoError(t, err)
 

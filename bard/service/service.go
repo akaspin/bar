@@ -84,7 +84,7 @@ func (s *Service) UploadChunk(chunk *proto.ChunkData, res *struct{}) (err error)
 
 // Get manifests for download blobs
 func (s *Service) GetFetch(req *[]manifest.ID, res *[]manifest.Manifest) (err error) {
-	var feed []manifest.Manifest
+	var feed []*manifest.Manifest
 
 	for _, id := range *req {
 		m1, err := s.Storage.ReadManifest(id)
@@ -93,7 +93,11 @@ func (s *Service) GetFetch(req *[]manifest.ID, res *[]manifest.Manifest) (err er
 		}
 		feed = append(feed, m1)
 	}
-	*res = *(&feed)
+	for _, v := range feed {
+		*res = append(*res, *v)
+	}
+
+//	*res = *(&feed)
 	return
 }
 
@@ -146,12 +150,13 @@ func (s *Service) GetSpec(id *manifest.ID, res *lists.Links) (err error) {
 
 			var err1 error
 			mu.Lock()
-			res1[n], err1 = s.Storage.ReadManifest(mID)
-			mu.Unlock()
+			rr, err1 := s.Storage.ReadManifest(mID)
 			if err1 != nil {
 				errs = append(errs, err1)
 				return
 			}
+			res1[n] = *rr
+			mu.Unlock()
 		}(name, manifestID)
 	}
 	wg.Wait()
