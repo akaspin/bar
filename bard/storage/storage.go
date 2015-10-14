@@ -25,7 +25,7 @@ type Storage interface {
 	ReadManifest(id manifest.ID) (res *manifest.Manifest, err error)
 
 	// Get manifests by it's ids
-	GetManifests(ids []manifest.ID) (res []*manifest.Manifest, err error)
+	GetManifests(ids []manifest.ID) (res []manifest.Manifest, err error)
 
 	// Declare new upload
 	DeclareUpload(m manifest.Manifest) (err error)

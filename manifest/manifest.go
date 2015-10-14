@@ -250,3 +250,26 @@ func (s *Manifest) UnmarshalThrift(data bar.Manifest) (err error) {
 	return
 }
 
+type ManifestSlice []Manifest
+
+func (m ManifestSlice) MarshalThrift() (res []*bar.Manifest, err error) {
+	for _, man := range m {
+		var t bar.Manifest
+		if t, err = man.MarshalThrift(); err != nil {
+			return
+		}
+		res = append(res, &t)
+	}
+	return
+}
+
+func (m *ManifestSlice) UnmarshalThrift(data []*bar.Manifest) (err error) {
+	for _, tm := range data {
+		var m1 Manifest
+		if err = (&m1).UnmarshalThrift(*tm); err != nil {
+			return
+		}
+		*m = append(*m, m1)
+	}
+	return
+}

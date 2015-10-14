@@ -39,6 +39,8 @@ struct Manifest {
     2: list<Chunk> chunks,
 }
 
+typedef list<Manifest> Manifests
+
 /**
 * Chunk info
 **/

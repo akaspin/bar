@@ -135,7 +135,7 @@ func (s *BlockStorage) ReadManifest(id manifest.ID) (res *manifest.Manifest, err
 	return
 }
 
-func (s *BlockStorage) GetManifests(ids []manifest.ID) (res []*manifest.Manifest, err error) {
+func (s *BlockStorage) GetManifests(ids []manifest.ID) (res []manifest.Manifest, err error) {
 	var req, res1 []interface{}
 	for _, i := range ids {
 		req = append(req, i)
@@ -144,7 +144,11 @@ func (s *BlockStorage) GetManifests(ids []manifest.ID) (res []*manifest.Manifest
 	if err = s.BatchPool.Do(
 		func(ctx context.Context, in interface{}) (out interface{}, err error) {
 			r := in.(manifest.ID)
-			out, err = s.ReadManifest(r)
+			r2, err := s.ReadManifest(r)
+			if err != nil {
+				return
+			}
+			out = *r2
 			return
 		}, &req, &res1, concurrent.DefaultBatchOptions(),
 	); err != nil {
@@ -152,7 +156,7 @@ func (s *BlockStorage) GetManifests(ids []manifest.ID) (res []*manifest.Manifest
 	}
 
 	for _, v := range res1 {
-		res = append(res, v.(*manifest.Manifest))
+		res = append(res, v.(manifest.Manifest))
 	}
 
 	return

@@ -256,25 +256,16 @@ func (t *Transport) GetManifests(ids []manifest.ID) (res []manifest.Manifest, er
 	}
 	defer cli.Release()
 
-	var req [][]byte
-	for _, i := range ids {
-		var i1 bar.ID
-		if i1, err = i.MarshalThrift(); err != nil {
-			return
-		}
-		req = append(req, []byte(i1))
+	req, err := manifest.IDSlice(ids).MarshalThrift()
+	if err != nil {
+		return
 	}
 
 	res1, err := cli.GetManifests(req)
 
-	for _, tm := range res1 {
-		var m manifest.Manifest
-		if err = (&m).UnmarshalThrift(*tm); err != nil {
-			return
-		}
-		res = append(res, m)
-	}
-
+	var mx manifest.ManifestSlice
+	err = (&mx).UnmarshalThrift(res1)
+	res = mx
 	return
 }
 

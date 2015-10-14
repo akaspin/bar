@@ -24,3 +24,18 @@ func (i *ID) UnmarshalThrift(data bar.ID) (err error) {
 	*i = ID(hex.EncodeToString(data))
 	return
 }
+
+type IDSlice []ID
+
+// NOTE: strange behaviour of thrift compiller should be []ID.
+func (i IDSlice) MarshalThrift() (res [][]byte, err error) {
+	for _, id := range i {
+		var id1 bar.ID
+		if id1, err = id.MarshalThrift(); err != nil {
+			return
+		}
+		res = append(res, []byte(id1))
+	}
+
+	return
+}
