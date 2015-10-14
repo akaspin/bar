@@ -21,14 +21,6 @@ type ID []byte
 
 func IDPtr(v ID) *ID { return &v }
 
-type IDs [][]byte
-
-func IDsPtr(v IDs) *IDs { return &v }
-
-type Manifests []*Manifest
-
-func ManifestsPtr(v Manifests) *Manifests { return &v }
-
 // Bard server info
 //
 // Attributes:

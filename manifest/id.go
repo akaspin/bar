@@ -39,3 +39,14 @@ func (i IDSlice) MarshalThrift() (res [][]byte, err error) {
 
 	return
 }
+
+func (i *IDSlice) UnmarshalThrift(data [][]byte) (err error) {
+	for _, d := range data {
+		var id ID
+		if err = (&id).UnmarshalThrift(d); err != nil {
+			return
+		}
+		*i = append(*i, id)
+	}
+	return
+}

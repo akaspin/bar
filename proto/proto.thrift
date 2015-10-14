@@ -20,8 +20,6 @@ struct ServerInfo {
 /** SHA3-256 */
 typedef binary ID
 
-typedef list<ID> IDs
-
 /**
 * Info about data entity
 **/
@@ -38,8 +36,6 @@ struct Manifest {
     1: DataInfo info,
     2: list<Chunk> chunks,
 }
-
-typedef list<Manifest> Manifests
 
 /**
 * Chunk info
