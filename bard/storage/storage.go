@@ -11,18 +11,11 @@ type Storage interface {
 
 	IsSpecExists(id proto.ID) (ok bool, err error)
 
-	IsBLOBExists(id proto.ID) (ok bool, err error)
-
-//	CheckBLOBS(ids []string) (map[string]bool, error)
-
 	// Write spec
 	WriteSpec(s proto.Spec) (err error)
 
 	// Read spec
 	ReadSpec(id proto.ID) (res proto.Spec, err error)
-
-	// Read proto
-	ReadManifest(id proto.ID) (res *proto.Manifest, err error)
 
 	// Get manifests by it's ids
 	GetManifests(ids []proto.ID) (res []proto.Manifest, err error)
@@ -32,8 +25,6 @@ type Storage interface {
 
 	// Returns IDs of requested blobs except already stored
 	GetMissingBlobIDs(ids []proto.ID) (res []proto.ID, err error)
-
-	//// New store API
 
 	// Create new upload session. Returns upload ID and IDs of chunks
 	// missing on bard. Upload id is simple uuid bytes
