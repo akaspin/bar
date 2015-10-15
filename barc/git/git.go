@@ -302,8 +302,8 @@ Extract manifests from diff
 
 
 */
-func (g *Git) ManifestsFromDiff(r io.Reader) (res lists.Links, err error) {
-	res = lists.Links{}
+func (g *Git) ManifestsFromDiff(r io.Reader) (res lists.BlobMap, err error) {
+	res = lists.BlobMap{}
 
 	var data []byte
 	var line string

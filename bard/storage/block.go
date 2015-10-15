@@ -11,6 +11,10 @@ import (
 	"time"
 	"github.com/akaspin/bar/concurrent"
 	"golang.org/x/net/context"
+	"github.com/nu7hatch/gouuid"
+	"strings"
+	"encoding/hex"
+	"github.com/tamtam-im/logx"
 )
 
 const (
@@ -324,6 +328,198 @@ func (s *BlockStorage) ReadChunkFromBlob(blobID proto.ID, size, offset int64, w 
 			blobID, offset, size, written)
 	}
 
+	return
+}
+
+
+func (s *BlockStorage) CreateUploadSession(uploadID uuid.UUID, in []proto.Manifest, ttl time.Duration) (missing []proto.ID, err error) {
+	hexid := proto.ID(hex.EncodeToString(uploadID[:]))
+
+	// take lock
+	lock, err := s.FDLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Close()
+
+	// Create directories and write support data
+	base := filepath.Join(s.idPath(upload_ns,
+		proto.ID(hex.EncodeToString(uploadID[:]))), manifests_ns)
+	if err = os.MkdirAll(base, 0755); err != nil {
+		return
+	}
+
+	var missingBlobs []proto.Manifest
+
+	for _, m := range in {
+		if err = func(m proto.Manifest) (err error) {
+			var statErr error
+			_, statErr = os.Stat(s.idPath(manifests_ns, m.ID))
+			if os.IsNotExist(statErr) {
+				missingBlobs = append(missingBlobs, m)
+			} else if statErr != nil {
+				err = statErr
+				return
+			} else {
+				// exists - ok
+				return
+			}
+
+			w, err := os.OpenFile(filepath.Join(base, m.ID.String() + "-manifest.json"),
+				os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+			if err != nil {
+				return
+			}
+			defer w.Close()
+			err = json.NewEncoder(w).Encode(&m)
+			return
+		}(m); err != nil {
+			return
+		}
+	}
+
+	missing = proto.ManifestSlice(missingBlobs).GetChunkSlice()
+
+	w, err := os.OpenFile(filepath.Join(s.idPath(upload_ns, hexid), "expires.timestamp"),
+		os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		return
+	}
+	defer w.Close()
+
+	if _, err = w.Write([]byte(fmt.Sprintf("%d", time.Now().Add(ttl).UnixNano()))); err != nil {
+		return
+	}
+	logx.Debugf("upload session %s created succefully", hexid)
+	return
+}
+
+func (s *BlockStorage) UploadChunk(uploadID uuid.UUID, chunkID proto.ID, r io.Reader) (err error) {
+	lock, err := s.FDLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Close()
+	hexid := proto.ID(hex.EncodeToString(uploadID[:]))
+
+	n := filepath.Join(s.idPath(upload_ns, hexid), chunkID.String())
+	w, err := s.getCAFile(n)
+	if err != nil {
+		return
+	}
+	defer w.Close()
+
+	if _, err = io.Copy(w, r); err != nil {
+		return
+	}
+
+	err = w.Accept()
+	return
+}
+
+func (s *BlockStorage) FinishUploadSession(uploadID uuid.UUID) (err error) {
+	hexid := proto.ID(hex.EncodeToString(uploadID[:]))
+	base := s.idPath(upload_ns, hexid)
+	defer os.RemoveAll(base)
+
+
+	// load manifests
+	manifests_base := filepath.Join(base, manifests_ns)
+	var manifests []proto.Manifest
+	if err = func () (err error) {
+		lock, err := s.FDLocks.Take()
+		if err != nil {
+			return
+		}
+		defer lock.Close()
+
+		err = filepath.Walk(manifests_base, func (path string, info os.FileInfo, ferr error) (err error){
+			if strings.HasSuffix(path, "-manifest.json") {
+				var man proto.Manifest
+				if man, err = s.readManifest(path); err != nil {
+					return
+				}
+				manifests = append(manifests, man)
+			}
+			return
+		})
+		return
+	}(); err != nil {
+		return
+	}
+
+	// collect all manifests
+	var req, res []interface{}
+	for _, v := range manifests {
+		req = append(req, v)
+	}
+
+	err = s.BatchPool.Do(
+		func(ctx context.Context, in interface{}) (out interface{}, err error) {
+			lock, err := s.FDLocks.Take()
+			if err != nil {
+				return
+			}
+			defer lock.Close()
+
+			m := in.(proto.Manifest)
+			target := s.idPath(blob_ns, m.ID)
+
+			f, fErr := s.getCAFile(target)
+			if os.IsExist(fErr) {
+				return
+			} else if fErr != nil {
+				err = fErr
+				return
+			}
+			defer f.Close()
+			logx.Debugf("assembling %s", m.ID)
+
+			for _, chunk := range m.Chunks {
+				if err = func(chunk proto.Chunk) (err error) {
+					lock, err := s.FDLocks.Take()
+					if err != nil {
+						return
+					}
+					defer lock.Close()
+
+					r, err := os.Open(filepath.Join(base, chunk.ID.String()))
+					if err != nil {
+						return
+					}
+					defer r.Close()
+
+					_, err = io.Copy(f, r)
+					return
+				}(chunk); err != nil {
+					return
+				}
+			}
+			err = f.Accept()
+
+			// move manifest
+			manTarget := s.idPath(manifests_ns, m.ID) + ".json"
+			os.MkdirAll(filepath.Dir(manTarget), 0755)
+			err = os.Rename(filepath.Join(manifests_base, m.ID.String() + "-manifest.json"), manTarget)
+			return
+		}, &req, &res, concurrent.DefaultBatchOptions().AllowErrors(),
+	)
+	return
+}
+
+func (s *BlockStorage) readManifest(filename string) (res proto.Manifest, err error) {
+	lock, err := s.FDLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Close()
+
+	r, err := os.Open(filename)
+	if err != nil {
+		return
+	}
+	defer r.Close()
+	err = json.NewDecoder(r).Decode(&res)
 	return
 }
 

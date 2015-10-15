@@ -2,9 +2,7 @@ package transport
 import (
 	"time"
 	"github.com/akaspin/bar/proto"
-	"sync"
 	"github.com/tamtam-im/logx"
-	"fmt"
 	"github.com/akaspin/bar/barc/lists"
 	"github.com/akaspin/bar/barc/model"
 	"bytes"
@@ -51,153 +49,36 @@ func (t *Transport) Ping() (res proto.Info, err error) {
 }
 
 // Upload blobs
-func (t *Transport) Upload(blobs lists.Links) (err error) {
+func (t *Transport) Upload(blobs lists.BlobMap) (err error) {
 	// declare upload
-	toUpload, err := t.NewUpload(blobs)
+	upload := NewUpload(t, time.Hour)
+
+	missing, err := upload.SendCreateUpload(blobs)
 	if err != nil {
 		return
 	}
-
-	// Ok. Now we can upload all
-	// chunks before commit
-	wg := sync.WaitGroup{}
-	var errs []error
-
-	for name, mt := range toUpload {
-		wg.Add(1)
-		go func(n string, mi proto.Manifest) {
-			defer wg.Done()
-			var err1 error
-			if err1 = t.UploadBlob(n, mi); err1 != nil {
-				errs = append(errs, err1)
-				return
-			}
-			if err1 = t.FinishUpload(mi.ID); err1 != nil {
-				errs = append(errs, err1)
-				return
-			}
-
-		}(name, mt)
-
-	}
-	wg.Wait()
-	if len(errs) > 0 {
-		err = fmt.Errorf("errors upload %s", errs)
-		return
-	}
-
-	return
-}
-
-// Declare upload on bard server
-func (t *Transport) NewUpload(blobs lists.Links) (toUpload lists.Links, err error) {
-	var req, res []proto.Manifest
-
-	idmap := blobs.IDMap()
-
-	for _, name := range idmap {
-		req = append(req, blobs[name[0]])
-	}
-
-	cli, err := t.rpcPool.Take()
-	if err != nil {
-		return
-	}
-	defer cli.Release()
-
-	if err = cli.Call("Service.NewUpload", &req, &res); err != nil {
-		return
-	}
-
-	toUpload = lists.Links{}
-	for _, m := range res {
-		toUpload[idmap[m.ID][0]] = m
-	}
-	return
-}
-
-// Upload chunks from blob
-func (t *Transport) UploadBlob(name string, info proto.Manifest) (err error) {
-
-	logx.Debugf("uploading %s %s (%d chunks)", name, info.ID, len(info.Chunks))
 
 	var req, res []interface{}
-	for _, v := range info.Chunks {
+	toUp := blobs.GetChunkLinkSlice(missing)
+	for _, v := range toUp {
 		req = append(req, v)
 	}
 
 	err = t.BatchPool.Do(
 		func(ctx context.Context, in interface{}) (out interface{}, err error) {
-			err = t.UploadChunk(name, info.ID, in.(proto.Chunk))
+			l := in.(lists.ChunkLink)
+			err = upload.UploadChunk(l.Name, l.Chunk)
 			return
-		}, &req, &res, concurrent.DefaultBatchOptions(),
+		}, &req, &res, concurrent.DefaultBatchOptions().AllowErrors(),
 	)
+	logx.OnError(err)
+
+	err = upload.Commit()
 	return
 }
 
-//func (t *Transport) UploadBlob(name string, info proto.Manifest) (err error) {
-//
-//	logx.Debugf("uploading %s %s (%d chunks)", name, info.ID, len(info.Chunks))
-//
-//	req := map[string]interface{}{}
-//	for _, chunk := range info.Chunks {
-//		req[chunk.ID.String()] = chunk
-//	}
-//
-//	_, err = t.pool.RunBatch(parmap.Task{
-//		Map: req,
-//		Fn: func(id string, v interface{}) (res interface{}, err error) {
-//			err = t.UploadChunk(name, info.ID, v.(proto.Chunk))
-//			return
-//		},
-//	})
-//
-//	return
-//}
 
-// Finish BLOB upload
-func (t *Transport) FinishUpload(id proto.ID) (err error) {
-	cli, err := t.rpcPool.Take()
-	if err != nil {
-		return
-	}
-	defer cli.Release()
-
-	var res struct{}
-	if err = cli.Call("Service.CommitUpload", &id, &res); err != nil {
-		return
-	}
-	logx.Debugf("finish upload BLOB %s", id)
-	return
-}
-
-// Upload chunk
-func (t *Transport) UploadChunk(name string, blobID proto.ID, chunk proto.Chunk) (err error) {
-	logx.Tracef("uploading chunk %s (size: %d, offset %d) for BLOB %s:%s",
-		chunk.ID, chunk.Size, chunk.Offset, name, blobID)
-
-	buf := make([]byte, chunk.Size)
-	if err = t.model.ReadChunk(name, chunk, buf); err != nil {
-		return
-	}
-
-	cli, err := t.rpcPool.Take()
-	if err != nil {
-		return
-	}
-	defer cli.Release()
-
-	var res struct{}
-	err = cli.Call("Service.UploadChunk", &proto.ChunkData{
-		proto.ChunkInfo{blobID, chunk}, buf,
-	}, &res)
-
-	logx.Tracef("chunk %s %s:%s %d uploaded", name,
-		blobID, chunk.ID, chunk.Size)
-	return
-}
-
-func (t *Transport) Download(blobs lists.Links) (err error) {
+func (t *Transport) Download(blobs lists.BlobMap) (err error) {
 
 	logx.Tracef("fetching blobs %s", blobs.IDMap())
 	fetch, err := t.GetManifests(blobs.IDMap().IDs())
@@ -253,7 +134,7 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 	logx.OnError(err)
 
 	// filter blobs
-	toAssemble := lists.Links{}
+	toAssemble := lists.BlobMap{}
 	for name, man := range blobs {
 		_, exists := fetchIds[man.ID]
 		if exists {
@@ -312,7 +193,7 @@ func (t *Transport) UploadSpec(spec proto.Spec) (err error) {
 	return
 }
 
-func (t *Transport) GetSpec(id proto.ID) (res lists.Links, err error) {
+func (t *Transport) GetSpec(id proto.ID) (res lists.BlobMap, err error) {
 	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return

@@ -130,14 +130,14 @@ func (s *Service) UploadSpec(spec *proto.Spec, res *struct{}) (err error) {
 }
 
 // Get all links by spec-id
-func (s *Service) GetSpec(id *proto.ID, res *lists.Links) (err error) {
+func (s *Service) GetSpec(id *proto.ID, res *lists.BlobMap) (err error) {
 
 	spec, err := s.Storage.ReadSpec(*id)
 	if err != nil {
 		return
 	}
 
-	res1 := lists.Links{}
+	res1 := lists.BlobMap{}
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	var errs []error

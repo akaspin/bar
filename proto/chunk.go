@@ -19,19 +19,47 @@ func (c Chunk) String() string {
 	return fmt.Sprintf("id %s\nsize %d\noffset %d\n\n", c.ID, c.Size, c.Offset)
 }
 
-func (c Chunk) MarshalThrift() (res wire.Chunk, err error) {
-	data, err := c.Data.MarshalThrift()
+func (c Chunk) MarshalThrift() (data wire.Chunk, err error) {
+	dataInfo, err := c.Data.MarshalThrift()
 	if err != nil {
 		return
 	}
-	res = wire.Chunk{&data, c.Offset}
+	data = wire.Chunk{&dataInfo, c.Offset}
 	return
 }
 
-func (c *Chunk) UnmarshalThrift(tC wire.Chunk) (err error) {
-	if err = c.Data.UnmarshalThrift(*tC.Info); err != nil {
+func (c *Chunk) UnmarshalThrift(data wire.Chunk) (err error) {
+	if err = c.Data.UnmarshalThrift(*data.Info); err != nil {
 		return
 	}
-	c.Offset = tC.Offset
+	c.Offset = data.Offset
 	return
 }
+
+////
+
+// slice of unique chunks
+type ChunkSlice []Chunk
+
+func (s ChunkSlice) MarshalThrift() (data []*wire.Chunk, err error) {
+	for _, chunk := range s {
+		var c wire.Chunk
+		if c, err = chunk.MarshalThrift(); err != nil {
+			return
+		}
+		data = append(data, &c)
+	}
+	return
+}
+
+func (s *ChunkSlice) UnmarshalThrift(data []*wire.Chunk) (err error) {
+	for _, tChunk := range data {
+		var c Chunk
+		if err = (&c).UnmarshalThrift(*tChunk); err != nil {
+			return
+		}
+	}
+	return
+}
+
+

@@ -19,7 +19,7 @@ func newStorage() *storage.BlockStorage {
 }
 
 func Test_BlockDriver_WriteBLOB(t *testing.T) {
-
+	t.Skip()
 	cleanup()
 
 	bn := fixtures.MakeBLOB(t, 1024 * 1024 * 5 + 435)
@@ -63,6 +63,7 @@ func Test_BlockDriver_WriteBLOB(t *testing.T) {
 }
 
 func Test_Storage_GetManifests(t *testing.T) {
+	t.Skip()
 	cleanup()
 
 	bn := fixtures.MakeBLOB(t, 1024 * 1024 * 5 + 435)

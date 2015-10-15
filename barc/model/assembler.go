@@ -73,17 +73,17 @@ func (a *Assembler) StoredChunks() (res []string, err error) {
 }
 
 // Assemble target files from stored chunks
-func (a *Assembler) Done(what lists.Links) (err error) {
+func (a *Assembler) Done(what lists.BlobMap) (err error) {
 	logx.Tracef("assembling %s", what.Names())
 
 	var req, res []interface{}
 	for k, v := range what {
-		req = append(req, lists.Link{v, k})
+		req = append(req, lists.BlobLink{v, k})
 	}
 
 	err = a.model.BatchPool.Do(
 		func(ctx context.Context, in interface{}) (out interface{}, err error) {
-			r := in.(lists.Link)
+			r := in.(lists.BlobLink)
 
 			lock, err := a.model.FdLocks.Take()
 			if err != nil {

@@ -86,12 +86,12 @@ test:
 test-short:
 	CGO_ENABLED=0 go test -run=${TESTS} -short ./...
 
-stubs: proto/bar/ttypes.go
+stubs: proto/wire/ttypes.go
 
 clean-stubs:
 	rm -rf proto/wire
 
-proto/bar/ttypes.go: proto/proto.thrift
+proto/wire/ttypes.go: proto/proto.thrift
 	mkdir -p ${@D}
 	thrift -strict -v -out proto --gen \
 		go:package=wire,package_prefix=github.com/akaspin/bar/proto,thrift_import=github.com/apache/thrift/lib/go/thrift,ignore_initialisms \

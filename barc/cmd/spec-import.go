@@ -49,7 +49,7 @@ func NewSpecImportCmd(s *BaseSubCommand) SubCommand  {
 
 func (c *SpecImportCmd) Do() (err error) {
 	// get spec first
-	var spec lists.Links
+	var spec lists.BlobMap
 	mod, err := model.New(c.WD, c.useGit, c.chunkSize, c.pool)
 	if err != nil {
 		return
@@ -103,7 +103,7 @@ func (c *SpecImportCmd) Do() (err error) {
 	logx.Debugf("already stored %s", stored.Names())
 
 	// squash present
-	toSquash := lists.Links{}
+	toSquash := lists.BlobMap{}
 	for n, m := range spec {
 		m1, ok := stored[filepath.FromSlash(n)]
 		if !ok || m.ID != m1.ID {

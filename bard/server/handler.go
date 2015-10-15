@@ -4,6 +4,8 @@ import (
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/bard/storage"
 	"bytes"
+	"github.com/nu7hatch/gouuid"
+	"time"
 )
 
 type BardTHandler struct {
@@ -26,32 +28,47 @@ func (h *BardTHandler) GetInfo() (r *wire.ServerInfo, err error) {
 	return
 }
 
-func (h *BardTHandler) CreateUpload(id []byte, manifests []*wire.Manifest) (r []*wire.DataInfo, err error) {
-	
+func (h *BardTHandler) CreateUpload(id []byte, manifests []*wire.Manifest, ttl int64) (r [][]byte, err error) {
+	reqUploadID, err := uuid.Parse(id)
+	if err != nil {
+		return
+	}
+	var mans proto.ManifestSlice
+	if err = (&mans).UnmarshalThrift(manifests); err != nil {
+		return
+	}
+	r1, err := h.Storage.CreateUploadSession(*reqUploadID, mans, time.Duration(ttl))
+	if err != nil {
+		return
+	}
+
+	r, err = proto.IDSlice(r1).MarshalThrift()
 	return
 }
 
-func (h *BardTHandler) UploadChunk(uploadId wire.ID, info *wire.DataInfo, body []byte) (err error) {
-	return
-}
-
-func (h *BardTHandler) FinishUploadBlob(uploadId []byte, blobId wire.ID, tags [][]byte) (err error) {
+func (h *BardTHandler) UploadChunk(uploadId []byte, chunkId wire.ID, body []byte) (err error) {
+	reqUploadID, err := uuid.Parse(uploadId)
+	if err != nil {
+		return
+	}
+	var id proto.ID
+	if err = (&id).UnmarshalThrift(chunkId); err != nil {
+		return
+	}
+	err = h.Storage.UploadChunk(*reqUploadID, id, bytes.NewReader(body))
 	return
 }
 
 func (h *BardTHandler) FinishUpload(uploadId []byte) (err error) {
+	reqUploadID, err := uuid.Parse(uploadId)
+	if err != nil {
+		return
+	}
+	err = h.Storage.FinishUploadSession(*reqUploadID)
 	return
 }
 
-func (h *BardTHandler) TagBlobs(ids [][]byte, tags [][]byte) (err error) {
-	return
-}
-
-func (h *BardTHandler) UntagBlobs(ids [][]byte, tags [][]byte) (err error) {
-	return
-}
-
-func (h *BardTHandler) IsBlobExists(ids [][]byte) (r [][]byte, err error) {
+func (h *BardTHandler) GetMissingBlobIds(ids [][]byte) (r [][]byte, err error) {
 	return
 }
 

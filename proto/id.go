@@ -11,6 +11,11 @@ func (i ID) String() string {
 	return string(i)
 }
 
+func (i *ID) UnmarshalBinary(data []byte) (err error) {
+	*i = ID(hex.EncodeToString(data))
+	return
+}
+
 func (i ID) Decode(data []byte) (err error) {
 	data, err = hex.DecodeString(i.String())
 	return

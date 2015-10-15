@@ -27,6 +27,10 @@ func NewTree(where, wd string) *Tree {
 	return &Tree{root}
 }
 
+func (f *Tree) BlobFilename(n string) string {
+	return filepath.Join(f.CWD, n)
+}
+
 func (f *Tree) Populate() (err error) {
 	if err = os.MkdirAll(f.CWD, 0755); err != nil {
 		return

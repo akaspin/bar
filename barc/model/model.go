@@ -65,7 +65,7 @@ func (m *Model) ReadChunk(name string, chunk proto.Chunk, res []byte) (err error
 	return
 }
 
-func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (res lists.Links, err error) {
+func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (res lists.BlobMap, err error) {
 	var req, res1 []interface{}
 	for _, n := range names {
 		req = append(req, n)
@@ -85,7 +85,7 @@ func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (r
 		},
 		&req, &res1, concurrent.DefaultBatchOptions().AllowErrors(),
 	)
-	res = lists.Links{}
+	res = lists.BlobMap{}
 	for _, r := range res1 {
 		r1 := r.(struct{
 			name string
@@ -172,7 +172,7 @@ func (m *Model) IsBlobs(names ...string) (res map[string]bool, err error) {
 	return
 }
 
-func (m *Model) SquashBlobs(blobs lists.Links) (err error) {
+func (m *Model) SquashBlobs(blobs lists.BlobMap) (err error) {
 	logx.Tracef("squashing blobs %s", blobs.IDMap())
 
 	var req, res []interface{}
@@ -182,7 +182,7 @@ func (m *Model) SquashBlobs(blobs lists.Links) (err error) {
 
 	err = m.BatchPool.Do(
 		func(ctx context.Context, in interface{}) (out interface{}, err error) {
-			r := in.(lists.Link)
+			r := in.(lists.BlobLink)
 
 			lock, err := m.FdLocks.Take()
 			if err != nil {

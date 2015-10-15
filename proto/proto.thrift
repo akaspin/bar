@@ -65,13 +65,16 @@ service Bar {
     /**
     * Creates new upload on bard and returns missing chunks.
     **/
-    list<DataInfo> CreateUpload (
+    list<ID> CreateUpload (
 
-        /** upload id */
+        /** upload id (UUIDv4) */
         1: binary id,
 
         /** requested manifests */
         2: list<Manifest> manifests,
+
+        /** upload TTL */
+        3: i64 ttl,
     ),
 
     /**
@@ -79,25 +82,22 @@ service Bar {
     **/
     void UploadChunk(
         /** upload id */
-        1: ID uploadId,
-        2: DataInfo info,
-        3: binary body,
-    ),
-
-    /**
-    * Finish upload BLOB
-    **/
-    void FinishUploadBlob (
         1: binary uploadId,
-        2: ID blobId,
-        3: list<binary> tags,
+
+        /** chunk id */
+        2: ID chunkId,
+
+        /** Chunk body */
+        3: binary body,
     ),
 
     /**
     * Mark upload as finished. This action will
     * immediately remove all upload data.
     **/
-    oneway void FinishUpload (
+    void FinishUpload (
+
+        /** Upload id */
         1: binary uploadId,
     ),
 
@@ -106,19 +106,19 @@ service Bar {
     /**
     * Tag blobs. Untagged blobs will be removed by GC.
     **/
-    void TagBlobs (
-        1: list<ID> ids,
-        2: list<binary> tags,
-    ),
-
-    void UntagBlobs (
-        1: list<ID> ids,
-        2: list<binary> tags,
-    ),
+//    void TagBlobs (
+//        1: list<ID> ids,
+//        2: list<binary> tags,
+//    ),
+//
+//    void UntagBlobs (
+//        1: list<ID> ids,
+//        2: list<binary> tags,
+//    ),
 
 ///
 
-    list<ID> IsBlobExists (
+    list<ID> GetMissingBlobIds (
         1: list<ID> ids
     ),
 

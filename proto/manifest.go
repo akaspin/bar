@@ -235,6 +235,8 @@ func (s Manifest) MarshalThrift() (res wire.Manifest, err error) {
 	return
 }
 
+////
+
 func (s *Manifest) UnmarshalThrift(data wire.Manifest) (err error) {
 	if err = (&s.Data).UnmarshalThrift(*data.Info); err != nil {
 		return
@@ -252,8 +254,28 @@ func (s *Manifest) UnmarshalThrift(data wire.Manifest) (err error) {
 
 type ManifestSlice []Manifest
 
-func (m ManifestSlice) MarshalThrift() (res []*wire.Manifest, err error) {
-	for _, man := range m {
+// Get slice with unique chunk ids
+func (s ManifestSlice) GetChunkSlice() (res IDSlice) {
+	var exists bool
+	var id string
+
+	ref := map[string]ID{}
+	for _, m := range s {
+		for _, c := range m.Chunks {
+			id = c.ID.String()
+			if _, exists = ref[id]; !exists {
+				ref[id] = c.ID
+			}
+		}
+	}
+	for _, c := range ref {
+		res = append(res, c)
+	}
+	return
+}
+
+func (s ManifestSlice) MarshalThrift() (res []*wire.Manifest, err error) {
+	for _, man := range s {
 		var t wire.Manifest
 		if t, err = man.MarshalThrift(); err != nil {
 			return
@@ -263,13 +285,13 @@ func (m ManifestSlice) MarshalThrift() (res []*wire.Manifest, err error) {
 	return
 }
 
-func (m *ManifestSlice) UnmarshalThrift(data []*wire.Manifest) (err error) {
+func (s *ManifestSlice) UnmarshalThrift(data []*wire.Manifest) (err error) {
 	for _, tm := range data {
 		var m1 Manifest
 		if err = (&m1).UnmarshalThrift(*tm); err != nil {
 			return
 		}
-		*m = append(*m, m1)
+		*s = append(*s, m1)
 	}
 	return
 }

@@ -22,46 +22,31 @@ type Bar interface { //Wire service
 	//
 	//
 	// Parameters:
-	//  - Id: upload id
+	//  - Id: upload id (UUIDv4)
 	//  - Manifests: requested manifests
-	CreateUpload(id []byte, manifests []*Manifest) (r []*DataInfo, err error)
+	//  - Ttl: upload TTL
+	CreateUpload(id []byte, manifests []*Manifest, ttl int64) (r [][]byte, err error)
 	// Upload BLOB chunk
 	//
 	//
 	// Parameters:
 	//  - UploadId: upload id
-	//  - Info
-	//  - Body
-	UploadChunk(uploadId ID, info *DataInfo, body []byte) (err error)
-	// Finish upload BLOB
-	//
-	//
-	// Parameters:
-	//  - UploadId
-	//  - BlobId
-	//  - Tags
-	FinishUploadBlob(uploadId []byte, blobId ID, tags [][]byte) (err error)
+	//  - ChunkId: chunk id
+	//  - Body: Chunk body
+	UploadChunk(uploadId []byte, chunkId ID, body []byte) (err error)
 	// Mark upload as finished. This action will
 	// immediately remove all upload data.
 	//
 	//
 	// Parameters:
-	//  - UploadId
+	//  - UploadId: Upload id
 	FinishUpload(uploadId []byte) (err error)
 	// Tag blobs. Untagged blobs will be removed by GC.
 	//
 	//
 	// Parameters:
 	//  - Ids
-	//  - Tags
-	TagBlobs(ids [][]byte, tags [][]byte) (err error)
-	// Parameters:
-	//  - Ids
-	//  - Tags
-	UntagBlobs(ids [][]byte, tags [][]byte) (err error)
-	// Parameters:
-	//  - Ids
-	IsBlobExists(ids [][]byte) (r [][]byte, err error)
+	GetMissingBlobIds(ids [][]byte) (r [][]byte, err error)
 	// Get manifests by their ids
 	//
 	//
@@ -188,16 +173,17 @@ func (p *BarClient) recvGetInfo() (value *ServerInfo, err error) {
 //
 //
 // Parameters:
-//  - Id: upload id
+//  - Id: upload id (UUIDv4)
 //  - Manifests: requested manifests
-func (p *BarClient) CreateUpload(id []byte, manifests []*Manifest) (r []*DataInfo, err error) {
-	if err = p.sendCreateUpload(id, manifests); err != nil {
+//  - Ttl: upload TTL
+func (p *BarClient) CreateUpload(id []byte, manifests []*Manifest, ttl int64) (r [][]byte, err error) {
+	if err = p.sendCreateUpload(id, manifests, ttl); err != nil {
 		return
 	}
 	return p.recvCreateUpload()
 }
 
-func (p *BarClient) sendCreateUpload(id []byte, manifests []*Manifest) (err error) {
+func (p *BarClient) sendCreateUpload(id []byte, manifests []*Manifest, ttl int64) (err error) {
 	oprot := p.OutputProtocol
 	if oprot == nil {
 		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -210,6 +196,7 @@ func (p *BarClient) sendCreateUpload(id []byte, manifests []*Manifest) (err erro
 	args := BarCreateUploadArgs{
 		Id:        id,
 		Manifests: manifests,
+		Ttl:       ttl,
 	}
 	if err = args.Write(oprot); err != nil {
 		return
@@ -220,7 +207,7 @@ func (p *BarClient) sendCreateUpload(id []byte, manifests []*Manifest) (err erro
 	return oprot.Flush()
 }
 
-func (p *BarClient) recvCreateUpload() (value []*DataInfo, err error) {
+func (p *BarClient) recvCreateUpload() (value [][]byte, err error) {
 	iprot := p.InputProtocol
 	if iprot == nil {
 		iprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -271,16 +258,16 @@ func (p *BarClient) recvCreateUpload() (value []*DataInfo, err error) {
 //
 // Parameters:
 //  - UploadId: upload id
-//  - Info
-//  - Body
-func (p *BarClient) UploadChunk(uploadId ID, info *DataInfo, body []byte) (err error) {
-	if err = p.sendUploadChunk(uploadId, info, body); err != nil {
+//  - ChunkId: chunk id
+//  - Body: Chunk body
+func (p *BarClient) UploadChunk(uploadId []byte, chunkId ID, body []byte) (err error) {
+	if err = p.sendUploadChunk(uploadId, chunkId, body); err != nil {
 		return
 	}
 	return p.recvUploadChunk()
 }
 
-func (p *BarClient) sendUploadChunk(uploadId ID, info *DataInfo, body []byte) (err error) {
+func (p *BarClient) sendUploadChunk(uploadId []byte, chunkId ID, body []byte) (err error) {
 	oprot := p.OutputProtocol
 	if oprot == nil {
 		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -292,7 +279,7 @@ func (p *BarClient) sendUploadChunk(uploadId ID, info *DataInfo, body []byte) (e
 	}
 	args := BarUploadChunkArgs{
 		UploadId: uploadId,
-		Info:     info,
+		ChunkId:  chunkId,
 		Body:     body,
 	}
 	if err = args.Write(oprot); err != nil {
@@ -349,34 +336,31 @@ func (p *BarClient) recvUploadChunk() (err error) {
 	return
 }
 
-// Finish upload BLOB
+// Mark upload as finished. This action will
+// immediately remove all upload data.
 //
 //
 // Parameters:
-//  - UploadId
-//  - BlobId
-//  - Tags
-func (p *BarClient) FinishUploadBlob(uploadId []byte, blobId ID, tags [][]byte) (err error) {
-	if err = p.sendFinishUploadBlob(uploadId, blobId, tags); err != nil {
+//  - UploadId: Upload id
+func (p *BarClient) FinishUpload(uploadId []byte) (err error) {
+	if err = p.sendFinishUpload(uploadId); err != nil {
 		return
 	}
-	return p.recvFinishUploadBlob()
+	return p.recvFinishUpload()
 }
 
-func (p *BarClient) sendFinishUploadBlob(uploadId []byte, blobId ID, tags [][]byte) (err error) {
+func (p *BarClient) sendFinishUpload(uploadId []byte) (err error) {
 	oprot := p.OutputProtocol
 	if oprot == nil {
 		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
 		p.OutputProtocol = oprot
 	}
 	p.SeqId++
-	if err = oprot.WriteMessageBegin("FinishUploadBlob", thrift.CALL, p.SeqId); err != nil {
+	if err = oprot.WriteMessageBegin("FinishUpload", thrift.CALL, p.SeqId); err != nil {
 		return
 	}
-	args := BarFinishUploadBlobArgs{
+	args := BarFinishUploadArgs{
 		UploadId: uploadId,
-		BlobId:   blobId,
-		Tags:     tags,
 	}
 	if err = args.Write(oprot); err != nil {
 		return
@@ -387,7 +371,7 @@ func (p *BarClient) sendFinishUploadBlob(uploadId []byte, blobId ID, tags [][]by
 	return oprot.Flush()
 }
 
-func (p *BarClient) recvFinishUploadBlob() (err error) {
+func (p *BarClient) recvFinishUpload() (err error) {
 	iprot := p.InputProtocol
 	if iprot == nil {
 		iprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -397,12 +381,12 @@ func (p *BarClient) recvFinishUploadBlob() (err error) {
 	if err != nil {
 		return
 	}
-	if method != "FinishUploadBlob" {
-		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "FinishUploadBlob failed: wrong method name")
+	if method != "FinishUpload" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "FinishUpload failed: wrong method name")
 		return
 	}
 	if p.SeqId != seqId {
-		err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "FinishUploadBlob failed: out of sequence response")
+		err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "FinishUpload failed: out of sequence response")
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
@@ -419,10 +403,10 @@ func (p *BarClient) recvFinishUploadBlob() (err error) {
 		return
 	}
 	if mTypeId != thrift.REPLY {
-		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "FinishUploadBlob failed: invalid message type")
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "FinishUpload failed: invalid message type")
 		return
 	}
-	result := BarFinishUploadBlobResult{}
+	result := BarFinishUploadResult{}
 	if err = result.Read(iprot); err != nil {
 		return
 	}
@@ -432,67 +416,30 @@ func (p *BarClient) recvFinishUploadBlob() (err error) {
 	return
 }
 
-// Mark upload as finished. This action will
-// immediately remove all upload data.
-//
-//
-// Parameters:
-//  - UploadId
-func (p *BarClient) FinishUpload(uploadId []byte) (err error) {
-	if err = p.sendFinishUpload(uploadId); err != nil {
-		return
-	}
-	return
-}
-
-func (p *BarClient) sendFinishUpload(uploadId []byte) (err error) {
-	oprot := p.OutputProtocol
-	if oprot == nil {
-		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
-		p.OutputProtocol = oprot
-	}
-	p.SeqId++
-	if err = oprot.WriteMessageBegin("FinishUpload", thrift.ONEWAY, p.SeqId); err != nil {
-		return
-	}
-	args := BarFinishUploadArgs{
-		UploadId: uploadId,
-	}
-	if err = args.Write(oprot); err != nil {
-		return
-	}
-	if err = oprot.WriteMessageEnd(); err != nil {
-		return
-	}
-	return oprot.Flush()
-}
-
 // Tag blobs. Untagged blobs will be removed by GC.
 //
 //
 // Parameters:
 //  - Ids
-//  - Tags
-func (p *BarClient) TagBlobs(ids [][]byte, tags [][]byte) (err error) {
-	if err = p.sendTagBlobs(ids, tags); err != nil {
+func (p *BarClient) GetMissingBlobIds(ids [][]byte) (r [][]byte, err error) {
+	if err = p.sendGetMissingBlobIds(ids); err != nil {
 		return
 	}
-	return p.recvTagBlobs()
+	return p.recvGetMissingBlobIds()
 }
 
-func (p *BarClient) sendTagBlobs(ids [][]byte, tags [][]byte) (err error) {
+func (p *BarClient) sendGetMissingBlobIds(ids [][]byte) (err error) {
 	oprot := p.OutputProtocol
 	if oprot == nil {
 		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
 		p.OutputProtocol = oprot
 	}
 	p.SeqId++
-	if err = oprot.WriteMessageBegin("TagBlobs", thrift.CALL, p.SeqId); err != nil {
+	if err = oprot.WriteMessageBegin("GetMissingBlobIds", thrift.CALL, p.SeqId); err != nil {
 		return
 	}
-	args := BarTagBlobsArgs{
-		Ids:  ids,
-		Tags: tags,
+	args := BarGetMissingBlobIdsArgs{
+		Ids: ids,
 	}
 	if err = args.Write(oprot); err != nil {
 		return
@@ -503,7 +450,7 @@ func (p *BarClient) sendTagBlobs(ids [][]byte, tags [][]byte) (err error) {
 	return oprot.Flush()
 }
 
-func (p *BarClient) recvTagBlobs() (err error) {
+func (p *BarClient) recvGetMissingBlobIds() (value [][]byte, err error) {
 	iprot := p.InputProtocol
 	if iprot == nil {
 		iprot = p.ProtocolFactory.GetProtocol(p.Transport)
@@ -513,12 +460,12 @@ func (p *BarClient) recvTagBlobs() (err error) {
 	if err != nil {
 		return
 	}
-	if method != "TagBlobs" {
-		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "TagBlobs failed: wrong method name")
+	if method != "GetMissingBlobIds" {
+		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "GetMissingBlobIds failed: wrong method name")
 		return
 	}
 	if p.SeqId != seqId {
-		err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "TagBlobs failed: out of sequence response")
+		err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "GetMissingBlobIds failed: out of sequence response")
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
@@ -535,164 +482,10 @@ func (p *BarClient) recvTagBlobs() (err error) {
 		return
 	}
 	if mTypeId != thrift.REPLY {
-		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "TagBlobs failed: invalid message type")
+		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "GetMissingBlobIds failed: invalid message type")
 		return
 	}
-	result := BarTagBlobsResult{}
-	if err = result.Read(iprot); err != nil {
-		return
-	}
-	if err = iprot.ReadMessageEnd(); err != nil {
-		return
-	}
-	return
-}
-
-// Parameters:
-//  - Ids
-//  - Tags
-func (p *BarClient) UntagBlobs(ids [][]byte, tags [][]byte) (err error) {
-	if err = p.sendUntagBlobs(ids, tags); err != nil {
-		return
-	}
-	return p.recvUntagBlobs()
-}
-
-func (p *BarClient) sendUntagBlobs(ids [][]byte, tags [][]byte) (err error) {
-	oprot := p.OutputProtocol
-	if oprot == nil {
-		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
-		p.OutputProtocol = oprot
-	}
-	p.SeqId++
-	if err = oprot.WriteMessageBegin("UntagBlobs", thrift.CALL, p.SeqId); err != nil {
-		return
-	}
-	args := BarUntagBlobsArgs{
-		Ids:  ids,
-		Tags: tags,
-	}
-	if err = args.Write(oprot); err != nil {
-		return
-	}
-	if err = oprot.WriteMessageEnd(); err != nil {
-		return
-	}
-	return oprot.Flush()
-}
-
-func (p *BarClient) recvUntagBlobs() (err error) {
-	iprot := p.InputProtocol
-	if iprot == nil {
-		iprot = p.ProtocolFactory.GetProtocol(p.Transport)
-		p.InputProtocol = iprot
-	}
-	method, mTypeId, seqId, err := iprot.ReadMessageBegin()
-	if err != nil {
-		return
-	}
-	if method != "UntagBlobs" {
-		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "UntagBlobs failed: wrong method name")
-		return
-	}
-	if p.SeqId != seqId {
-		err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "UntagBlobs failed: out of sequence response")
-		return
-	}
-	if mTypeId == thrift.EXCEPTION {
-		error15 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error16 error
-		error16, err = error15.Read(iprot)
-		if err != nil {
-			return
-		}
-		if err = iprot.ReadMessageEnd(); err != nil {
-			return
-		}
-		err = error16
-		return
-	}
-	if mTypeId != thrift.REPLY {
-		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "UntagBlobs failed: invalid message type")
-		return
-	}
-	result := BarUntagBlobsResult{}
-	if err = result.Read(iprot); err != nil {
-		return
-	}
-	if err = iprot.ReadMessageEnd(); err != nil {
-		return
-	}
-	return
-}
-
-// Parameters:
-//  - Ids
-func (p *BarClient) IsBlobExists(ids [][]byte) (r [][]byte, err error) {
-	if err = p.sendIsBlobExists(ids); err != nil {
-		return
-	}
-	return p.recvIsBlobExists()
-}
-
-func (p *BarClient) sendIsBlobExists(ids [][]byte) (err error) {
-	oprot := p.OutputProtocol
-	if oprot == nil {
-		oprot = p.ProtocolFactory.GetProtocol(p.Transport)
-		p.OutputProtocol = oprot
-	}
-	p.SeqId++
-	if err = oprot.WriteMessageBegin("IsBlobExists", thrift.CALL, p.SeqId); err != nil {
-		return
-	}
-	args := BarIsBlobExistsArgs{
-		Ids: ids,
-	}
-	if err = args.Write(oprot); err != nil {
-		return
-	}
-	if err = oprot.WriteMessageEnd(); err != nil {
-		return
-	}
-	return oprot.Flush()
-}
-
-func (p *BarClient) recvIsBlobExists() (value [][]byte, err error) {
-	iprot := p.InputProtocol
-	if iprot == nil {
-		iprot = p.ProtocolFactory.GetProtocol(p.Transport)
-		p.InputProtocol = iprot
-	}
-	method, mTypeId, seqId, err := iprot.ReadMessageBegin()
-	if err != nil {
-		return
-	}
-	if method != "IsBlobExists" {
-		err = thrift.NewTApplicationException(thrift.WRONG_METHOD_NAME, "IsBlobExists failed: wrong method name")
-		return
-	}
-	if p.SeqId != seqId {
-		err = thrift.NewTApplicationException(thrift.BAD_SEQUENCE_ID, "IsBlobExists failed: out of sequence response")
-		return
-	}
-	if mTypeId == thrift.EXCEPTION {
-		error17 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error18 error
-		error18, err = error17.Read(iprot)
-		if err != nil {
-			return
-		}
-		if err = iprot.ReadMessageEnd(); err != nil {
-			return
-		}
-		err = error18
-		return
-	}
-	if mTypeId != thrift.REPLY {
-		err = thrift.NewTApplicationException(thrift.INVALID_MESSAGE_TYPE_EXCEPTION, "IsBlobExists failed: invalid message type")
-		return
-	}
-	result := BarIsBlobExistsResult{}
+	result := BarGetMissingBlobIdsResult{}
 	if err = result.Read(iprot); err != nil {
 		return
 	}
@@ -756,16 +549,16 @@ func (p *BarClient) recvGetManifests() (value []*Manifest, err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error19 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error20 error
-		error20, err = error19.Read(iprot)
+		error15 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error16 error
+		error16, err = error15.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error20
+		err = error16
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -838,16 +631,16 @@ func (p *BarClient) recvFetchChunk() (value []byte, err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error21 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error22 error
-		error22, err = error21.Read(iprot)
+		error17 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error18 error
+		error18, err = error17.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error22
+		err = error18
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -915,16 +708,16 @@ func (p *BarClient) recvUploadSpec() (err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error23 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error24 error
-		error24, err = error23.Read(iprot)
+		error19 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error20 error
+		error20, err = error19.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error24
+		err = error20
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -991,16 +784,16 @@ func (p *BarClient) recvFetchSpec() (value *Spec, err error) {
 		return
 	}
 	if mTypeId == thrift.EXCEPTION {
-		error25 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
-		var error26 error
-		error26, err = error25.Read(iprot)
+		error21 := thrift.NewTApplicationException(thrift.UNKNOWN_APPLICATION_EXCEPTION, "Unknown Exception")
+		var error22 error
+		error22, err = error21.Read(iprot)
 		if err != nil {
 			return
 		}
 		if err = iprot.ReadMessageEnd(); err != nil {
 			return
 		}
-		err = error26
+		err = error22
 		return
 	}
 	if mTypeId != thrift.REPLY {
@@ -1038,20 +831,17 @@ func (p *BarProcessor) ProcessorMap() map[string]thrift.TProcessorFunction {
 
 func NewBarProcessor(handler Bar) *BarProcessor {
 
-	self27 := &BarProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
-	self27.processorMap["GetInfo"] = &barProcessorGetInfo{handler: handler}
-	self27.processorMap["CreateUpload"] = &barProcessorCreateUpload{handler: handler}
-	self27.processorMap["UploadChunk"] = &barProcessorUploadChunk{handler: handler}
-	self27.processorMap["FinishUploadBlob"] = &barProcessorFinishUploadBlob{handler: handler}
-	self27.processorMap["FinishUpload"] = &barProcessorFinishUpload{handler: handler}
-	self27.processorMap["TagBlobs"] = &barProcessorTagBlobs{handler: handler}
-	self27.processorMap["UntagBlobs"] = &barProcessorUntagBlobs{handler: handler}
-	self27.processorMap["IsBlobExists"] = &barProcessorIsBlobExists{handler: handler}
-	self27.processorMap["GetManifests"] = &barProcessorGetManifests{handler: handler}
-	self27.processorMap["FetchChunk"] = &barProcessorFetchChunk{handler: handler}
-	self27.processorMap["UploadSpec"] = &barProcessorUploadSpec{handler: handler}
-	self27.processorMap["FetchSpec"] = &barProcessorFetchSpec{handler: handler}
-	return self27
+	self23 := &BarProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
+	self23.processorMap["GetInfo"] = &barProcessorGetInfo{handler: handler}
+	self23.processorMap["CreateUpload"] = &barProcessorCreateUpload{handler: handler}
+	self23.processorMap["UploadChunk"] = &barProcessorUploadChunk{handler: handler}
+	self23.processorMap["FinishUpload"] = &barProcessorFinishUpload{handler: handler}
+	self23.processorMap["GetMissingBlobIds"] = &barProcessorGetMissingBlobIds{handler: handler}
+	self23.processorMap["GetManifests"] = &barProcessorGetManifests{handler: handler}
+	self23.processorMap["FetchChunk"] = &barProcessorFetchChunk{handler: handler}
+	self23.processorMap["UploadSpec"] = &barProcessorUploadSpec{handler: handler}
+	self23.processorMap["FetchSpec"] = &barProcessorFetchSpec{handler: handler}
+	return self23
 }
 
 func (p *BarProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -1064,12 +854,12 @@ func (p *BarProcessor) Process(iprot, oprot thrift.TProtocol) (success bool, err
 	}
 	iprot.Skip(thrift.STRUCT)
 	iprot.ReadMessageEnd()
-	x28 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
+	x24 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
 	oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
-	x28.Write(oprot)
+	x24.Write(oprot)
 	oprot.WriteMessageEnd()
 	oprot.Flush()
-	return false, x28
+	return false, x24
 
 }
 
@@ -1139,9 +929,9 @@ func (p *barProcessorCreateUpload) Process(seqId int32, iprot, oprot thrift.TPro
 
 	iprot.ReadMessageEnd()
 	result := BarCreateUploadResult{}
-	var retval []*DataInfo
+	var retval [][]byte
 	var err2 error
-	if retval, err2 = p.handler.CreateUpload(args.Id, args.Manifests); err2 != nil {
+	if retval, err2 = p.handler.CreateUpload(args.Id, args.Manifests, args.Ttl); err2 != nil {
 		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing CreateUpload: "+err2.Error())
 		oprot.WriteMessageBegin("CreateUpload", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
@@ -1188,7 +978,7 @@ func (p *barProcessorUploadChunk) Process(seqId int32, iprot, oprot thrift.TProt
 	iprot.ReadMessageEnd()
 	result := BarUploadChunkResult{}
 	var err2 error
-	if err2 = p.handler.UploadChunk(args.UploadId, args.Info, args.Body); err2 != nil {
+	if err2 = p.handler.UploadChunk(args.UploadId, args.ChunkId, args.Body); err2 != nil {
 		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing UploadChunk: "+err2.Error())
 		oprot.WriteMessageBegin("UploadChunk", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
@@ -1214,51 +1004,6 @@ func (p *barProcessorUploadChunk) Process(seqId int32, iprot, oprot thrift.TProt
 	return true, err
 }
 
-type barProcessorFinishUploadBlob struct {
-	handler Bar
-}
-
-func (p *barProcessorFinishUploadBlob) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
-	args := BarFinishUploadBlobArgs{}
-	if err = args.Read(iprot); err != nil {
-		iprot.ReadMessageEnd()
-		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
-		oprot.WriteMessageBegin("FinishUploadBlob", thrift.EXCEPTION, seqId)
-		x.Write(oprot)
-		oprot.WriteMessageEnd()
-		oprot.Flush()
-		return false, err
-	}
-
-	iprot.ReadMessageEnd()
-	result := BarFinishUploadBlobResult{}
-	var err2 error
-	if err2 = p.handler.FinishUploadBlob(args.UploadId, args.BlobId, args.Tags); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing FinishUploadBlob: "+err2.Error())
-		oprot.WriteMessageBegin("FinishUploadBlob", thrift.EXCEPTION, seqId)
-		x.Write(oprot)
-		oprot.WriteMessageEnd()
-		oprot.Flush()
-		return true, err2
-	}
-	if err2 = oprot.WriteMessageBegin("FinishUploadBlob", thrift.REPLY, seqId); err2 != nil {
-		err = err2
-	}
-	if err2 = result.Write(oprot); err == nil && err2 != nil {
-		err = err2
-	}
-	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
-		err = err2
-	}
-	if err2 = oprot.Flush(); err == nil && err2 != nil {
-		err = err2
-	}
-	if err != nil {
-		return
-	}
-	return true, err
-}
-
 type barProcessorFinishUpload struct {
 	handler Bar
 }
@@ -1267,45 +1012,26 @@ func (p *barProcessorFinishUpload) Process(seqId int32, iprot, oprot thrift.TPro
 	args := BarFinishUploadArgs{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("FinishUpload", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush()
 		return false, err
 	}
 
 	iprot.ReadMessageEnd()
+	result := BarFinishUploadResult{}
 	var err2 error
 	if err2 = p.handler.FinishUpload(args.UploadId); err2 != nil {
-		return true, err2
-	}
-	return true, nil
-}
-
-type barProcessorTagBlobs struct {
-	handler Bar
-}
-
-func (p *barProcessorTagBlobs) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
-	args := BarTagBlobsArgs{}
-	if err = args.Read(iprot); err != nil {
-		iprot.ReadMessageEnd()
-		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
-		oprot.WriteMessageBegin("TagBlobs", thrift.EXCEPTION, seqId)
-		x.Write(oprot)
-		oprot.WriteMessageEnd()
-		oprot.Flush()
-		return false, err
-	}
-
-	iprot.ReadMessageEnd()
-	result := BarTagBlobsResult{}
-	var err2 error
-	if err2 = p.handler.TagBlobs(args.Ids, args.Tags); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing TagBlobs: "+err2.Error())
-		oprot.WriteMessageBegin("TagBlobs", thrift.EXCEPTION, seqId)
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing FinishUpload: "+err2.Error())
+		oprot.WriteMessageBegin("FinishUpload", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush()
 		return true, err2
 	}
-	if err2 = oprot.WriteMessageBegin("TagBlobs", thrift.REPLY, seqId); err2 != nil {
+	if err2 = oprot.WriteMessageBegin("FinishUpload", thrift.REPLY, seqId); err2 != nil {
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -1323,16 +1049,16 @@ func (p *barProcessorTagBlobs) Process(seqId int32, iprot, oprot thrift.TProtoco
 	return true, err
 }
 
-type barProcessorUntagBlobs struct {
+type barProcessorGetMissingBlobIds struct {
 	handler Bar
 }
 
-func (p *barProcessorUntagBlobs) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
-	args := BarUntagBlobsArgs{}
+func (p *barProcessorGetMissingBlobIds) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := BarGetMissingBlobIdsArgs{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
 		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
-		oprot.WriteMessageBegin("UntagBlobs", thrift.EXCEPTION, seqId)
+		oprot.WriteMessageBegin("GetMissingBlobIds", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush()
@@ -1340,57 +1066,12 @@ func (p *barProcessorUntagBlobs) Process(seqId int32, iprot, oprot thrift.TProto
 	}
 
 	iprot.ReadMessageEnd()
-	result := BarUntagBlobsResult{}
-	var err2 error
-	if err2 = p.handler.UntagBlobs(args.Ids, args.Tags); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing UntagBlobs: "+err2.Error())
-		oprot.WriteMessageBegin("UntagBlobs", thrift.EXCEPTION, seqId)
-		x.Write(oprot)
-		oprot.WriteMessageEnd()
-		oprot.Flush()
-		return true, err2
-	}
-	if err2 = oprot.WriteMessageBegin("UntagBlobs", thrift.REPLY, seqId); err2 != nil {
-		err = err2
-	}
-	if err2 = result.Write(oprot); err == nil && err2 != nil {
-		err = err2
-	}
-	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
-		err = err2
-	}
-	if err2 = oprot.Flush(); err == nil && err2 != nil {
-		err = err2
-	}
-	if err != nil {
-		return
-	}
-	return true, err
-}
-
-type barProcessorIsBlobExists struct {
-	handler Bar
-}
-
-func (p *barProcessorIsBlobExists) Process(seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
-	args := BarIsBlobExistsArgs{}
-	if err = args.Read(iprot); err != nil {
-		iprot.ReadMessageEnd()
-		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
-		oprot.WriteMessageBegin("IsBlobExists", thrift.EXCEPTION, seqId)
-		x.Write(oprot)
-		oprot.WriteMessageEnd()
-		oprot.Flush()
-		return false, err
-	}
-
-	iprot.ReadMessageEnd()
-	result := BarIsBlobExistsResult{}
+	result := BarGetMissingBlobIdsResult{}
 	var retval [][]byte
 	var err2 error
-	if retval, err2 = p.handler.IsBlobExists(args.Ids); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing IsBlobExists: "+err2.Error())
-		oprot.WriteMessageBegin("IsBlobExists", thrift.EXCEPTION, seqId)
+	if retval, err2 = p.handler.GetMissingBlobIds(args.Ids); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing GetMissingBlobIds: "+err2.Error())
+		oprot.WriteMessageBegin("GetMissingBlobIds", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
 		oprot.Flush()
@@ -1398,7 +1079,7 @@ func (p *barProcessorIsBlobExists) Process(seqId int32, iprot, oprot thrift.TPro
 	} else {
 		result.Success = retval
 	}
-	if err2 = oprot.WriteMessageBegin("IsBlobExists", thrift.REPLY, seqId); err2 != nil {
+	if err2 = oprot.WriteMessageBegin("GetMissingBlobIds", thrift.REPLY, seqId); err2 != nil {
 		err = err2
 	}
 	if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -1762,11 +1443,13 @@ func (p *BarGetInfoResult) String() string {
 }
 
 // Attributes:
-//  - Id: upload id
+//  - Id: upload id (UUIDv4)
 //  - Manifests: requested manifests
+//  - Ttl: upload TTL
 type BarCreateUploadArgs struct {
 	Id        []byte      `thrift:"id,1" json:"id"`
 	Manifests []*Manifest `thrift:"manifests,2" json:"manifests"`
+	Ttl       int64       `thrift:"ttl,3" json:"ttl"`
 }
 
 func NewBarCreateUploadArgs() *BarCreateUploadArgs {
@@ -1779,6 +1462,10 @@ func (p *BarCreateUploadArgs) GetId() []byte {
 
 func (p *BarCreateUploadArgs) GetManifests() []*Manifest {
 	return p.Manifests
+}
+
+func (p *BarCreateUploadArgs) GetTtl() int64 {
+	return p.Ttl
 }
 func (p *BarCreateUploadArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
@@ -1800,6 +1487,10 @@ func (p *BarCreateUploadArgs) Read(iprot thrift.TProtocol) error {
 			}
 		case 2:
 			if err := p.readField2(iprot); err != nil {
+				return err
+			}
+		case 3:
+			if err := p.readField3(iprot); err != nil {
 				return err
 			}
 		default:
@@ -1834,14 +1525,23 @@ func (p *BarCreateUploadArgs) readField2(iprot thrift.TProtocol) error {
 	tSlice := make([]*Manifest, 0, size)
 	p.Manifests = tSlice
 	for i := 0; i < size; i++ {
-		_elem29 := &Manifest{}
-		if err := _elem29.Read(iprot); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem29), err)
+		_elem25 := &Manifest{}
+		if err := _elem25.Read(iprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem25), err)
 		}
-		p.Manifests = append(p.Manifests, _elem29)
+		p.Manifests = append(p.Manifests, _elem25)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
+	}
+	return nil
+}
+
+func (p *BarCreateUploadArgs) readField3(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI64(); err != nil {
+		return thrift.PrependError("error reading field 3: ", err)
+	} else {
+		p.Ttl = v
 	}
 	return nil
 }
@@ -1854,6 +1554,9 @@ func (p *BarCreateUploadArgs) Write(oprot thrift.TProtocol) error {
 		return err
 	}
 	if err := p.writeField2(oprot); err != nil {
+		return err
+	}
+	if err := p.writeField3(oprot); err != nil {
 		return err
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -1899,6 +1602,19 @@ func (p *BarCreateUploadArgs) writeField2(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
+func (p *BarCreateUploadArgs) writeField3(oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin("ttl", thrift.I64, 3); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:ttl: ", p), err)
+	}
+	if err := oprot.WriteI64(int64(p.Ttl)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.ttl (3) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 3:ttl: ", p), err)
+	}
+	return err
+}
+
 func (p *BarCreateUploadArgs) String() string {
 	if p == nil {
 		return "<nil>"
@@ -1909,16 +1625,16 @@ func (p *BarCreateUploadArgs) String() string {
 // Attributes:
 //  - Success
 type BarCreateUploadResult struct {
-	Success []*DataInfo `thrift:"success,0" json:"success,omitempty"`
+	Success [][]byte `thrift:"success,0" json:"success,omitempty"`
 }
 
 func NewBarCreateUploadResult() *BarCreateUploadResult {
 	return &BarCreateUploadResult{}
 }
 
-var BarCreateUploadResult_Success_DEFAULT []*DataInfo
+var BarCreateUploadResult_Success_DEFAULT [][]byte
 
-func (p *BarCreateUploadResult) GetSuccess() []*DataInfo {
+func (p *BarCreateUploadResult) GetSuccess() [][]byte {
 	return p.Success
 }
 func (p *BarCreateUploadResult) IsSetSuccess() bool {
@@ -1963,14 +1679,16 @@ func (p *BarCreateUploadResult) readField0(iprot thrift.TProtocol) error {
 	if err != nil {
 		return thrift.PrependError("error reading list begin: ", err)
 	}
-	tSlice := make([]*DataInfo, 0, size)
+	tSlice := make([][]byte, 0, size)
 	p.Success = tSlice
 	for i := 0; i < size; i++ {
-		_elem30 := &DataInfo{}
-		if err := _elem30.Read(iprot); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem30), err)
+		var _elem26 []byte
+		if v, err := iprot.ReadBinary(); err != nil {
+			return thrift.PrependError("error reading field 0: ", err)
+		} else {
+			_elem26 = v
 		}
-		p.Success = append(p.Success, _elem30)
+		p.Success = append(p.Success, _elem26)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -1999,12 +1717,12 @@ func (p *BarCreateUploadResult) writeField0(oprot thrift.TProtocol) (err error) 
 		if err := oprot.WriteFieldBegin("success", thrift.LIST, 0); err != nil {
 			return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err)
 		}
-		if err := oprot.WriteListBegin(thrift.STRUCT, len(p.Success)); err != nil {
+		if err := oprot.WriteListBegin(thrift.STRING, len(p.Success)); err != nil {
 			return thrift.PrependError("error writing list begin: ", err)
 		}
 		for _, v := range p.Success {
-			if err := v.Write(oprot); err != nil {
-				return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
+			if err := oprot.WriteBinary(v); err != nil {
+				return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
 			}
 		}
 		if err := oprot.WriteListEnd(); err != nil {
@@ -2026,38 +1744,29 @@ func (p *BarCreateUploadResult) String() string {
 
 // Attributes:
 //  - UploadId: upload id
-//  - Info
-//  - Body
+//  - ChunkId: chunk id
+//  - Body: Chunk body
 type BarUploadChunkArgs struct {
-	UploadId ID        `thrift:"uploadId,1" json:"uploadId"`
-	Info     *DataInfo `thrift:"info,2" json:"info"`
-	Body     []byte    `thrift:"body,3" json:"body"`
+	UploadId []byte `thrift:"uploadId,1" json:"uploadId"`
+	ChunkId  ID     `thrift:"chunkId,2" json:"chunkId"`
+	Body     []byte `thrift:"body,3" json:"body"`
 }
 
 func NewBarUploadChunkArgs() *BarUploadChunkArgs {
 	return &BarUploadChunkArgs{}
 }
 
-func (p *BarUploadChunkArgs) GetUploadId() ID {
+func (p *BarUploadChunkArgs) GetUploadId() []byte {
 	return p.UploadId
 }
 
-var BarUploadChunkArgs_Info_DEFAULT *DataInfo
-
-func (p *BarUploadChunkArgs) GetInfo() *DataInfo {
-	if !p.IsSetInfo() {
-		return BarUploadChunkArgs_Info_DEFAULT
-	}
-	return p.Info
+func (p *BarUploadChunkArgs) GetChunkId() ID {
+	return p.ChunkId
 }
 
 func (p *BarUploadChunkArgs) GetBody() []byte {
 	return p.Body
 }
-func (p *BarUploadChunkArgs) IsSetInfo() bool {
-	return p.Info != nil
-}
-
 func (p *BarUploadChunkArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
@@ -2103,16 +1812,17 @@ func (p *BarUploadChunkArgs) readField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadBinary(); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
-		temp := ID(v)
-		p.UploadId = temp
+		p.UploadId = v
 	}
 	return nil
 }
 
 func (p *BarUploadChunkArgs) readField2(iprot thrift.TProtocol) error {
-	p.Info = &DataInfo{}
-	if err := p.Info.Read(iprot); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Info), err)
+	if v, err := iprot.ReadBinary(); err != nil {
+		return thrift.PrependError("error reading field 2: ", err)
+	} else {
+		temp := ID(v)
+		p.ChunkId = temp
 	}
 	return nil
 }
@@ -2162,14 +1872,14 @@ func (p *BarUploadChunkArgs) writeField1(oprot thrift.TProtocol) (err error) {
 }
 
 func (p *BarUploadChunkArgs) writeField2(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("info", thrift.STRUCT, 2); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:info: ", p), err)
+	if err := oprot.WriteFieldBegin("chunkId", thrift.STRING, 2); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:chunkId: ", p), err)
 	}
-	if err := p.Info.Write(oprot); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Info), err)
+	if err := oprot.WriteBinary(p.ChunkId); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.chunkId (2) field write error: ", p), err)
 	}
 	if err := oprot.WriteFieldEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:info: ", p), err)
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:chunkId: ", p), err)
 	}
 	return err
 }
@@ -2248,243 +1958,7 @@ func (p *BarUploadChunkResult) String() string {
 }
 
 // Attributes:
-//  - UploadId
-//  - BlobId
-//  - Tags
-type BarFinishUploadBlobArgs struct {
-	UploadId []byte   `thrift:"uploadId,1" json:"uploadId"`
-	BlobId   ID       `thrift:"blobId,2" json:"blobId"`
-	Tags     [][]byte `thrift:"tags,3" json:"tags"`
-}
-
-func NewBarFinishUploadBlobArgs() *BarFinishUploadBlobArgs {
-	return &BarFinishUploadBlobArgs{}
-}
-
-func (p *BarFinishUploadBlobArgs) GetUploadId() []byte {
-	return p.UploadId
-}
-
-func (p *BarFinishUploadBlobArgs) GetBlobId() ID {
-	return p.BlobId
-}
-
-func (p *BarFinishUploadBlobArgs) GetTags() [][]byte {
-	return p.Tags
-}
-func (p *BarFinishUploadBlobArgs) Read(iprot thrift.TProtocol) error {
-	if _, err := iprot.ReadStructBegin(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
-	}
-
-	for {
-		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
-		if err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
-		}
-		if fieldTypeId == thrift.STOP {
-			break
-		}
-		switch fieldId {
-		case 1:
-			if err := p.readField1(iprot); err != nil {
-				return err
-			}
-		case 2:
-			if err := p.readField2(iprot); err != nil {
-				return err
-			}
-		case 3:
-			if err := p.readField3(iprot); err != nil {
-				return err
-			}
-		default:
-			if err := iprot.Skip(fieldTypeId); err != nil {
-				return err
-			}
-		}
-		if err := iprot.ReadFieldEnd(); err != nil {
-			return err
-		}
-	}
-	if err := iprot.ReadStructEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
-	}
-	return nil
-}
-
-func (p *BarFinishUploadBlobArgs) readField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
-		return thrift.PrependError("error reading field 1: ", err)
-	} else {
-		p.UploadId = v
-	}
-	return nil
-}
-
-func (p *BarFinishUploadBlobArgs) readField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
-		return thrift.PrependError("error reading field 2: ", err)
-	} else {
-		temp := ID(v)
-		p.BlobId = temp
-	}
-	return nil
-}
-
-func (p *BarFinishUploadBlobArgs) readField3(iprot thrift.TProtocol) error {
-	_, size, err := iprot.ReadListBegin()
-	if err != nil {
-		return thrift.PrependError("error reading list begin: ", err)
-	}
-	tSlice := make([][]byte, 0, size)
-	p.Tags = tSlice
-	for i := 0; i < size; i++ {
-		var _elem31 []byte
-		if v, err := iprot.ReadBinary(); err != nil {
-			return thrift.PrependError("error reading field 0: ", err)
-		} else {
-			_elem31 = v
-		}
-		p.Tags = append(p.Tags, _elem31)
-	}
-	if err := iprot.ReadListEnd(); err != nil {
-		return thrift.PrependError("error reading list end: ", err)
-	}
-	return nil
-}
-
-func (p *BarFinishUploadBlobArgs) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("FinishUploadBlob_args"); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
-	}
-	if err := p.writeField1(oprot); err != nil {
-		return err
-	}
-	if err := p.writeField2(oprot); err != nil {
-		return err
-	}
-	if err := p.writeField3(oprot); err != nil {
-		return err
-	}
-	if err := oprot.WriteFieldStop(); err != nil {
-		return thrift.PrependError("write field stop error: ", err)
-	}
-	if err := oprot.WriteStructEnd(); err != nil {
-		return thrift.PrependError("write struct stop error: ", err)
-	}
-	return nil
-}
-
-func (p *BarFinishUploadBlobArgs) writeField1(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("uploadId", thrift.STRING, 1); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:uploadId: ", p), err)
-	}
-	if err := oprot.WriteBinary(p.UploadId); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T.uploadId (1) field write error: ", p), err)
-	}
-	if err := oprot.WriteFieldEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:uploadId: ", p), err)
-	}
-	return err
-}
-
-func (p *BarFinishUploadBlobArgs) writeField2(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("blobId", thrift.STRING, 2); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:blobId: ", p), err)
-	}
-	if err := oprot.WriteBinary(p.BlobId); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T.blobId (2) field write error: ", p), err)
-	}
-	if err := oprot.WriteFieldEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:blobId: ", p), err)
-	}
-	return err
-}
-
-func (p *BarFinishUploadBlobArgs) writeField3(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("tags", thrift.LIST, 3); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:tags: ", p), err)
-	}
-	if err := oprot.WriteListBegin(thrift.STRING, len(p.Tags)); err != nil {
-		return thrift.PrependError("error writing list begin: ", err)
-	}
-	for _, v := range p.Tags {
-		if err := oprot.WriteBinary(v); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
-		}
-	}
-	if err := oprot.WriteListEnd(); err != nil {
-		return thrift.PrependError("error writing list end: ", err)
-	}
-	if err := oprot.WriteFieldEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field end error 3:tags: ", p), err)
-	}
-	return err
-}
-
-func (p *BarFinishUploadBlobArgs) String() string {
-	if p == nil {
-		return "<nil>"
-	}
-	return fmt.Sprintf("BarFinishUploadBlobArgs(%+v)", *p)
-}
-
-type BarFinishUploadBlobResult struct {
-}
-
-func NewBarFinishUploadBlobResult() *BarFinishUploadBlobResult {
-	return &BarFinishUploadBlobResult{}
-}
-
-func (p *BarFinishUploadBlobResult) Read(iprot thrift.TProtocol) error {
-	if _, err := iprot.ReadStructBegin(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
-	}
-
-	for {
-		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
-		if err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
-		}
-		if fieldTypeId == thrift.STOP {
-			break
-		}
-		if err := iprot.Skip(fieldTypeId); err != nil {
-			return err
-		}
-		if err := iprot.ReadFieldEnd(); err != nil {
-			return err
-		}
-	}
-	if err := iprot.ReadStructEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
-	}
-	return nil
-}
-
-func (p *BarFinishUploadBlobResult) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("FinishUploadBlob_result"); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
-	}
-	if err := oprot.WriteFieldStop(); err != nil {
-		return thrift.PrependError("write field stop error: ", err)
-	}
-	if err := oprot.WriteStructEnd(); err != nil {
-		return thrift.PrependError("write struct stop error: ", err)
-	}
-	return nil
-}
-
-func (p *BarFinishUploadBlobResult) String() string {
-	if p == nil {
-		return "<nil>"
-	}
-	return fmt.Sprintf("BarFinishUploadBlobResult(%+v)", *p)
-}
-
-// Attributes:
-//  - UploadId
+//  - UploadId: Upload id
 type BarFinishUploadArgs struct {
 	UploadId []byte `thrift:"uploadId,1" json:"uploadId"`
 }
@@ -2574,182 +2048,14 @@ func (p *BarFinishUploadArgs) String() string {
 	return fmt.Sprintf("BarFinishUploadArgs(%+v)", *p)
 }
 
-// Attributes:
-//  - Ids
-//  - Tags
-type BarTagBlobsArgs struct {
-	Ids  [][]byte `thrift:"ids,1" json:"ids"`
-	Tags [][]byte `thrift:"tags,2" json:"tags"`
+type BarFinishUploadResult struct {
 }
 
-func NewBarTagBlobsArgs() *BarTagBlobsArgs {
-	return &BarTagBlobsArgs{}
+func NewBarFinishUploadResult() *BarFinishUploadResult {
+	return &BarFinishUploadResult{}
 }
 
-func (p *BarTagBlobsArgs) GetIds() [][]byte {
-	return p.Ids
-}
-
-func (p *BarTagBlobsArgs) GetTags() [][]byte {
-	return p.Tags
-}
-func (p *BarTagBlobsArgs) Read(iprot thrift.TProtocol) error {
-	if _, err := iprot.ReadStructBegin(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
-	}
-
-	for {
-		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
-		if err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
-		}
-		if fieldTypeId == thrift.STOP {
-			break
-		}
-		switch fieldId {
-		case 1:
-			if err := p.readField1(iprot); err != nil {
-				return err
-			}
-		case 2:
-			if err := p.readField2(iprot); err != nil {
-				return err
-			}
-		default:
-			if err := iprot.Skip(fieldTypeId); err != nil {
-				return err
-			}
-		}
-		if err := iprot.ReadFieldEnd(); err != nil {
-			return err
-		}
-	}
-	if err := iprot.ReadStructEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
-	}
-	return nil
-}
-
-func (p *BarTagBlobsArgs) readField1(iprot thrift.TProtocol) error {
-	_, size, err := iprot.ReadListBegin()
-	if err != nil {
-		return thrift.PrependError("error reading list begin: ", err)
-	}
-	tSlice := make([][]byte, 0, size)
-	p.Ids = tSlice
-	for i := 0; i < size; i++ {
-		var _elem32 []byte
-		if v, err := iprot.ReadBinary(); err != nil {
-			return thrift.PrependError("error reading field 0: ", err)
-		} else {
-			_elem32 = v
-		}
-		p.Ids = append(p.Ids, _elem32)
-	}
-	if err := iprot.ReadListEnd(); err != nil {
-		return thrift.PrependError("error reading list end: ", err)
-	}
-	return nil
-}
-
-func (p *BarTagBlobsArgs) readField2(iprot thrift.TProtocol) error {
-	_, size, err := iprot.ReadListBegin()
-	if err != nil {
-		return thrift.PrependError("error reading list begin: ", err)
-	}
-	tSlice := make([][]byte, 0, size)
-	p.Tags = tSlice
-	for i := 0; i < size; i++ {
-		var _elem33 []byte
-		if v, err := iprot.ReadBinary(); err != nil {
-			return thrift.PrependError("error reading field 0: ", err)
-		} else {
-			_elem33 = v
-		}
-		p.Tags = append(p.Tags, _elem33)
-	}
-	if err := iprot.ReadListEnd(); err != nil {
-		return thrift.PrependError("error reading list end: ", err)
-	}
-	return nil
-}
-
-func (p *BarTagBlobsArgs) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("TagBlobs_args"); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
-	}
-	if err := p.writeField1(oprot); err != nil {
-		return err
-	}
-	if err := p.writeField2(oprot); err != nil {
-		return err
-	}
-	if err := oprot.WriteFieldStop(); err != nil {
-		return thrift.PrependError("write field stop error: ", err)
-	}
-	if err := oprot.WriteStructEnd(); err != nil {
-		return thrift.PrependError("write struct stop error: ", err)
-	}
-	return nil
-}
-
-func (p *BarTagBlobsArgs) writeField1(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("ids", thrift.LIST, 1); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:ids: ", p), err)
-	}
-	if err := oprot.WriteListBegin(thrift.STRING, len(p.Ids)); err != nil {
-		return thrift.PrependError("error writing list begin: ", err)
-	}
-	for _, v := range p.Ids {
-		if err := oprot.WriteBinary(v); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
-		}
-	}
-	if err := oprot.WriteListEnd(); err != nil {
-		return thrift.PrependError("error writing list end: ", err)
-	}
-	if err := oprot.WriteFieldEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:ids: ", p), err)
-	}
-	return err
-}
-
-func (p *BarTagBlobsArgs) writeField2(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("tags", thrift.LIST, 2); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:tags: ", p), err)
-	}
-	if err := oprot.WriteListBegin(thrift.STRING, len(p.Tags)); err != nil {
-		return thrift.PrependError("error writing list begin: ", err)
-	}
-	for _, v := range p.Tags {
-		if err := oprot.WriteBinary(v); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
-		}
-	}
-	if err := oprot.WriteListEnd(); err != nil {
-		return thrift.PrependError("error writing list end: ", err)
-	}
-	if err := oprot.WriteFieldEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:tags: ", p), err)
-	}
-	return err
-}
-
-func (p *BarTagBlobsArgs) String() string {
-	if p == nil {
-		return "<nil>"
-	}
-	return fmt.Sprintf("BarTagBlobsArgs(%+v)", *p)
-}
-
-type BarTagBlobsResult struct {
-}
-
-func NewBarTagBlobsResult() *BarTagBlobsResult {
-	return &BarTagBlobsResult{}
-}
-
-func (p *BarTagBlobsResult) Read(iprot thrift.TProtocol) error {
+func (p *BarFinishUploadResult) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
 	}
@@ -2775,8 +2081,8 @@ func (p *BarTagBlobsResult) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarTagBlobsResult) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("TagBlobs_result"); err != nil {
+func (p *BarFinishUploadResult) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("FinishUpload_result"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if err := oprot.WriteFieldStop(); err != nil {
@@ -2788,248 +2094,27 @@ func (p *BarTagBlobsResult) Write(oprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarTagBlobsResult) String() string {
+func (p *BarFinishUploadResult) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("BarTagBlobsResult(%+v)", *p)
+	return fmt.Sprintf("BarFinishUploadResult(%+v)", *p)
 }
 
 // Attributes:
 //  - Ids
-//  - Tags
-type BarUntagBlobsArgs struct {
-	Ids  [][]byte `thrift:"ids,1" json:"ids"`
-	Tags [][]byte `thrift:"tags,2" json:"tags"`
-}
-
-func NewBarUntagBlobsArgs() *BarUntagBlobsArgs {
-	return &BarUntagBlobsArgs{}
-}
-
-func (p *BarUntagBlobsArgs) GetIds() [][]byte {
-	return p.Ids
-}
-
-func (p *BarUntagBlobsArgs) GetTags() [][]byte {
-	return p.Tags
-}
-func (p *BarUntagBlobsArgs) Read(iprot thrift.TProtocol) error {
-	if _, err := iprot.ReadStructBegin(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
-	}
-
-	for {
-		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
-		if err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
-		}
-		if fieldTypeId == thrift.STOP {
-			break
-		}
-		switch fieldId {
-		case 1:
-			if err := p.readField1(iprot); err != nil {
-				return err
-			}
-		case 2:
-			if err := p.readField2(iprot); err != nil {
-				return err
-			}
-		default:
-			if err := iprot.Skip(fieldTypeId); err != nil {
-				return err
-			}
-		}
-		if err := iprot.ReadFieldEnd(); err != nil {
-			return err
-		}
-	}
-	if err := iprot.ReadStructEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
-	}
-	return nil
-}
-
-func (p *BarUntagBlobsArgs) readField1(iprot thrift.TProtocol) error {
-	_, size, err := iprot.ReadListBegin()
-	if err != nil {
-		return thrift.PrependError("error reading list begin: ", err)
-	}
-	tSlice := make([][]byte, 0, size)
-	p.Ids = tSlice
-	for i := 0; i < size; i++ {
-		var _elem34 []byte
-		if v, err := iprot.ReadBinary(); err != nil {
-			return thrift.PrependError("error reading field 0: ", err)
-		} else {
-			_elem34 = v
-		}
-		p.Ids = append(p.Ids, _elem34)
-	}
-	if err := iprot.ReadListEnd(); err != nil {
-		return thrift.PrependError("error reading list end: ", err)
-	}
-	return nil
-}
-
-func (p *BarUntagBlobsArgs) readField2(iprot thrift.TProtocol) error {
-	_, size, err := iprot.ReadListBegin()
-	if err != nil {
-		return thrift.PrependError("error reading list begin: ", err)
-	}
-	tSlice := make([][]byte, 0, size)
-	p.Tags = tSlice
-	for i := 0; i < size; i++ {
-		var _elem35 []byte
-		if v, err := iprot.ReadBinary(); err != nil {
-			return thrift.PrependError("error reading field 0: ", err)
-		} else {
-			_elem35 = v
-		}
-		p.Tags = append(p.Tags, _elem35)
-	}
-	if err := iprot.ReadListEnd(); err != nil {
-		return thrift.PrependError("error reading list end: ", err)
-	}
-	return nil
-}
-
-func (p *BarUntagBlobsArgs) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("UntagBlobs_args"); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
-	}
-	if err := p.writeField1(oprot); err != nil {
-		return err
-	}
-	if err := p.writeField2(oprot); err != nil {
-		return err
-	}
-	if err := oprot.WriteFieldStop(); err != nil {
-		return thrift.PrependError("write field stop error: ", err)
-	}
-	if err := oprot.WriteStructEnd(); err != nil {
-		return thrift.PrependError("write struct stop error: ", err)
-	}
-	return nil
-}
-
-func (p *BarUntagBlobsArgs) writeField1(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("ids", thrift.LIST, 1); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:ids: ", p), err)
-	}
-	if err := oprot.WriteListBegin(thrift.STRING, len(p.Ids)); err != nil {
-		return thrift.PrependError("error writing list begin: ", err)
-	}
-	for _, v := range p.Ids {
-		if err := oprot.WriteBinary(v); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
-		}
-	}
-	if err := oprot.WriteListEnd(); err != nil {
-		return thrift.PrependError("error writing list end: ", err)
-	}
-	if err := oprot.WriteFieldEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field end error 1:ids: ", p), err)
-	}
-	return err
-}
-
-func (p *BarUntagBlobsArgs) writeField2(oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin("tags", thrift.LIST, 2); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:tags: ", p), err)
-	}
-	if err := oprot.WriteListBegin(thrift.STRING, len(p.Tags)); err != nil {
-		return thrift.PrependError("error writing list begin: ", err)
-	}
-	for _, v := range p.Tags {
-		if err := oprot.WriteBinary(v); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
-		}
-	}
-	if err := oprot.WriteListEnd(); err != nil {
-		return thrift.PrependError("error writing list end: ", err)
-	}
-	if err := oprot.WriteFieldEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:tags: ", p), err)
-	}
-	return err
-}
-
-func (p *BarUntagBlobsArgs) String() string {
-	if p == nil {
-		return "<nil>"
-	}
-	return fmt.Sprintf("BarUntagBlobsArgs(%+v)", *p)
-}
-
-type BarUntagBlobsResult struct {
-}
-
-func NewBarUntagBlobsResult() *BarUntagBlobsResult {
-	return &BarUntagBlobsResult{}
-}
-
-func (p *BarUntagBlobsResult) Read(iprot thrift.TProtocol) error {
-	if _, err := iprot.ReadStructBegin(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
-	}
-
-	for {
-		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
-		if err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
-		}
-		if fieldTypeId == thrift.STOP {
-			break
-		}
-		if err := iprot.Skip(fieldTypeId); err != nil {
-			return err
-		}
-		if err := iprot.ReadFieldEnd(); err != nil {
-			return err
-		}
-	}
-	if err := iprot.ReadStructEnd(); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
-	}
-	return nil
-}
-
-func (p *BarUntagBlobsResult) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("UntagBlobs_result"); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
-	}
-	if err := oprot.WriteFieldStop(); err != nil {
-		return thrift.PrependError("write field stop error: ", err)
-	}
-	if err := oprot.WriteStructEnd(); err != nil {
-		return thrift.PrependError("write struct stop error: ", err)
-	}
-	return nil
-}
-
-func (p *BarUntagBlobsResult) String() string {
-	if p == nil {
-		return "<nil>"
-	}
-	return fmt.Sprintf("BarUntagBlobsResult(%+v)", *p)
-}
-
-// Attributes:
-//  - Ids
-type BarIsBlobExistsArgs struct {
+type BarGetMissingBlobIdsArgs struct {
 	Ids [][]byte `thrift:"ids,1" json:"ids"`
 }
 
-func NewBarIsBlobExistsArgs() *BarIsBlobExistsArgs {
-	return &BarIsBlobExistsArgs{}
+func NewBarGetMissingBlobIdsArgs() *BarGetMissingBlobIdsArgs {
+	return &BarGetMissingBlobIdsArgs{}
 }
 
-func (p *BarIsBlobExistsArgs) GetIds() [][]byte {
+func (p *BarGetMissingBlobIdsArgs) GetIds() [][]byte {
 	return p.Ids
 }
-func (p *BarIsBlobExistsArgs) Read(iprot thrift.TProtocol) error {
+func (p *BarGetMissingBlobIdsArgs) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
 	}
@@ -3062,7 +2147,7 @@ func (p *BarIsBlobExistsArgs) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarIsBlobExistsArgs) readField1(iprot thrift.TProtocol) error {
+func (p *BarGetMissingBlobIdsArgs) readField1(iprot thrift.TProtocol) error {
 	_, size, err := iprot.ReadListBegin()
 	if err != nil {
 		return thrift.PrependError("error reading list begin: ", err)
@@ -3070,13 +2155,13 @@ func (p *BarIsBlobExistsArgs) readField1(iprot thrift.TProtocol) error {
 	tSlice := make([][]byte, 0, size)
 	p.Ids = tSlice
 	for i := 0; i < size; i++ {
-		var _elem36 []byte
+		var _elem27 []byte
 		if v, err := iprot.ReadBinary(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_elem36 = v
+			_elem27 = v
 		}
-		p.Ids = append(p.Ids, _elem36)
+		p.Ids = append(p.Ids, _elem27)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -3084,8 +2169,8 @@ func (p *BarIsBlobExistsArgs) readField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarIsBlobExistsArgs) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("IsBlobExists_args"); err != nil {
+func (p *BarGetMissingBlobIdsArgs) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("GetMissingBlobIds_args"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if err := p.writeField1(oprot); err != nil {
@@ -3100,7 +2185,7 @@ func (p *BarIsBlobExistsArgs) Write(oprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarIsBlobExistsArgs) writeField1(oprot thrift.TProtocol) (err error) {
+func (p *BarGetMissingBlobIdsArgs) writeField1(oprot thrift.TProtocol) (err error) {
 	if err := oprot.WriteFieldBegin("ids", thrift.LIST, 1); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:ids: ", p), err)
 	}
@@ -3121,33 +2206,33 @@ func (p *BarIsBlobExistsArgs) writeField1(oprot thrift.TProtocol) (err error) {
 	return err
 }
 
-func (p *BarIsBlobExistsArgs) String() string {
+func (p *BarGetMissingBlobIdsArgs) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("BarIsBlobExistsArgs(%+v)", *p)
+	return fmt.Sprintf("BarGetMissingBlobIdsArgs(%+v)", *p)
 }
 
 // Attributes:
 //  - Success
-type BarIsBlobExistsResult struct {
+type BarGetMissingBlobIdsResult struct {
 	Success [][]byte `thrift:"success,0" json:"success,omitempty"`
 }
 
-func NewBarIsBlobExistsResult() *BarIsBlobExistsResult {
-	return &BarIsBlobExistsResult{}
+func NewBarGetMissingBlobIdsResult() *BarGetMissingBlobIdsResult {
+	return &BarGetMissingBlobIdsResult{}
 }
 
-var BarIsBlobExistsResult_Success_DEFAULT [][]byte
+var BarGetMissingBlobIdsResult_Success_DEFAULT [][]byte
 
-func (p *BarIsBlobExistsResult) GetSuccess() [][]byte {
+func (p *BarGetMissingBlobIdsResult) GetSuccess() [][]byte {
 	return p.Success
 }
-func (p *BarIsBlobExistsResult) IsSetSuccess() bool {
+func (p *BarGetMissingBlobIdsResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
 
-func (p *BarIsBlobExistsResult) Read(iprot thrift.TProtocol) error {
+func (p *BarGetMissingBlobIdsResult) Read(iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
 	}
@@ -3180,7 +2265,7 @@ func (p *BarIsBlobExistsResult) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarIsBlobExistsResult) readField0(iprot thrift.TProtocol) error {
+func (p *BarGetMissingBlobIdsResult) readField0(iprot thrift.TProtocol) error {
 	_, size, err := iprot.ReadListBegin()
 	if err != nil {
 		return thrift.PrependError("error reading list begin: ", err)
@@ -3188,13 +2273,13 @@ func (p *BarIsBlobExistsResult) readField0(iprot thrift.TProtocol) error {
 	tSlice := make([][]byte, 0, size)
 	p.Success = tSlice
 	for i := 0; i < size; i++ {
-		var _elem37 []byte
+		var _elem28 []byte
 		if v, err := iprot.ReadBinary(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_elem37 = v
+			_elem28 = v
 		}
-		p.Success = append(p.Success, _elem37)
+		p.Success = append(p.Success, _elem28)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -3202,8 +2287,8 @@ func (p *BarIsBlobExistsResult) readField0(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarIsBlobExistsResult) Write(oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin("IsBlobExists_result"); err != nil {
+func (p *BarGetMissingBlobIdsResult) Write(oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin("GetMissingBlobIds_result"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if err := p.writeField0(oprot); err != nil {
@@ -3218,7 +2303,7 @@ func (p *BarIsBlobExistsResult) Write(oprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *BarIsBlobExistsResult) writeField0(oprot thrift.TProtocol) (err error) {
+func (p *BarGetMissingBlobIdsResult) writeField0(oprot thrift.TProtocol) (err error) {
 	if p.IsSetSuccess() {
 		if err := oprot.WriteFieldBegin("success", thrift.LIST, 0); err != nil {
 			return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err)
@@ -3241,11 +2326,11 @@ func (p *BarIsBlobExistsResult) writeField0(oprot thrift.TProtocol) (err error) 
 	return err
 }
 
-func (p *BarIsBlobExistsResult) String() string {
+func (p *BarGetMissingBlobIdsResult) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("BarIsBlobExistsResult(%+v)", *p)
+	return fmt.Sprintf("BarGetMissingBlobIdsResult(%+v)", *p)
 }
 
 // Attributes:
@@ -3302,13 +2387,13 @@ func (p *BarGetManifestsArgs) readField1(iprot thrift.TProtocol) error {
 	tSlice := make([][]byte, 0, size)
 	p.Ids = tSlice
 	for i := 0; i < size; i++ {
-		var _elem38 []byte
+		var _elem29 []byte
 		if v, err := iprot.ReadBinary(); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_elem38 = v
+			_elem29 = v
 		}
-		p.Ids = append(p.Ids, _elem38)
+		p.Ids = append(p.Ids, _elem29)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)
@@ -3420,11 +2505,11 @@ func (p *BarGetManifestsResult) readField0(iprot thrift.TProtocol) error {
 	tSlice := make([]*Manifest, 0, size)
 	p.Success = tSlice
 	for i := 0; i < size; i++ {
-		_elem39 := &Manifest{}
-		if err := _elem39.Read(iprot); err != nil {
-			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem39), err)
+		_elem30 := &Manifest{}
+		if err := _elem30.Read(iprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem30), err)
 		}
-		p.Success = append(p.Success, _elem39)
+		p.Success = append(p.Success, _elem30)
 	}
 	if err := iprot.ReadListEnd(); err != nil {
 		return thrift.PrependError("error reading list end: ", err)

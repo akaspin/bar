@@ -125,7 +125,7 @@ func Test_ParseDiff2(t *testing.T) {
 	res, err := g.ManifestsFromDiff(in)
 	assert.NoError(t, err)
 
-	assert.EqualValues(t, lists.Links{
+	assert.EqualValues(t, lists.BlobMap{
 		"../../fix/aa.txt": proto.Manifest{
 			proto.Data{
 				"f627c8f9355399ef45e1a6b6e5a9e6a3abcb3e1b6255603357bffa9f2211ba7e",
