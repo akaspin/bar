@@ -1,4 +1,4 @@
-package manifest
+package proto
 import (
 	"io"
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"hash"
 	"strings"
 	"encoding/hex"
-	"github.com/akaspin/bar/proto/bar"
+	"github.com/akaspin/bar/proto/wire"
 )
 
 const (
@@ -50,7 +50,7 @@ func (s *Manifest) Serialize(out io.Writer) (err error) {
 }
 
 func NewFromAny(in io.Reader, chunkSize int64) (res *Manifest, err error) {
-	r, isShadow, err := Peek(in)
+	r, isShadow, err := PeekManifest(in)
 	if err != nil {
 		return
 	}
@@ -219,14 +219,14 @@ func (s *Manifest) nextLine(in *bufio.Reader, buf []byte) (res string, err error
 	return
 }
 
-func (s Manifest) MarshalThrift() (res bar.Manifest, err error) {
-	var info bar.DataInfo
+func (s Manifest) MarshalThrift() (res wire.Manifest, err error) {
+	var info wire.DataInfo
 	if info, err = s.Data.MarshalThrift(); err != nil {
 		return
 	}
 	res.Info = &info
 	for _, chunk := range s.Chunks {
-		var ch bar.Chunk
+		var ch wire.Chunk
 		if ch, err = chunk.MarshalThrift(); err != nil {
 			return
 		}
@@ -235,7 +235,7 @@ func (s Manifest) MarshalThrift() (res bar.Manifest, err error) {
 	return
 }
 
-func (s *Manifest) UnmarshalThrift(data bar.Manifest) (err error) {
+func (s *Manifest) UnmarshalThrift(data wire.Manifest) (err error) {
 	if err = (&s.Data).UnmarshalThrift(*data.Info); err != nil {
 		return
 	}
@@ -252,9 +252,9 @@ func (s *Manifest) UnmarshalThrift(data bar.Manifest) (err error) {
 
 type ManifestSlice []Manifest
 
-func (m ManifestSlice) MarshalThrift() (res []*bar.Manifest, err error) {
+func (m ManifestSlice) MarshalThrift() (res []*wire.Manifest, err error) {
 	for _, man := range m {
-		var t bar.Manifest
+		var t wire.Manifest
 		if t, err = man.MarshalThrift(); err != nil {
 			return
 		}
@@ -263,7 +263,7 @@ func (m ManifestSlice) MarshalThrift() (res []*bar.Manifest, err error) {
 	return
 }
 
-func (m *ManifestSlice) UnmarshalThrift(data []*bar.Manifest) (err error) {
+func (m *ManifestSlice) UnmarshalThrift(data []*wire.Manifest) (err error) {
 	for _, tm := range data {
 		var m1 Manifest
 		if err = (&m1).UnmarshalThrift(*tm); err != nil {

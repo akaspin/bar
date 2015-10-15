@@ -1,7 +1,7 @@
 package cmd
 import (
 	"github.com/akaspin/bar/barc/model"
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/lists"
 	"fmt"
 	"github.com/akaspin/bar/barc/transport"
@@ -74,7 +74,7 @@ func (c *LsCmd) Do() (err error) {
 		return
 	}
 
-	mod, err := model.New(c.WD, c.useGit, manifest.CHUNK_SIZE, c.pool)
+	mod, err := model.New(c.WD, c.useGit, proto.CHUNK_SIZE, c.pool)
 	if err != nil {
 		return
 	}
@@ -101,9 +101,9 @@ func (c *LsCmd) Do() (err error) {
 		return
 	}
 
-	onRemote := map[manifest.ID]struct{}{}
+	onRemote := map[proto.ID]struct{}{}
 	if !c.noRemote {
-		var exists []manifest.ID
+		var exists []proto.ID
 		trans := transport.NewTransport(mod, c.httpEndpoint, c.rpcEndpoints, c.pool)
 		if exists, err = trans.Check(blobs.IDMap().IDs()); err != nil {
 			return

@@ -1,7 +1,7 @@
-package manifest_test
+package proto_test
 import (
 	"testing"
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/fixtures"
 	"golang.org/x/crypto/sha3"
@@ -21,7 +21,7 @@ func Test_SHA3(t *testing.T) {
 }
 
 func Test_Shadow_ToStringFull(t *testing.T) {
-	id := manifest.ID("ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c")
+	id := proto.ID("ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c")
 	expect := fixtures.FixStream(`BAR:MANIFEST
 
 		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c
@@ -33,10 +33,10 @@ func Test_Shadow_ToStringFull(t *testing.T) {
 		offset 0
 		`)
 
-	sh := &manifest.Manifest{
-		manifest.Data{id, 1234},
-		[]manifest.Chunk{
-			manifest.Chunk{manifest.Data{id, 1234}, 0},
+	sh := &proto.Manifest{
+		proto.Data{id, 1234},
+		[]proto.Chunk{
+			proto.Chunk{proto.Data{id, 1234}, 0},
 		},
 	}
 
@@ -54,7 +54,7 @@ func Test_Shadow_New1(t *testing.T) {
 		size 1234
 		offset 0
 		`
-	m, err := manifest.NewFromManifest(fixtures.CleanInput(in))
+	m, err := proto.NewFromManifest(fixtures.CleanInput(in))
 	assert.NoError(t, err)
 	assert.Equal(t, fixtures.FixStream(in), (*m).String())
 }

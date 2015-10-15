@@ -1,8 +1,7 @@
 package transport
 import (
-	"github.com/akaspin/bar/proto"
 	"time"
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"sync"
 	"github.com/tamtam-im/logx"
 	"fmt"
@@ -10,7 +9,7 @@ import (
 	"github.com/akaspin/bar/barc/model"
 	"bytes"
 	"strings"
-	"github.com/akaspin/bar/proto/bar"
+	"github.com/akaspin/bar/proto/wire"
 	"golang.org/x/net/context"
 	"github.com/akaspin/bar/concurrent"
 )
@@ -66,7 +65,7 @@ func (t *Transport) Upload(blobs lists.Links) (err error) {
 
 	for name, mt := range toUpload {
 		wg.Add(1)
-		go func(n string, mi manifest.Manifest) {
+		go func(n string, mi proto.Manifest) {
 			defer wg.Done()
 			var err1 error
 			if err1 = t.UploadBlob(n, mi); err1 != nil {
@@ -92,7 +91,7 @@ func (t *Transport) Upload(blobs lists.Links) (err error) {
 
 // Declare upload on bard server
 func (t *Transport) NewUpload(blobs lists.Links) (toUpload lists.Links, err error) {
-	var req, res []manifest.Manifest
+	var req, res []proto.Manifest
 
 	idmap := blobs.IDMap()
 
@@ -118,7 +117,7 @@ func (t *Transport) NewUpload(blobs lists.Links) (toUpload lists.Links, err erro
 }
 
 // Upload chunks from blob
-func (t *Transport) UploadBlob(name string, info manifest.Manifest) (err error) {
+func (t *Transport) UploadBlob(name string, info proto.Manifest) (err error) {
 
 	logx.Debugf("uploading %s %s (%d chunks)", name, info.ID, len(info.Chunks))
 
@@ -129,14 +128,14 @@ func (t *Transport) UploadBlob(name string, info manifest.Manifest) (err error) 
 
 	err = t.BatchPool.Do(
 		func(ctx context.Context, in interface{}) (out interface{}, err error) {
-			err = t.UploadChunk(name, info.ID, in.(manifest.Chunk))
+			err = t.UploadChunk(name, info.ID, in.(proto.Chunk))
 			return
 		}, &req, &res, concurrent.DefaultBatchOptions(),
 	)
 	return
 }
 
-//func (t *Transport) UploadBlob(name string, info manifest.Manifest) (err error) {
+//func (t *Transport) UploadBlob(name string, info proto.Manifest) (err error) {
 //
 //	logx.Debugf("uploading %s %s (%d chunks)", name, info.ID, len(info.Chunks))
 //
@@ -148,7 +147,7 @@ func (t *Transport) UploadBlob(name string, info manifest.Manifest) (err error) 
 //	_, err = t.pool.RunBatch(parmap.Task{
 //		Map: req,
 //		Fn: func(id string, v interface{}) (res interface{}, err error) {
-//			err = t.UploadChunk(name, info.ID, v.(manifest.Chunk))
+//			err = t.UploadChunk(name, info.ID, v.(proto.Chunk))
 //			return
 //		},
 //	})
@@ -157,7 +156,7 @@ func (t *Transport) UploadBlob(name string, info manifest.Manifest) (err error) 
 //}
 
 // Finish BLOB upload
-func (t *Transport) FinishUpload(id manifest.ID) (err error) {
+func (t *Transport) FinishUpload(id proto.ID) (err error) {
 	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
@@ -173,7 +172,7 @@ func (t *Transport) FinishUpload(id manifest.ID) (err error) {
 }
 
 // Upload chunk
-func (t *Transport) UploadChunk(name string, blobID manifest.ID, chunk manifest.Chunk) (err error) {
+func (t *Transport) UploadChunk(name string, blobID proto.ID, chunk proto.Chunk) (err error) {
 	logx.Tracef("uploading chunk %s (size: %d, offset %d) for BLOB %s:%s",
 		chunk.ID, chunk.Size, chunk.Offset, name, blobID)
 
@@ -205,13 +204,13 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 
 	// little funny, but all chunks are equal - flatten them
 	var req, res []interface{}
-	chunkMap := map[string]struct{manifest.ID; manifest.Chunk}{}
-	fetchIds := map[manifest.ID]struct{}{}
+	chunkMap := map[string]struct{proto.ID; proto.Chunk}{}
+	fetchIds := map[proto.ID]struct{}{}
 
 	for _, mt := range fetch {
 		fetchIds[mt.ID] = struct{}{}
 		for _, ch := range mt.Chunks    {
-			chunkMap[ch.ID.String()] = struct{manifest.ID; manifest.Chunk}{mt.ID, ch}
+			chunkMap[ch.ID.String()] = struct{proto.ID; proto.Chunk}{mt.ID, ch}
 		}
 	}
 	for _, v := range chunkMap {
@@ -225,7 +224,7 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 	// Fetch all chunks
 	err = t.model.BatchPool.Do(
 		func (ctx context.Context, in interface{}) (out interface{}, err error) {
-			r := in.(struct{manifest.ID; manifest.Chunk})
+			r := in.(struct{proto.ID; proto.Chunk})
 
 			tclient, err := t.tPool.Take()
 			if err != nil {
@@ -233,11 +232,11 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 			}
 			defer tclient.Release()
 
-			var blobID bar.ID
+			var blobID wire.ID
 			if blobID, err = r.ID.MarshalThrift(); err != nil {
 				return
 			}
-			var chunk bar.Chunk
+			var chunk wire.Chunk
 			chunk, err = r.Chunk.MarshalThrift()
 			if err != nil {
 				return
@@ -266,27 +265,27 @@ func (t *Transport) Download(blobs lists.Links) (err error) {
 	return
 }
 
-func (t *Transport) GetManifests(ids []manifest.ID) (res []manifest.Manifest, err error) {
+func (t *Transport) GetManifests(ids []proto.ID) (res []proto.Manifest, err error) {
 	cli, err := t.tPool.Take()
 	if err != nil {
 		return
 	}
 	defer cli.Release()
 
-	req, err := manifest.IDSlice(ids).MarshalThrift()
+	req, err := proto.IDSlice(ids).MarshalThrift()
 	if err != nil {
 		return
 	}
 
 	res1, err := cli.GetManifests(req)
 
-	var mx manifest.ManifestSlice
+	var mx proto.ManifestSlice
 	err = (&mx).UnmarshalThrift(res1)
 	res = mx
 	return
 }
 
-func (t *Transport) Check(ids []manifest.ID) (res []manifest.ID, err error) {
+func (t *Transport) Check(ids []proto.ID) (res []proto.ID, err error) {
 	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return
@@ -313,7 +312,7 @@ func (t *Transport) UploadSpec(spec proto.Spec) (err error) {
 	return
 }
 
-func (t *Transport) GetSpec(id manifest.ID) (res lists.Links, err error) {
+func (t *Transport) GetSpec(id proto.ID) (res lists.Links, err error) {
 	cli, err := t.rpcPool.Take()
 	if err != nil {
 		return

@@ -6,9 +6,8 @@ import (
 	"github.com/akaspin/bar/barc/transport"
 	"os"
 	"github.com/akaspin/bar/barc/model"
-	"github.com/akaspin/bar/manifest"
-	"github.com/akaspin/bar/barc/lists"
 	"github.com/akaspin/bar/proto"
+	"github.com/akaspin/bar/barc/lists"
 	"time"
 	"fmt"
 )
@@ -19,7 +18,7 @@ func Test_Ping(t *testing.T) {
 	defer stop()
 	defer os.RemoveAll(root)
 
-	mod, err := model.New("", false, manifest.CHUNK_SIZE, 16)
+	mod, err := model.New("", false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
 	defer tr.Close()
@@ -39,13 +38,13 @@ func Test_DeclareUpload(t *testing.T) {
 	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
-	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
 	defer tr.Close()
 
 
-	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
@@ -67,13 +66,13 @@ func Test_Upload(t *testing.T) {
 	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
-	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
 	defer tr.Close()
 
 
-	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
@@ -93,12 +92,12 @@ func Test_GetFetch(t *testing.T) {
 	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
-	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 	tr := transport.NewTransport(mod, endpoint, tEP, 16)
 	defer tr.Close()
 
-	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
@@ -122,12 +121,12 @@ func Test_Download(t *testing.T) {
 	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
-	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 	tr := transport.NewTransport(mod, endpoint, rpcEP, 16)
 	defer tr.Close()
 
-	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
@@ -160,12 +159,12 @@ func Test_Download_Many(t *testing.T) {
 	assert.NoError(t, tree.Populate())
 	assert.NoError(t, tree.PopulateN(10, 300))
 
-	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 	tr := transport.NewTransport(mod, endpoint, rpcEP, 16)
 	defer tr.Close()
 
-	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
@@ -203,12 +202,12 @@ func Test_Check(t *testing.T) {
 	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
-	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
 	defer tr.Close()
 
-	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
@@ -217,12 +216,12 @@ func Test_Check(t *testing.T) {
 	err = tr.Upload(mx)
 	assert.NoError(t, err)
 
-	res, err := tr.Check([]manifest.ID{
+	res, err := tr.Check([]proto.ID{
 		"eebd7b0c388d7f4d4ede4681b472969d5f09228c0473010d670a6918a3c05e79",
 		"eebd7b0c388d7f4d4ede4681b472969d5f09228c0473010d670a6918a3c05e7a",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, []manifest.ID{
+	assert.Equal(t, []proto.ID{
 		"eebd7b0c388d7f4d4ede4681b472969d5f09228c0473010d670a6918a3c05e79",
 	}, res)
 }
@@ -237,12 +236,12 @@ func Test_Spec(t *testing.T) {
 	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
-	mod, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
 	defer tr.Close()
 
-	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
@@ -252,7 +251,7 @@ func Test_Spec(t *testing.T) {
 	assert.NoError(t, err)
 
 	// make spec
-	nameMap := map[string]manifest.ID{}
+	nameMap := map[string]proto.ID{}
 	for name, m := range mx {
 		nameMap[name] = m.ID
 	}

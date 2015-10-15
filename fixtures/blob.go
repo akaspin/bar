@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 	"github.com/stretchr/testify/assert"
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 )
 
 // Make temporary BLOB
@@ -101,13 +101,13 @@ func FixStream(in string) (res string) {
 	return
 }
 
-func NewShadowFromFile(filename string) (res *manifest.Manifest, err error) {
+func NewShadowFromFile(filename string) (res *proto.Manifest, err error) {
 
 	r, err := os.Open(filename)
 	if err != nil {
 		return
 	}
 	defer r.Close()
-	res, err = manifest.NewFromAny(r, manifest.CHUNK_SIZE)
+	res, err = proto.NewFromAny(r, proto.CHUNK_SIZE)
 	return
 }

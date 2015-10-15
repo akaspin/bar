@@ -1,10 +1,9 @@
 package server
 import (
-	"github.com/akaspin/bar/proto/bar"
+	"github.com/akaspin/bar/proto/wire"
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/bard/storage"
 	"bytes"
-	"github.com/akaspin/bar/manifest"
 )
 
 type BardTHandler struct {
@@ -16,8 +15,8 @@ func NewBardTHandler(options *BardServerOptions) *BardTHandler {
 	return &BardTHandler{options.Info, options.Storage}
 }
 
-func (h *BardTHandler) GetInfo() (r *bar.ServerInfo, err error) {
-	r = &bar.ServerInfo{
+func (h *BardTHandler) GetInfo() (r *wire.ServerInfo, err error) {
+	r = &wire.ServerInfo{
 		HttpEndpoint: h.Info.HTTPEndpoint,
 		RpcEndpoints: h.Info.RPCEndpoints,
 		ChunkSize: h.Info.ChunkSize,
@@ -27,16 +26,16 @@ func (h *BardTHandler) GetInfo() (r *bar.ServerInfo, err error) {
 	return
 }
 
-func (h *BardTHandler) CreateUpload(id []byte, manifests []*bar.Manifest) (r []*bar.DataInfo, err error) {
+func (h *BardTHandler) CreateUpload(id []byte, manifests []*wire.Manifest) (r []*wire.DataInfo, err error) {
 	
 	return
 }
 
-func (h *BardTHandler) UploadChunk(uploadId bar.ID, info *bar.DataInfo, body []byte) (err error) {
+func (h *BardTHandler) UploadChunk(uploadId wire.ID, info *wire.DataInfo, body []byte) (err error) {
 	return
 }
 
-func (h *BardTHandler) FinishUploadBlob(uploadId []byte, blobId bar.ID, tags [][]byte) (err error) {
+func (h *BardTHandler) FinishUploadBlob(uploadId []byte, blobId wire.ID, tags [][]byte) (err error) {
 	return
 }
 
@@ -56,10 +55,8 @@ func (h *BardTHandler) IsBlobExists(ids [][]byte) (r [][]byte, err error) {
 	return
 }
 
-func (h *BardTHandler) GetManifests(ids [][]byte) (r []*bar.Manifest, err error) {
-	var req manifest.IDSlice
-//	var res []manifest.Manifest
-
+func (h *BardTHandler) GetManifests(ids [][]byte) (r []*wire.Manifest, err error) {
+	var req proto.IDSlice
 	if err = (&req).UnmarshalThrift(ids); err != nil {
 		return
 	}
@@ -69,13 +66,13 @@ func (h *BardTHandler) GetManifests(ids [][]byte) (r []*bar.Manifest, err error)
 		return
 	}
 
-	r, err = manifest.ManifestSlice(res).MarshalThrift()
+	r, err = proto.ManifestSlice(res).MarshalThrift()
 	return
 }
 
-func (h *BardTHandler) FetchChunk(blobID bar.ID, chunk *bar.Chunk) (r []byte, err error) {
+func (h *BardTHandler) FetchChunk(blobID wire.ID, chunk *wire.Chunk) (r []byte, err error) {
 	w := new(bytes.Buffer)
-	var id manifest.ID
+	var id proto.ID
 	if err = (&id).UnmarshalThrift(blobID); err != nil {
 		return
 	}
@@ -86,10 +83,11 @@ func (h *BardTHandler) FetchChunk(blobID bar.ID, chunk *bar.Chunk) (r []byte, er
 	return
 }
 
-func (h *BardTHandler) UploadSpec(spec *bar.Spec) (err error) {
+func (h *BardTHandler) UploadSpec(spec *wire.Spec) (err error) {
+
 	return
 }
 
-func (h *BardTHandler) FetchSpec(id bar.ID) (r *bar.Spec, err error) {
+func (h *BardTHandler) FetchSpec(id wire.ID) (r *wire.Spec, err error) {
 	return
 }

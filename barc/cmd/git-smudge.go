@@ -1,6 +1,6 @@
 package cmd
 import (
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"github.com/tamtam-im/logx"
 )
 
@@ -31,7 +31,7 @@ type GitSmudgeCmd struct {
 func NewGitSmudgeCmd(s *BaseSubCommand) SubCommand {
 	c := &GitSmudgeCmd{BaseSubCommand: s}
 
-	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
+	c.FS.Int64Var(&c.chunkSize, "chunk", proto.CHUNK_SIZE, "preferred chunk size")
 	c.FS.IntVar(&c.maxConn, "pool", 16, "pool size")
 	return c
 }
@@ -43,7 +43,7 @@ func (c *GitSmudgeCmd) Do() (err error) {
 //
 //	}
 
-	m, err := manifest.NewFromAny(c.Stdin, c.chunkSize)
+	m, err := proto.NewFromAny(c.Stdin, c.chunkSize)
 	logx.Debugf("smudge manifest for %s", name, m.ID)
 	err = m.Serialize(c.Stdout)
 	return

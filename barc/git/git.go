@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"io/ioutil"
 	"github.com/akaspin/bar/barc/lists"
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"github.com/tamtam-im/logx"
 )
 
@@ -326,7 +326,7 @@ func (g *Git) ManifestsFromDiff(r io.Reader) (res lists.Links, err error) {
 
 		if eof || strings.HasPrefix(line, "diff --git ") {
 			if hunt {
-				mn, err := manifest.NewFromManifest(bytes.NewReader(w.Bytes()))
+				mn, err := proto.NewFromManifest(bytes.NewReader(w.Bytes()))
 				if err != nil {
 					return res, err
 				}

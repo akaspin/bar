@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"github.com/akaspin/bar/barc/lists"
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 )
 
 func Test_DirtyFiles(t *testing.T) {
@@ -126,23 +126,23 @@ func Test_ParseDiff2(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.EqualValues(t, lists.Links{
-		"../../fix/aa.txt": manifest.Manifest{
-			manifest.Data{
+		"../../fix/aa.txt": proto.Manifest{
+			proto.Data{
 				"f627c8f9355399ef45e1a6b6e5a9e6a3abcb3e1b6255603357bffa9f2211ba7e",
 				6},
-			[]manifest.Chunk{
-				manifest.Chunk{
-					manifest.Data{
+			[]proto.Chunk{
+				proto.Chunk{
+					proto.Data{
 						"f627c8f9355399ef45e1a6b6e5a9e6a3abcb3e1b6255603357bffa9f2211ba7e",
 						6},
 					0}}},
-		"../../fix/aa21.txt":manifest.Manifest{
-			manifest.Data{
+		"../../fix/aa21.txt":proto.Manifest{
+			proto.Data{
 				"f627c8f9355399ef45e1a6b6e5a9e6a3abcb3e1b6255603357bffa9f2211ba7e",
 				6},
-			[]manifest.Chunk{
-				manifest.Chunk{
-					manifest.Data{
+			[]proto.Chunk{
+				proto.Chunk{
+					proto.Data{
 						"f627c8f9355399ef45e1a6b6e5a9e6a3abcb3e1b6255603357bffa9f2211ba7e",
 						6},
 					0}}}},

@@ -1,10 +1,9 @@
 package cmd
 import (
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/model"
 	"github.com/akaspin/bar/barc/lists"
 	"fmt"
-	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/transport"
 	"encoding/json"
 	"github.com/tamtam-im/logx"
@@ -38,7 +37,7 @@ func NewSpecExportCmd(s *BaseSubCommand) SubCommand  {
 	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
 		"bard rpc endpoints separated by comma")
 	s.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
-	s.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
+	s.FS.Int64Var(&c.chunkSize, "chunk", proto.CHUNK_SIZE, "preferred chunk size")
 	s.FS.IntVar(&c.pool, "pool", 16, "pool sizes")
 
 	s.FS.BoolVar(&c.upload, "upload", false, "upload spec to bard and print URL")
@@ -74,7 +73,7 @@ func (c *SpecExportCmd) Do() (err error) {
 	}
 
 	// make specmap
-	nameMap := map[string]manifest.ID{}
+	nameMap := map[string]proto.ID{}
 	for name, m := range blobs {
 		nameMap[name] = m.ID
 	}

@@ -1,6 +1,6 @@
-package manifest
+package proto
 import (
-	"github.com/akaspin/bar/proto/bar"
+	"github.com/akaspin/bar/proto/wire"
 	"encoding/hex"
 )
 
@@ -16,11 +16,11 @@ func (i ID) Decode(data []byte) (err error) {
 	return
 }
 
-func (i ID) MarshalThrift() (res bar.ID, err error) {
+func (i ID) MarshalThrift() (res wire.ID, err error) {
 	return hex.DecodeString(i.String())
 }
 
-func (i *ID) UnmarshalThrift(data bar.ID) (err error) {
+func (i *ID) UnmarshalThrift(data wire.ID) (err error) {
 	*i = ID(hex.EncodeToString(data))
 	return
 }
@@ -30,7 +30,7 @@ type IDSlice []ID
 // NOTE: strange behaviour of thrift compiller should be []ID.
 func (i IDSlice) MarshalThrift() (res [][]byte, err error) {
 	for _, id := range i {
-		var id1 bar.ID
+		var id1 wire.ID
 		if id1, err = id.MarshalThrift(); err != nil {
 			return
 		}

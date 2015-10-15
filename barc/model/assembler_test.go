@@ -4,7 +4,7 @@ import (
 	"github.com/akaspin/bar/barc/model"
 	"os"
 	"path/filepath"
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/sha3"
 	"encoding/hex"
@@ -17,13 +17,13 @@ import (
 func Test_Assembler_StoreChunk(t *testing.T) {
 	wd, _ := os.Getwd()
 	wd = filepath.Join(wd, "testdata", "assembler-StoreChunk")
-	m, err := model.New(wd, false, manifest.CHUNK_SIZE, 128)
+	m, err := model.New(wd, false, proto.CHUNK_SIZE, 128)
 	assert.NoError(t, err)
 
 	data := []byte("mama myla ramu")
 	hasher := sha3.New256()
 	_, err = hasher.Write([]byte(data))
-	id := manifest.ID(hex.EncodeToString(hasher.Sum(nil)))
+	id := proto.ID(hex.EncodeToString(hasher.Sum(nil)))
 
 	a, err := model.NewAssembler(m)
 	assert.NoError(t, err)
@@ -49,7 +49,7 @@ func Test_Assembler_Assemble(t *testing.T) {
 	assert.NoError(t, tree.Populate())
 	defer tree.Squash()
 
-	ml, err := model.New(tree.CWD, false, manifest.CHUNK_SIZE, 16)
+	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
 	names := []string{

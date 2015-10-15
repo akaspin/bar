@@ -89,11 +89,11 @@ test-short:
 stubs: proto/bar/ttypes.go
 
 clean-stubs:
-	rm -rf proto/bar
+	rm -rf proto/wire
 
 proto/bar/ttypes.go: proto/proto.thrift
 	mkdir -p ${@D}
 	thrift -strict -v -out proto --gen \
-		go:package=bar,package_prefix=github.com/akaspin/bar/proto,thrift_import=github.com/apache/thrift/lib/go/thrift,ignore_initialisms \
+		go:package=wire,package_prefix=github.com/akaspin/bar/proto,thrift_import=github.com/apache/thrift/lib/go/thrift,ignore_initialisms \
 		$<
 	rm -rf ${@D}/bar-remote

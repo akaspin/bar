@@ -1,7 +1,7 @@
-package manifest_test
+package proto_test
 import (
 	"testing"
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/fixtures"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,7 +17,7 @@ func Test_Manifest_MarshalThrift(t *testing.T) {
 		size 1234
 		offset 0
 		`
-	m, err := manifest.NewFromManifest(fixtures.CleanInput(in))
+	m, err := proto.NewFromManifest(fixtures.CleanInput(in))
 	assert.NoError(t, err)
 
 	_, err = (*m).MarshalThrift()

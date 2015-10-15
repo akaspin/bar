@@ -3,7 +3,7 @@ import (
 	"io"
 	"fmt"
 	"github.com/akaspin/bar/barc/git"
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"github.com/tamtam-im/logx"
 )
 
@@ -80,7 +80,7 @@ type GitDiffCmd struct {
 
 func NewGitDiffCmd(s *BaseSubCommand) SubCommand {
 	c := &GitDiffCmd{BaseSubCommand: s}
-	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
+	c.FS.Int64Var(&c.chunkSize, "chunk", proto.CHUNK_SIZE, "preferred chunk size")
 	return c
 }
 
@@ -136,12 +136,12 @@ func (c *GitDiffCmd) Do() (err error) {
 	}
 
 	var r io.Reader
-	var m *manifest.Manifest
+	var m *proto.Manifest
 	if !isNew {
 		if r, err = c.git.Cat(lOID); err != nil {
 			return
 		}
-		if m, err = manifest.NewFromAny(r, c.chunkSize); err != nil {
+		if m, err = proto.NewFromAny(r, c.chunkSize); err != nil {
 			return
 		}
 		logx.Debugf("manifest from %s", lOID)
@@ -152,7 +152,7 @@ func (c *GitDiffCmd) Do() (err error) {
 		if r, err = c.git.Cat(rOID); err != nil {
 			return
 		}
-		if m, err = manifest.NewFromAny(r, c.chunkSize); err != nil {
+		if m, err = proto.NewFromAny(r, c.chunkSize); err != nil {
 			return
 		}
 		logx.Debugf("manifest from %s", rOID)

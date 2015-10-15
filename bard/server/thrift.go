@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/apache/thrift/lib/go/thrift"
-	"github.com/akaspin/bar/proto/bar"
+	"github.com/akaspin/bar/proto/wire"
 	"github.com/tamtam-im/logx"
 )
 
@@ -17,7 +17,7 @@ func NewThriftServer(options *BardServerOptions) *ThriftServer  {
 
 func (s *ThriftServer) Start() (err error) {
 	handler := NewBardTHandler(s.BardServerOptions)
-	processor := bar.NewBarProcessor(handler)
+	processor := wire.NewBarProcessor(handler)
 
 	var transport thrift.TServerTransport
 

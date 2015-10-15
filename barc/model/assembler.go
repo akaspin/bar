@@ -8,7 +8,7 @@ import (
 	"github.com/akaspin/bar/barc/lists"
 	"os"
 	"github.com/tamtam-im/logx"
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"strings"
 	"golang.org/x/net/context"
 	"github.com/akaspin/bar/concurrent"
@@ -29,7 +29,7 @@ func NewAssembler(m *Model) (res *Assembler, err error) {
 }
 
 // Store chunk in assemble
-func (a *Assembler) StoreChunk(r io.Reader, id manifest.ID) (err error) {
+func (a *Assembler) StoreChunk(r io.Reader, id proto.ID) (err error) {
 	lock, err := a.model.FdLocks.Take()
 	if err != nil {
 		return
@@ -115,7 +115,7 @@ func (a *Assembler) Done(what lists.Links) (err error) {
 	return
 }
 
-func (a *Assembler) commitBlob(name string, id manifest.ID) (err error) {
+func (a *Assembler) commitBlob(name string, id proto.ID) (err error) {
 	dst := filepath.Join(a.model.WD, name)
 	src := dst + id.String()
 	bak := dst + ".bak"
@@ -130,7 +130,7 @@ func (a *Assembler) commitBlob(name string, id manifest.ID) (err error) {
 	return
 }
 
-func (a *Assembler) writeChunkTo(w io.Writer, id manifest.ID) (err error) {
+func (a *Assembler) writeChunkTo(w io.Writer, id proto.ID) (err error) {
 	lock, err := a.model.FdLocks.Take()
 	if err != nil {
 		return

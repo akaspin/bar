@@ -6,7 +6,6 @@ import (
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/model"
-	"github.com/akaspin/bar/manifest"
 	"strings"
 )
 
@@ -52,7 +51,7 @@ func NewGitInitCmd(s *BaseSubCommand) SubCommand {
 }
 
 func (c *GitInitCmd) Do() (err error) {
-	mod, err := model.New(c.WD, true, manifest.CHUNK_SIZE, 16)
+	mod, err := model.New(c.WD, true, proto.CHUNK_SIZE, 16)
 	if err != nil {
 		return
 	}

@@ -1,6 +1,5 @@
 package proto
 import (
-	"github.com/akaspin/bar/manifest"
 	"strings"
 )
 
@@ -28,8 +27,8 @@ func (i *Info) JoinRPCEndpoints() string {
 }
 
 type ChunkInfo struct {
-	BlobID manifest.ID
-	manifest.Chunk
+	BlobID ID
+	Chunk
 }
 
 type ChunkData struct {

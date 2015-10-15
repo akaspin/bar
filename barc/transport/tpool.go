@@ -2,14 +2,14 @@ package transport
 import (
 	"github.com/vireshas/minimal_vitess_pool/pools"
 	"github.com/apache/thrift/lib/go/thrift"
-	"github.com/akaspin/bar/proto/bar"
+	"github.com/akaspin/bar/proto/wire"
 	"time"
 	"math/rand"
 )
 
 // Bar thrift client wrapper
 type TClient struct {
-	*bar.BarClient
+	*wire.BarClient
 	pool *TPool
 }
 
@@ -84,7 +84,7 @@ func (p *TPool) factory() (res pools.Resource, err error)  {
 	}
 	transport = p.transportFactory.GetTransport(transport)
 
-	client := bar.NewBarClientFactory(transport, p.protoFactory)
+	client := wire.NewBarClientFactory(transport, p.protoFactory)
 	res = &TClient{client, p}
 	return
 }

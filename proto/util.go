@@ -1,12 +1,12 @@
-package manifest
+package proto
 import (
 	"io"
 	"bytes"
 )
 
 
-// Peek input kind
-func Peek(in io.Reader) (r io.Reader, isShadow bool, err error) {
+// Peek blob kind from given reader
+func PeekManifest(in io.Reader) (r io.Reader, isShadow bool, err error) {
 	var n int
 	buf := make([]byte, len([]byte(MANIFEST_HEADER)))
 

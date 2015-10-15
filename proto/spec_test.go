@@ -1,7 +1,6 @@
 package proto_test
 import (
 	"testing"
-	"github.com/akaspin/bar/manifest"
 	"github.com/akaspin/bar/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/proto"
@@ -12,7 +11,7 @@ import (
 )
 
 func Test_Spec1(t *testing.T) {
-	m1, err := manifest.NewFromManifest(fixtures.CleanInput(`BAR:MANIFEST
+	m1, err := proto.NewFromManifest(fixtures.CleanInput(`BAR:MANIFEST
 
 		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c
 		size 1234
@@ -23,7 +22,7 @@ func Test_Spec1(t *testing.T) {
 		offset 0
 	`))
 	assert.NoError(t, err)
-	m2, err := manifest.NewFromManifest(fixtures.CleanInput(`BAR:MANIFEST
+	m2, err := proto.NewFromManifest(fixtures.CleanInput(`BAR:MANIFEST
 
 		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c
 		size 1234
@@ -35,7 +34,7 @@ func Test_Spec1(t *testing.T) {
 	`))
 	assert.NoError(t, err)
 
-	spec, err := proto.NewSpec(time.Now().UnixNano(), map[string]manifest.ID{
+	spec, err := proto.NewSpec(time.Now().UnixNano(), map[string]proto.ID{
 		"file/1": m1.ID,
 		"file/2": m2.ID,
 	}, []string{})
@@ -58,5 +57,5 @@ func Test_Spec1(t *testing.T) {
 	_, err = hasher.Write([]byte(sorted[1]))
 	_, err = hasher.Write(id)
 
-	assert.Equal(t, spec.ID, manifest.ID(hex.EncodeToString(hasher.Sum(nil))))
+	assert.Equal(t, spec.ID, proto.ID(hex.EncodeToString(hasher.Sum(nil))))
 }

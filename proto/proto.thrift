@@ -53,6 +53,9 @@ struct Spec {
 }
 
 
+/**
+* Wire service
+**/
 service Bar {
 
     ServerInfo GetInfo(),

@@ -2,7 +2,7 @@ package model
 import (
 	"github.com/akaspin/bar/barc/git"
 	"io"
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"os"
 	"github.com/tamtam-im/logx"
 	"path/filepath"
@@ -48,7 +48,7 @@ func (m *Model) Check(names ...string) (isDirty bool, dirty []string, err error)
 	return
 }
 
-func (m *Model) ReadChunk(name string, chunk manifest.Chunk, res []byte) (err error) {
+func (m *Model) ReadChunk(name string, chunk proto.Chunk, res []byte) (err error) {
 	lock, err := m.FdLocks.Take()
 	if err != nil {
 		return
@@ -79,7 +79,7 @@ func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (r
 			}
 			out = struct{
 				name string
-				manifest *manifest.Manifest
+				manifest *proto.Manifest
 			}{in.(string), res2}
 			return
 		},
@@ -89,14 +89,14 @@ func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (r
 	for _, r := range res1 {
 		r1 := r.(struct{
 			name string
-			manifest *manifest.Manifest
+			manifest *proto.Manifest
 		})
 		res[r1.name] = *r1.manifest
 	}
 	return
 }
 
-func (m *Model) getManifest(name string, blobs, manifests bool) (res *manifest.Manifest, err error) {
+func (m *Model) getManifest(name string, blobs, manifests bool) (res *proto.Manifest, err error) {
 	lock, err := m.FdLocks.Take()
 	if err != nil {
 		return
@@ -111,7 +111,7 @@ func (m *Model) getManifest(name string, blobs, manifests bool) (res *manifest.M
 
 	var r io.Reader
 	var isManifest bool
-	if r, isManifest, err = manifest.Peek(f); err != nil {
+	if r, isManifest, err = proto.PeekManifest(f); err != nil {
 		return
 	}
 	if (isManifest && !manifests) || (!isManifest && !blobs) {
@@ -119,19 +119,19 @@ func (m *Model) getManifest(name string, blobs, manifests bool) (res *manifest.M
 	}
 
 	if isManifest {
-		res, err = manifest.NewFromManifest(r)
+		res, err = proto.NewFromManifest(r)
 		return
 	}
 	// Hard way. First - try git
 	var sideR io.Reader
 	if m.Git != nil {
 		if sideR = m.getGitReader(name); sideR != nil {
-			res, err = manifest.NewFromAny(sideR, m.chunkSize)
+			res, err = proto.NewFromAny(sideR, m.chunkSize)
 			return
 		}
 	}
 	// No git - make from blob
-	res, err = manifest.NewFromBLOB(r, m.chunkSize)
+	res, err = proto.NewFromBLOB(r, m.chunkSize)
 	return
 }
 
@@ -155,7 +155,7 @@ func (m *Model) IsBlobs(names ...string) (res map[string]bool, err error) {
 				return
 			}
 			defer f.Close()
-			_, isManifest, err := manifest.Peek(f)
+			_, isManifest, err := proto.PeekManifest(f)
 			if err != nil {
 				return
 			}
@@ -220,15 +220,15 @@ func (m *Model) SquashBlobs(blobs lists.Links) (err error) {
 }
 
 // Get manifest by filename or given reader
-func (m *Model) GetManifest(name string, in io.Reader) (res *manifest.Manifest, err error) {
-	r, isManifest, err := manifest.Peek(in)
+func (m *Model) GetManifest(name string, in io.Reader) (res *proto.Manifest, err error) {
+	r, isManifest, err := proto.PeekManifest(in)
 	if err != nil {
 		return
 	}
 
 	if isManifest {
 		// ok - just read
-		res, err = manifest.NewFromManifest(r)
+		res, err = proto.NewFromManifest(r)
 		return
 	}
 
@@ -236,13 +236,13 @@ func (m *Model) GetManifest(name string, in io.Reader) (res *manifest.Manifest, 
 	var sideR io.Reader
 	if m.Git != nil {
 		if sideR = m.getGitReader(name); sideR != nil {
-			res, err = manifest.NewFromAny(sideR, m.chunkSize)
+			res, err = proto.NewFromAny(sideR, m.chunkSize)
 			return
 		}
 	}
 
 	// No git - make from blob
-	res, err = manifest.NewFromBLOB(r, m.chunkSize)
+	res, err = proto.NewFromBLOB(r, m.chunkSize)
 	return
 }
 

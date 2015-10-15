@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	h_template "html/template"
 	"github.com/akaspin/bar/proto"
-	"github.com/akaspin/bar/manifest"
 )
 
 const spec_tpl string = `
@@ -42,7 +41,7 @@ type SpecHandler struct {
 
 func (h *SpecHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
-	id := manifest.ID(strings.TrimPrefix(r.URL.Path, "/v1/spec/"))
+	id := proto.ID(strings.TrimPrefix(r.URL.Path, "/v1/spec/"))
 
 	logx.Debugf("serving spec %s", id)
 

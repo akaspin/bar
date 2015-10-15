@@ -1,7 +1,7 @@
 package cmd
 import (
 
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/model"
 	"github.com/akaspin/bar/barc/lists"
 	"fmt"
@@ -34,7 +34,7 @@ func NewDownCmd(s *BaseSubCommand) SubCommand {
 		"bard rpc endpoints separated by comma")
 	c.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 	c.FS.IntVar(&c.maxPool, "pool", 16, "pool size")
-	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "chunk size")
+	c.FS.Int64Var(&c.chunkSize, "chunk", proto.CHUNK_SIZE, "chunk size")
 
 	return c
 }

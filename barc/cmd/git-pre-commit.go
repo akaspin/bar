@@ -1,6 +1,6 @@
 package cmd
 import (
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/model"
 	"fmt"
 	"github.com/akaspin/bar/barc/transport"
@@ -42,7 +42,7 @@ func NewGitPreCommitCmd(s *BaseSubCommand) SubCommand {
 		"bard http endpoint")
 	c.FS.StringVar(&c.rpcEndpoints, "rpc", "http://localhost:3000/v1",
 		"bard rpc endpoints separated by comma")
-	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
+	c.FS.Int64Var(&c.chunkSize, "chunk", proto.CHUNK_SIZE, "preferred chunk size")
 	c.FS.IntVar(&c.pool, "pool", 16, "pool size")
 	return c
 }

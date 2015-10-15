@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"golang.org/x/crypto/sha3"
 	"github.com/akaspin/go-contentaddressable"
-	"github.com/akaspin/bar/manifest"
-	"encoding/json"
 	"github.com/akaspin/bar/proto"
+	"encoding/json"
 	"time"
 	"github.com/akaspin/bar/concurrent"
 	"golang.org/x/net/context"
@@ -52,17 +51,17 @@ func NewBlockStorage(options *BlockStorageOptions) *BlockStorage {
 	}
 }
 
-func (s *BlockStorage) IsSpecExists(id manifest.ID) (ok bool, err error) {
-	ok, err = s.isExists(spec_ns, manifest.ID(id.String() + ".json"))
+func (s *BlockStorage) IsSpecExists(id proto.ID) (ok bool, err error) {
+	ok, err = s.isExists(spec_ns, proto.ID(id.String() + ".json"))
 	return
 }
 
-func (s *BlockStorage) IsBLOBExists(id manifest.ID) (ok bool, err error) {
+func (s *BlockStorage) IsBLOBExists(id proto.ID) (ok bool, err error) {
 	ok, err = s.isExists(blob_ns, id)
 	return
 }
 
-func (s *BlockStorage) isExists(ns string, id manifest.ID) (ok bool, err error) {
+func (s *BlockStorage) isExists(ns string, id proto.ID) (ok bool, err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
 		return
@@ -101,7 +100,7 @@ func (s *BlockStorage) WriteSpec(in proto.Spec) (err error) {
 	return
 }
 
-func (s *BlockStorage) ReadSpec(id manifest.ID) (res proto.Spec, err error) {
+func (s *BlockStorage) ReadSpec(id proto.ID) (res proto.Spec, err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
 		return
@@ -118,7 +117,7 @@ func (s *BlockStorage) ReadSpec(id manifest.ID) (res proto.Spec, err error) {
 	return
 }
 
-func (s *BlockStorage) ReadManifest(id manifest.ID) (res *manifest.Manifest, err error) {
+func (s *BlockStorage) ReadManifest(id proto.ID) (res *proto.Manifest, err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
 		return
@@ -130,12 +129,12 @@ func (s *BlockStorage) ReadManifest(id manifest.ID) (res *manifest.Manifest, err
 		return
 	}
 	defer r.Close()
-	res = &manifest.Manifest{}
+	res = &proto.Manifest{}
 	err = json.NewDecoder(r).Decode(&res)
 	return
 }
 
-func (s *BlockStorage) GetManifests(ids []manifest.ID) (res []manifest.Manifest, err error) {
+func (s *BlockStorage) GetManifests(ids []proto.ID) (res []proto.Manifest, err error) {
 	var req, res1 []interface{}
 	for _, i := range ids {
 		req = append(req, i)
@@ -143,7 +142,7 @@ func (s *BlockStorage) GetManifests(ids []manifest.ID) (res []manifest.Manifest,
 
 	if err = s.BatchPool.Do(
 		func(ctx context.Context, in interface{}) (out interface{}, err error) {
-			r := in.(manifest.ID)
+			r := in.(proto.ID)
 			r2, err := s.ReadManifest(r)
 			if err != nil {
 				return
@@ -156,13 +155,13 @@ func (s *BlockStorage) GetManifests(ids []manifest.ID) (res []manifest.Manifest,
 	}
 
 	for _, v := range res1 {
-		res = append(res, v.(manifest.Manifest))
+		res = append(res, v.(proto.Manifest))
 	}
 
 	return
 }
 
-func (s *BlockStorage) DeclareUpload(m manifest.Manifest) (err error) {
+func (s *BlockStorage) DeclareUpload(m proto.Manifest) (err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
 		return
@@ -184,7 +183,7 @@ func (s *BlockStorage) DeclareUpload(m manifest.Manifest) (err error) {
 	return
 }
 
-func (s *BlockStorage) WriteChunk(blobID, chunkID manifest.ID, size int64, r io.Reader) (err error) {
+func (s *BlockStorage) WriteChunk(blobID, chunkID proto.ID, size int64, r io.Reader) (err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
 		return
@@ -212,7 +211,7 @@ func (s *BlockStorage) WriteChunk(blobID, chunkID manifest.ID, size int64, r io.
 	return
 }
 
-func (s *BlockStorage) FinishUpload(id manifest.ID) (err error) {
+func (s *BlockStorage) FinishUpload(id proto.ID) (err error) {
 
 	base := s.idPath(upload_ns, id)
 	manifestName := filepath.Join(base, "manifest.json")
@@ -223,7 +222,7 @@ func (s *BlockStorage) FinishUpload(id manifest.ID) (err error) {
 	}
 	defer mr.Close()
 
-	var m manifest.Manifest
+	var m proto.Manifest
 	err = json.NewDecoder(mr).Decode(&m)
 	if err != nil {
 		return
@@ -253,7 +252,7 @@ func (s *BlockStorage) FinishUpload(id manifest.ID) (err error) {
 	return
 }
 
-func (s *BlockStorage) finishChunk(base string, info manifest.Chunk, w io.Writer) (err error) {
+func (s *BlockStorage) finishChunk(base string, info proto.Chunk, w io.Writer) (err error) {
 	name := filepath.Join(base, string(info.ID))
 	r, err := os.Open(name)
 	if err != nil {
@@ -299,7 +298,7 @@ func (s *BlockStorage) ReadChunk(chunk proto.ChunkInfo, w io.Writer) (err error)
 	return
 }
 
-func (s *BlockStorage) ReadChunkFromBlob(blobID manifest.ID, size, offset int64, w io.Writer) (err error) {
+func (s *BlockStorage) ReadChunkFromBlob(blobID proto.ID, size, offset int64, w io.Writer) (err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
 		return
@@ -332,7 +331,7 @@ func (s *BlockStorage) Close() (err error) {
 	return
 }
 
-func (s *BlockStorage) idPath(ns string, id manifest.ID) string {
+func (s *BlockStorage) idPath(ns string, id proto.ID) string {
 	ids := id.String()
 	return filepath.Join(s.Root, ns, ids[:s.Split], ids)
 }

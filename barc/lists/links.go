@@ -1,25 +1,25 @@
 package lists
 import (
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"path/filepath"
 )
 
 type Link struct {
-	manifest.Manifest
+	proto.Manifest
 	Name string
 }
 
 // Reverse mapping from id to names
-type IDMap map[manifest.ID][]string
+type IDMap map[proto.ID][]string
 
-func (i IDMap) IDs() (res []manifest.ID) {
+func (i IDMap) IDs() (res []proto.ID) {
 	for id, _ := range i {
 		res = append(res, id)
 	}
 	return
 }
 
-type Links map[string]manifest.Manifest
+type Links map[string]proto.Manifest
 
 func (l Links) ToSlice() (res []Link) {
 	for k, v := range l {

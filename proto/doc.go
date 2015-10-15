@@ -1,4 +1,0 @@
-/*
-Proto stubs
-*/
-package proto

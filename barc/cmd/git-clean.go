@@ -1,6 +1,6 @@
 package cmd
 import (
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"fmt"
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/barc/model"
@@ -39,7 +39,7 @@ type GitCleanCommand struct {
 func NewGitCleanCommand(s *BaseSubCommand) SubCommand {
 	c := &GitCleanCommand{BaseSubCommand: s}
 	c.FS.BoolVar(&c.id, "id", false, "print only id")
-	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
+	c.FS.Int64Var(&c.chunkSize, "chunk", proto.CHUNK_SIZE, "preferred chunk size")
 	c.FS.IntVar(&c.pool, "pool", 16, "pool size")
 	return c
 }

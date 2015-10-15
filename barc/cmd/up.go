@@ -1,6 +1,6 @@
 package cmd
 import (
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/model"
 	"fmt"
 	"github.com/akaspin/bar/barc/lists"
@@ -40,7 +40,7 @@ func NewUpCmd(s *BaseSubCommand) SubCommand {
 	c.FS.BoolVar(&c.squash, "squash", false,
 		"replace local BLOBs with shadows after upload")
 	c.FS.IntVar(&c.poolSize, "pool", 16, "pool size")
-	c.FS.Int64Var(&c.chunkSize, "chunk", manifest.CHUNK_SIZE, "preferred chunk size")
+	c.FS.Int64Var(&c.chunkSize, "chunk", proto.CHUNK_SIZE, "preferred chunk size")
 	return c
 }
 

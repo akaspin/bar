@@ -7,7 +7,7 @@ import (
 	"os"
 	"bytes"
 	"path/filepath"
-	"github.com/akaspin/bar/manifest"
+	"github.com/akaspin/bar/proto"
 )
 
 const sPath  = "testdata"
@@ -98,7 +98,7 @@ func Test_Storage_GetManifests(t *testing.T) {
 	assert.NoError(t, err)
 
 	// read manifests
-	res, err := s.GetManifests([]manifest.ID{m.ID})
+	res, err := s.GetManifests([]proto.ID{m.ID})
 	assert.NoError(t, err)
 	assert.Equal(t, m.ID, res[0].ID)
 
