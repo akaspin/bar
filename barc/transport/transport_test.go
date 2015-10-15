@@ -11,14 +11,34 @@ import (
 	"fmt"
 )
 
+func seed(t *testing.T, root string) (halt func(), tree *fixtures.Tree, ml *model.Model, srv *fixtures.FixtureServer, trans *transport.Transport) {
+	tree = fixtures.NewTree(root, "")
+	assert.NoError(t, tree.Populate())
+
+	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 32)
+	assert.NoError(t, err)
+
+	srv, err = fixtures.NewFixtureServer(root)
+	assert.NoError(t, err)
+	trans = transport.NewTransport(ml, srv.HTTPEndpoint, srv.RPCEndpoints[0], 16)
+
+	halt = func() {
+		trans.Close()
+		srv.Stop()
+		tree.Squash()
+	}
+	return
+}
+
 func Test_Transport_ServerInfo(t *testing.T) {
 	root := "testdata-Ping"
-	endpoint, tEP, stop := fixtures.RunServer(t, root)
-	defer stop()
 
+	srv, err := fixtures.NewFixtureServer(root)
+	assert.NoError(t, err)
+	defer srv.Stop()
 	mod, err := model.New("", false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, tEP, 16)
+	tr := transport.NewTransport(mod, srv.HTTPEndpoint, srv.RPCEndpoints[0], 16)
 	defer tr.Close()
 
 	res, err := tr.ServerInfo()
@@ -28,20 +48,9 @@ func Test_Transport_ServerInfo(t *testing.T) {
 
 func Test_Transport_CreateUpload(t *testing.T) {
 	root := "DeclareUpload"
-	endpoint, te, stop := fixtures.RunServer(t, root)
-	defer stop()
 
-	tree := fixtures.NewTree(root, "")
-	defer tree.Squash()
-	assert.NoError(t, tree.Populate())
-
-	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, te, 16)
-	defer tr.Close()
-
-	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
+	halt, tree, ml, _, tr := seed(t, root)
+	defer halt()
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
@@ -55,20 +64,9 @@ func Test_Transport_CreateUpload(t *testing.T) {
 
 func Test_Transport_UploadChunk(t *testing.T) {
 	root := "UploadChunk"
-	endpoint, te, stop := fixtures.RunServer(t, root)
-	defer stop()
 
-	tree := fixtures.NewTree(root, "")
-	defer tree.Squash()
-	assert.NoError(t, tree.Populate())
-
-	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, te, 16)
-	defer tr.Close()
-
-	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
+	halt, tree, ml, _, tr := seed(t, root)
+	defer halt()
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
@@ -87,20 +85,9 @@ func Test_Transport_UploadChunk(t *testing.T) {
 
 func Test_Transport_FinishUpload(t *testing.T) {
 	root := "FinishUpload"
-	endpoint, te, stop := fixtures.RunServer(t, root)
-	defer stop()
 
-	tree := fixtures.NewTree(root, "")
-	defer tree.Squash()
-	assert.NoError(t, tree.Populate())
-
-	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, te, 16)
-	defer tr.Close()
-
-	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
+	halt, tree, ml, _, tr := seed(t, root)
+	defer halt()
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
@@ -120,73 +107,21 @@ func Test_Transport_FinishUpload(t *testing.T) {
 
 func Test_Transport_Upload(t *testing.T) {
 	root := "Upload"
-	endpoint, te, stop := fixtures.RunServer(t, root)
-	defer stop()
-
-	tree := fixtures.NewTree(root, "")
-	defer tree.Squash()
-	assert.NoError(t, tree.Populate())
-
-	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, te, 16)
-	defer tr.Close()
-
-	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
+	halt, tree, ml, _, tr := seed(t, root)
+	defer halt()
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
 
 	err = tr.Upload(mx)
 	assert.NoError(t, err)
-}
-
-func Test_GetFetch(t *testing.T) {
-	t.Skip()
-	root := "testdata-GetFetch"
-	endpoint, tEP, stop := fixtures.RunServer(t, root)
-	defer stop()
-
-	tree := fixtures.NewTree("GetFetch", "")
-	defer tree.Squash()
-	assert.NoError(t, tree.Populate())
-
-	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, tEP, 16)
-	defer tr.Close()
-
-	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
-
-	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
-	assert.NoError(t, err)
-
-	err = tr.Upload(mx)
-	assert.NoError(t, err)
-
-	check, err := tr.GetManifests(mx.IDMap().IDs())
-	assert.NoError(t, err)
-	assert.Len(t, check, 3)
 }
 
 func Test_Transport_Download(t *testing.T) {
 	root := "Download"
-	endpoint, rpcEP, stop := fixtures.RunServer(t, root)
-	defer stop()
 
-	tree := fixtures.NewTree(root, "")
-	defer tree.Squash()
-	assert.NoError(t, tree.Populate())
-
-	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, rpcEP, 16)
-	defer tr.Close()
-
-	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
+	halt, tree, ml, _, tr := seed(t, root)
+	defer halt()
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
@@ -210,21 +145,11 @@ func Test_Transport_Download(t *testing.T) {
 func Test_Transport_Download_Many(t *testing.T) {
 //	t.Skip()
 	root := "Download-many"
-	endpoint, rpcEP, stop := fixtures.RunServer(t, root)
-	defer stop()
 
-	tree := fixtures.NewTree(root, "")
-	defer tree.Squash()
-	assert.NoError(t, tree.Populate())
-	assert.NoError(t, tree.PopulateN(10, 300))
+	halt, tree, ml, _, tr := seed(t, root)
+	defer halt()
 
-	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, rpcEP, 16)
-	defer tr.Close()
-
-	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
+	assert.NoError(t, tree.PopulateN(10, 1000))
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
@@ -253,20 +178,8 @@ func Test_Transport_Download_Many(t *testing.T) {
 
 func Test_Transport_Check(t *testing.T) {
 	root := "Check"
-	endpoint, tE, stop := fixtures.RunServer(t, root)
-	defer stop()
-
-	tree := fixtures.NewTree("Check", "")
-	defer tree.Squash()
-	assert.NoError(t, tree.Populate())
-
-	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, tE, 16)
-	defer tr.Close()
-
-	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
+	halt, tree, ml, _, tr := seed(t, root)
+	defer halt()
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
@@ -287,20 +200,8 @@ func Test_Transport_Check(t *testing.T) {
 func Test_Transport_UploadSpec(t *testing.T) {
 //	t.Skip()
 	root := "Spec"
-	endpoint, tE, stop := fixtures.RunServer(t, root)
-	defer stop()
-
-	tree := fixtures.NewTree(root, "")
-	defer tree.Squash()
-	assert.NoError(t, tree.Populate())
-
-	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, tE, 16)
-	defer tr.Close()
-
-	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
+	halt, tree, ml, _, tr := seed(t, root)
+	defer halt()
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)
@@ -327,20 +228,8 @@ func Test_Transport_UploadSpec(t *testing.T) {
 func Test_Transport_FetchSpec(t *testing.T) {
 //	t.Skip()
 	root := "Spec"
-	endpoint, tE, stop := fixtures.RunServer(t, root)
-	defer stop()
-
-	tree := fixtures.NewTree(root, "")
-	defer tree.Squash()
-	assert.NoError(t, tree.Populate())
-
-	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, tE, 16)
-	defer tr.Close()
-
-	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
-	assert.NoError(t, err)
+	halt, tree, ml, _, tr := seed(t, root)
+	defer halt()
 
 	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
 	assert.NoError(t, err)

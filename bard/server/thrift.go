@@ -26,7 +26,7 @@ func (s *ThriftServer) Start() (err error) {
 	}
 	protoFactory := thrift.NewTBinaryProtocolFactoryDefault()
 	transportFactory := thrift.NewTBufferedTransportFactory(
-		s.BardServerOptions.Info.BufferSize)
+		s.BardServerOptions.ServerInfo.BufferSize)
 	s.Server = thrift.NewTSimpleServer4(processor, transport,
 		transportFactory, protoFactory)
 

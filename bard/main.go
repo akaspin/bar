@@ -68,16 +68,13 @@ func main() {
 		os.Exit(2)
 	}
 	serverInfo.RPCEndpoints = strings.Split(rpcEndpoints, ",")
-	srv, err := server.NewBardServer(&server.BardServerOptions{
+	srv := server.NewBardServer(&server.BardServerOptions{
 		HttpBind: httpAddr,
 		RPCBind: rpcAddr,
-		Info: &serverInfo,
+		ServerInfo: &serverInfo,
 		Storage: pool,
 		BarExe: barExe,
 	})
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
 
 	err = srv.Start()
 	if err != nil {

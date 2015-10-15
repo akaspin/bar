@@ -15,7 +15,7 @@ type BardTHandler struct {
 }
 
 func NewBardTHandler(options *BardServerOptions) *BardTHandler {
-	return &BardTHandler{options.Info, options.Storage}
+	return &BardTHandler{options.ServerInfo, options.Storage}
 }
 
 func (h *BardTHandler) GetInfo() (r *wire.ServerInfo, err error) {

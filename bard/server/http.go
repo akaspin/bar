@@ -4,17 +4,15 @@ import (
 	"net/http"
 	"github.com/akaspin/bar/bard/handler"
 	"github.com/tamtam-im/logx"
-	"net/rpc"
 )
 
 type BardHttpServer struct  {
 	*BardServerOptions
-	service *rpc.Server
 	net.Listener
 }
 
-func NewBardHttpServer(opts *BardServerOptions, service *rpc.Server) *BardHttpServer {
-	return &BardHttpServer{BardServerOptions: opts, service: service}
+func NewBardHttpServer(opts *BardServerOptions) *BardHttpServer {
+	return &BardHttpServer{BardServerOptions: opts}
 }
 
 func (s *BardHttpServer) Start() (err error) {
@@ -25,13 +23,13 @@ func (s *BardHttpServer) Start() (err error) {
 
 	// make http frontend
 	mux := http.NewServeMux()
-	mux.Handle("/", &handler.FrontHandler{s.Info})
-	mux.Handle("/v1/win/bar-export.bat", &handler.ExportBatHandler{s.Info})
-	mux.Handle("/v1/win/bar-import/", &handler.ImportBatHandler{s.Info})
+	mux.Handle("/", &handler.FrontHandler{s.ServerInfo})
+	mux.Handle("/v1/win/bar-export.bat", &handler.ExportBatHandler{s.ServerInfo})
+	mux.Handle("/v1/win/bar-import/", &handler.ImportBatHandler{s.ServerInfo})
 	mux.Handle("/v1/win/barc.exe", &handler.ExeHandler{s.BarExe})
 	mux.Handle("/v1/spec/", &handler.SpecHandler{
-		s.Storage, s.Info, s.BarExe})
-	mux.Handle("/v1/rpc", s.service)
+		s.Storage, s.ServerInfo, s.BarExe})
+//	mux.Handle("/v1/rpc", s.service)
 	logx.Debugf("bard http serving at http://%s/v1", s.HttpBind)
 	srv := &http.Server{Handler:mux}
 	err = srv.Serve(s.Listener)
