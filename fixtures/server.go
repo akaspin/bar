@@ -12,7 +12,7 @@ import (
 	"os"
 )
 
-func RunServer(t *testing.T, root string) (httpEndpoint string, rpcEndpoints string, stop func() error)  {
+func RunServer(t *testing.T, root string) (httpEndpoint string, rpcEndpoints string, stop func())  {
 	logx.SetLevel(logx.DEBUG)
 
 	wd, _ := os.Getwd()
@@ -28,7 +28,7 @@ func RunServer(t *testing.T, root string) (httpEndpoint string, rpcEndpoints str
 	srv, err := server.NewBardServer(&server.BardServerOptions{
 		HttpBind: fmt.Sprintf(":%d", ports[0]),
 		RPCBind: fmt.Sprintf(":%d", ports[1]),
-		Info: &proto.Info{
+		Info: &proto.ServerInfo{
 			HTTPEndpoint: fmt.Sprintf("http://localhost:%d/v1", ports[0]),
 			RPCEndpoints: []string{fmt.Sprintf("localhost:%d", ports[1])},
 			ChunkSize: 1024 * 1024 * 2,
@@ -45,7 +45,10 @@ func RunServer(t *testing.T, root string) (httpEndpoint string, rpcEndpoints str
 	go srv.Start()
 	time.Sleep(time.Millisecond * 300)
 	assert.NoError(t, err)
-	stop = srv.Stop
+	stop = func() {
+		srv.Stop()
+		os.RemoveAll(rt)
+	}
 	return
 }
 

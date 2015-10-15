@@ -65,7 +65,7 @@ func (c *GitInitCmd) Do() (err error) {
 	c.transport = transport.NewTransport(mod, c.httpEndpoint, c.rpcEndpoints, 10)
 	defer c.transport.Close()
 
-	var opts proto.Info
+	var opts proto.ServerInfo
 	if opts, err = c.precheck(); err != nil {
 		return
 	}
@@ -87,7 +87,7 @@ func (c *GitInitCmd) Do() (err error) {
 	return
 }
 
-func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
+func (c *GitInitCmd) configVals(info proto.ServerInfo) map[string]string {
 	rpc := strings.Join(info.RPCEndpoints, ",")
 	return map[string]string{
 //		"diff.bar.command": fmt.Sprintf(
@@ -120,9 +120,9 @@ func (c *GitInitCmd) configVals(info proto.Info) map[string]string {
 }
 
 // Prepare to install. Check endpoint, pre-commit hook
-func (c *GitInitCmd) precheck() (res proto.Info, err error) {
+func (c *GitInitCmd) precheck() (res proto.ServerInfo, err error) {
 	logx.Debugf("requesting endpoint %s", c.httpEndpoint)
-	if res, err = c.transport.Ping(); err != nil {
+	if res, err = c.transport.ServerInfo(); err != nil {
 		return
 	}
 
@@ -139,7 +139,7 @@ func (c *GitInitCmd) precheck() (res proto.Info, err error) {
 func (c *GitInitCmd) uninstall() (err error) {
 	logx.Debug("removing pre-commit hook")
 	c.git.CleanHook("pre-commit")
-	for k, _ := range c.configVals(proto.Info{}) {
+	for k, _ := range c.configVals(proto.ServerInfo{}) {
 		logx.Debugf("removing %s from git config", k)
 		c.git.UnsetConfig(k)
 	}

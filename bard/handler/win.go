@@ -46,7 +46,7 @@ pause >nul
 `
 
 type ExportBatHandler struct {
-	Info *proto.Info
+	Info *proto.ServerInfo
 }
 
 func (h *ExportBatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +68,7 @@ func (h *ExportBatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type ImportBatHandler struct {
-	Info *proto.Info
+	Info *proto.ServerInfo
 }
 
 func (h *ImportBatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

@@ -37,14 +37,16 @@ func (t *Transport) Close() {
 	t.tPool.Close()
 }
 
-func (t *Transport) Ping() (res proto.Info, err error) {
-	cli, err := t.rpcPool.Take()
+func (t *Transport) ServerInfo() (res proto.ServerInfo, err error) {
+	cli, err := t.tPool.Take()
 	if err != nil {
 		return
 	}
 	defer cli.Release()
 
-	err = cli.Call("Service.Ping", &struct{}{}, &res)
+	res1, err := cli.GetInfo()
+
+	err = (&res).UnmarshalThrift(*res1)
 	return
 }
 
@@ -167,38 +169,60 @@ func (t *Transport) GetManifests(ids []proto.ID) (res []proto.Manifest, err erro
 }
 
 func (t *Transport) Check(ids []proto.ID) (res []proto.ID, err error) {
-	cli, err := t.rpcPool.Take()
+	cli, err := t.tPool.Take()
 	if err != nil {
 		return
 	}
 	defer cli.Release()
 
-	if err = cli.Call("Service.Check", &ids, &res); err != nil {
+	req, err := proto.IDSlice(ids).MarshalThrift()
+	if err != nil {
 		return
 	}
+
+	res1, err := cli.GetMissingBlobIds(req)
+	if err != nil {
+		return
+	}
+
+	var res2 proto.IDSlice
+	err = (&res2).UnmarshalThrift(res1)
+	res = res2
 
 	return
 }
 
 func (t *Transport) UploadSpec(spec proto.Spec) (err error) {
-	cli, err := t.rpcPool.Take()
+	cli, err := t.tPool.Take()
 	if err != nil {
 		return
 	}
 	defer cli.Release()
 
-	var res struct{}
-	err = cli.Call("Service.UploadSpec", &spec, &res)
-
+	req, err := spec.MarshalThrift()
+	if err != nil {
+		return
+	}
+	err = cli.UploadSpec(&req)
 	return
 }
 
-func (t *Transport) GetSpec(id proto.ID) (res lists.BlobMap, err error) {
-	cli, err := t.rpcPool.Take()
+func (t *Transport) GetSpec(id proto.ID) (res proto.Spec, err error) {
+	cli, err := t.tPool.Take()
 	if err != nil {
 		return
 	}
 	defer cli.Release()
-	err = cli.Call("Service.GetSpec", &id, &res)
+
+	req, err := id.MarshalThrift()
+	if err != nil {
+		return
+	}
+	r1, err := cli.FetchSpec(req)
+	if err != nil {
+		return
+	}
+	err = (&res).UnmarshalThrift(*r1)
+
 	return
 }

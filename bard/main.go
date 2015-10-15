@@ -22,7 +22,7 @@ var barExe string
 
 var storageType string
 
-var serverInfo proto.Info
+var serverInfo proto.ServerInfo
 var rpcEndpoints string
 
 var blockStorageOptions storage.BlockStorageOptions

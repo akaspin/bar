@@ -4,7 +4,6 @@ import (
 	"github.com/akaspin/bar/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/barc/transport"
-	"os"
 	"github.com/akaspin/bar/barc/model"
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/lists"
@@ -12,18 +11,17 @@ import (
 	"fmt"
 )
 
-func Test_Ping(t *testing.T) {
+func Test_Transport_ServerInfo(t *testing.T) {
 	root := "testdata-Ping"
-	endpoint, _, stop := fixtures.RunServer(t, root)
+	endpoint, tEP, stop := fixtures.RunServer(t, root)
 	defer stop()
-	defer os.RemoveAll(root)
 
 	mod, err := model.New("", false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
+	tr := transport.NewTransport(mod, endpoint, tEP, 16)
 	defer tr.Close()
 
-	res, err := tr.Ping()
+	res, err := tr.ServerInfo()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1024*1024*2), res.ChunkSize)
 }
@@ -32,7 +30,6 @@ func Test_Transport_CreateUpload(t *testing.T) {
 	root := "DeclareUpload"
 	endpoint, te, stop := fixtures.RunServer(t, root)
 	defer stop()
-	defer os.RemoveAll(root)
 
 	tree := fixtures.NewTree(root, "")
 	defer tree.Squash()
@@ -60,7 +57,6 @@ func Test_Transport_UploadChunk(t *testing.T) {
 	root := "UploadChunk"
 	endpoint, te, stop := fixtures.RunServer(t, root)
 	defer stop()
-	defer os.RemoveAll(root)
 
 	tree := fixtures.NewTree(root, "")
 	defer tree.Squash()
@@ -93,7 +89,6 @@ func Test_Transport_FinishUpload(t *testing.T) {
 	root := "FinishUpload"
 	endpoint, te, stop := fixtures.RunServer(t, root)
 	defer stop()
-	defer os.RemoveAll(root)
 
 	tree := fixtures.NewTree(root, "")
 	defer tree.Squash()
@@ -127,7 +122,6 @@ func Test_Transport_Upload(t *testing.T) {
 	root := "Upload"
 	endpoint, te, stop := fixtures.RunServer(t, root)
 	defer stop()
-//	defer os.RemoveAll(root)
 
 	tree := fixtures.NewTree(root, "")
 	defer tree.Squash()
@@ -153,7 +147,6 @@ func Test_GetFetch(t *testing.T) {
 	root := "testdata-GetFetch"
 	endpoint, tEP, stop := fixtures.RunServer(t, root)
 	defer stop()
-	defer os.RemoveAll(root)
 
 	tree := fixtures.NewTree("GetFetch", "")
 	defer tree.Squash()
@@ -178,14 +171,12 @@ func Test_GetFetch(t *testing.T) {
 	assert.Len(t, check, 3)
 }
 
-func Test_Download(t *testing.T) {
-	t.Skip()
+func Test_Transport_Download(t *testing.T) {
 	root := "Download"
 	endpoint, rpcEP, stop := fixtures.RunServer(t, root)
 	defer stop()
-	defer os.RemoveAll(root)
 
-	tree := fixtures.NewTree("Download", "")
+	tree := fixtures.NewTree(root, "")
 	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
@@ -216,14 +207,13 @@ func Test_Download(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func Test_Download_Many(t *testing.T) {
-	t.Skip()
-	root := "Download"
+func Test_Transport_Download_Many(t *testing.T) {
+//	t.Skip()
+	root := "Download-many"
 	endpoint, rpcEP, stop := fixtures.RunServer(t, root)
 	defer stop()
-	defer os.RemoveAll(root)
 
-	tree := fixtures.NewTree("Download", "")
+	tree := fixtures.NewTree(root, "")
 	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 	assert.NoError(t, tree.PopulateN(10, 300))
@@ -261,12 +251,10 @@ func Test_Download_Many(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func Test_Check(t *testing.T) {
-	t.Skip()
+func Test_Transport_Check(t *testing.T) {
 	root := "Check"
-	endpoint, _, stop := fixtures.RunServer(t, root)
+	endpoint, tE, stop := fixtures.RunServer(t, root)
 	defer stop()
-	defer os.RemoveAll(root)
 
 	tree := fixtures.NewTree("Check", "")
 	defer tree.Squash()
@@ -274,7 +262,7 @@ func Test_Check(t *testing.T) {
 
 	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
+	tr := transport.NewTransport(mod, endpoint, tE, 16)
 	defer tr.Close()
 
 	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
@@ -292,16 +280,15 @@ func Test_Check(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, []proto.ID{
-		"eebd7b0c388d7f4d4ede4681b472969d5f09228c0473010d670a6918a3c05e79",
+		"eebd7b0c388d7f4d4ede4681b472969d5f09228c0473010d670a6918a3c05e7a",
 	}, res)
 }
 
-func Test_Spec(t *testing.T) {
-	t.Skip()
+func Test_Transport_UploadSpec(t *testing.T) {
+//	t.Skip()
 	root := "Spec"
-	endpoint, _, stop := fixtures.RunServer(t, root)
+	endpoint, tE, stop := fixtures.RunServer(t, root)
 	defer stop()
-	defer os.RemoveAll(root)
 
 	tree := fixtures.NewTree(root, "")
 	defer tree.Squash()
@@ -309,7 +296,7 @@ func Test_Spec(t *testing.T) {
 
 	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
-	tr := transport.NewTransport(mod, endpoint, endpoint, 16)
+	tr := transport.NewTransport(mod, endpoint, tE, 16)
 	defer tr.Close()
 
 	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
@@ -333,8 +320,50 @@ func Test_Spec(t *testing.T) {
 	err = tr.UploadSpec(spec1)
 	assert.NoError(t, err)
 
-	_, err = tr.GetSpec(spec1.ID)
+//	_, err = tr.GetSpec(spec1.ID)
+//	assert.NoError(t, err)
+}
+
+func Test_Transport_FetchSpec(t *testing.T) {
+//	t.Skip()
+	root := "Spec"
+	endpoint, tE, stop := fixtures.RunServer(t, root)
+	defer stop()
+
+	tree := fixtures.NewTree(root, "")
+	defer tree.Squash()
+	assert.NoError(t, tree.Populate())
+
+	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
+	tr := transport.NewTransport(mod, endpoint, tE, 16)
+	defer tr.Close()
+
+	ml, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
+	assert.NoError(t, err)
+
+	mx, err := ml.FeedManifests(true, true, true, lists.NewFileList().ListDir(tree.CWD)...)
+	assert.NoError(t, err)
+
+	err = tr.Upload(mx)
+	assert.NoError(t, err)
+
+	// make spec
+	nameMap := map[string]proto.ID{}
+	for name, m := range mx {
+		nameMap[name] = m.ID
+	}
+
+	spec1, err := proto.NewSpec(time.Now().UnixNano(), nameMap, []string{})
+	assert.NoError(t, err)
+
+	err = tr.UploadSpec(spec1)
+	assert.NoError(t, err)
+
+	spec2, err := tr.GetSpec(spec1.ID)
+	assert.NoError(t, err)
+
+	assert.Equal(t, spec1.ID, spec2.ID)
 }
 
 

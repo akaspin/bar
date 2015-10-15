@@ -165,27 +165,26 @@ func (s *BlockStorage) GetManifests(ids []proto.ID) (res []proto.Manifest, err e
 	return
 }
 
-func (s *BlockStorage) DeclareUpload(m proto.Manifest) (err error) {
+func (s *BlockStorage) GetMissingBlobIDs(ids []proto.ID) (res []proto.ID, err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
 		return
 	}
 	defer lock.Close()
 
-	base := s.idPath(upload_ns, m.ID)
-	if err = os.MkdirAll(base, 0755); err != nil {
-		return
+	for _, id := range ids {
+		_, err = os.Stat(s.idPath(manifests_ns, id) + ".json")
+		if os.IsNotExist(err) {
+			res = append(res, id)
+			err = nil
+		} else if err != nil {
+			return
+		}
 	}
 
-	w, err := os.OpenFile(filepath.Join(base, "manifest.json"),
-		os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
-	if err != nil {
-		return
-	}
-	defer w.Close()
-	err = json.NewEncoder(w).Encode(&m)
 	return
 }
+
 
 func (s *BlockStorage) WriteChunk(blobID, chunkID proto.ID, size int64, r io.Reader) (err error) {
 	lock, err := s.FDLocks.Take()
@@ -327,7 +326,6 @@ func (s *BlockStorage) ReadChunkFromBlob(blobID proto.ID, size, offset int64, w 
 		err = fmt.Errorf("bad size for chunk %s (offset %d) %d != %d",
 			blobID, offset, size, written)
 	}
-
 	return
 }
 
@@ -520,10 +518,6 @@ func (s *BlockStorage) readManifest(filename string) (res proto.Manifest, err er
 	}
 	defer r.Close()
 	err = json.NewDecoder(r).Decode(&res)
-	return
-}
-
-func (s *BlockStorage) Close() (err error) {
 	return
 }
 

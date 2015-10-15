@@ -9,7 +9,7 @@ import (
 
 type BardServerOptions struct  {
 	// Client info
-	Info *proto.Info
+	Info *proto.ServerInfo
 	HttpBind string
 	RPCBind string
 	storage.Storage

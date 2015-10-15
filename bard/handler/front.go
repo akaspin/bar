@@ -31,7 +31,7 @@ to bard</p>
 `
 
 type FrontHandler struct {
-	Info *proto.Info
+	Info *proto.ServerInfo
 }
 
 func (h *FrontHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

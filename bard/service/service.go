@@ -2,7 +2,6 @@ package service
 import (
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/bard/storage"
-	"bytes"
 	"github.com/tamtam-im/logx"
 	"fmt"
 	"github.com/akaspin/bar/barc/lists"
@@ -11,94 +10,10 @@ import (
 
 // RPC service
 type Service struct {
-	Info *proto.Info
+	Info *proto.ServerInfo
 	Storage storage.Storage
 }
 
-// Just returns server info
-func (s *Service) Ping(req *struct{}, res *proto.Info) (err error) {
-	*res = *s.Info
-	logx.Debug("pong")
-	return
-}
-
-// Check BLOBs
-func (s *Service) Check(req *[]proto.ID, res *[]proto.ID) (err error) {
-
-
-	logx.Debugf("checking %s", *req)
-
-	var res1 []proto.ID
-	for _, id := range *req {
-		exists, err := s.Storage.IsBLOBExists(id)
-		if err == nil && exists {
-			res1 = append(res1, id)
-		}
-	}
-	*res = res1
-	return
-}
-
-// Takes manifests from client and returns missing BLOB ids
-func (s *Service) NewUpload(req *[]proto.Manifest, res *[]proto.Manifest) (err error) {
-	var missing []proto.Manifest
-	var exists bool
-	for _, m := range *req {
-		if exists, err = s.Storage.IsBLOBExists(m.ID); err != nil {
-			return
-		}
-		if !exists {
-			if err = s.Storage.DeclareUpload(m); err != nil {
-				return
-			}
-			missing = append(missing, m)
-			logx.Debugf("new upload %s declared", m.ID)
-		}
-	}
-	*res = missing
-	return
-}
-
-// Finish upload with ID
-func (s *Service) CommitUpload(id *proto.ID, res *struct{}) (err error) {
-	if err = s.Storage.FinishUpload(*id); err != nil {
-		return
-	}
-	logx.Debugf("upload %s finished", *id)
-	return
-}
-
-// Store chunk for declared blob
-func (s *Service) UploadChunk(chunk *proto.ChunkData, res *struct{}) (err error) {
-
-	err = s.Storage.WriteChunk(chunk.BlobID, chunk.Chunk.ID, chunk.Size,
-		bytes.NewReader(chunk.Data))
-	if err != nil {
-		return
-	}
-	logx.Tracef("chunk stored %s:%s %d bytes",
-		chunk.BlobID, chunk.Chunk.ID, chunk.Size)
-	return
-}
-
-// Get manifests for download blobs
-func (s *Service) GetFetch(req *[]proto.ID, res *[]proto.Manifest) (err error) {
-	var feed []*proto.Manifest
-
-	for _, id := range *req {
-		m1, err := s.Storage.ReadManifest(id)
-		if err != nil {
-			return err
-		}
-		feed = append(feed, m1)
-	}
-	for _, v := range feed {
-		*res = append(*res, *v)
-	}
-
-//	*res = *(&feed)
-	return
-}
 
 // Upload spec
 func (s *Service) UploadSpec(spec *proto.Spec, res *struct{}) (err error) {

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func Test_Spec1(t *testing.T) {
+func Test_Proto_Spec1(t *testing.T) {
 	m1, err := proto.NewFromManifest(fixtures.CleanInput(`BAR:MANIFEST
 
 		id ac934d9a88b42aa3b40ef7c81a9dee1aad5a2cddccb00ae6abab9c38095fc15c

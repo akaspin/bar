@@ -35,7 +35,7 @@ download <code>barc.exe</code> if it is not found and download spec and BLOBs fr
 
 type SpecHandler struct {
 	storage.Storage
-	Info *proto.Info
+	Info *proto.ServerInfo
 	BarExe string
 }
 

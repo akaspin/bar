@@ -101,7 +101,7 @@ func (c *LsCmd) Do() (err error) {
 		return
 	}
 
-	onRemote := map[proto.ID]struct{}{}
+	missingOnRemote := map[proto.ID]struct{}{}
 	if !c.noRemote {
 		var exists []proto.ID
 		trans := transport.NewTransport(mod, c.httpEndpoint, c.rpcEndpoints, c.pool)
@@ -109,7 +109,7 @@ func (c *LsCmd) Do() (err error) {
 			return
 		}
 		for _, id := range exists {
-			onRemote[id] = struct{}{}
+			missingOnRemote[id] = struct{}{}
 		}
 	}
 
@@ -173,10 +173,10 @@ func (c *LsCmd) Do() (err error) {
 			}
 		}
 		if !c.noRemote {
-			if _, synced := onRemote[blobs[name].ID]; synced {
-				toLine("yes")
-			} else {
+			if _, missing := missingOnRemote[blobs[name].ID]; missing {
 				toLine("no")
+			} else {
+				toLine("yes")
 			}
 		}
 		if c.useGit {

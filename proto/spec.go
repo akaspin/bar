@@ -4,6 +4,7 @@ import (
 	"sort"
 	"encoding/hex"
 	"path/filepath"
+	"github.com/akaspin/bar/proto/wire"
 )
 
 
@@ -20,7 +21,7 @@ type Spec struct {
 	BLOBs map[string]ID
 
 	// Deleted filenames (not implemented)
-	Remove []string
+	Removes []string
 }
 
 func NewSpec(timestamp int64, in map[string]ID, kill []string) (res Spec, err error) {
@@ -63,5 +64,39 @@ func NewSpec(timestamp int64, in map[string]ID, kill []string) (res Spec, err er
 		timestamp,
 		drop,
 		removalsDrop}
+	return
+}
+
+func (s Spec) MarshalThrift() (data wire.Spec, err error) {
+	if data.Id, err = s.ID.MarshalThrift(); err != nil {
+		return
+	}
+	data.Timestamp = s.Timestamp
+	data.Blobs = map[string]wire.ID{}
+	for filename, id := range s.BLOBs {
+		var tid wire.ID
+		if tid, err = id.MarshalThrift(); err != nil {
+			return
+		}
+		data.Blobs[filename] = tid
+	}
+	data.Removes = s.Removes
+	return
+}
+
+func (s *Spec) UnmarshalThrift(data wire.Spec) (err error) {
+	if err = (&s.ID).UnmarshalThrift(data.Id); err != nil {
+		return
+	}
+	s.Timestamp = data.Timestamp
+	s.BLOBs = map[string]ID{}
+	for k, v := range data.Blobs {
+		var id ID
+		if err = (&id).UnmarshalThrift(v); err != nil {
+			return
+		}
+		s.BLOBs[k] = id
+	}
+	s.Removes = data.Removes
 	return
 }
