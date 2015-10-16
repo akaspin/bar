@@ -7,13 +7,14 @@ import (
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/model"
 	"strings"
+	"flag"
 )
 
 const hook  = `#!/bin/sh
 # bar pre-commit hook
 set -e
 
-barc -log-level=%s git-pre-commit -http=%s -rpc=%s -chunk=%d -pool=%d
+barc -log-level=%s -endpoint=%s -chunk=%d -pool=%d git-pre-commit
 `
 
 /*
@@ -29,9 +30,7 @@ This command installs git infrastructure to use with bar:
 4. Adds git aliases for `barc up`, `barc down` and `barc ls`
 */
 type GitInitCmd struct {
-	*BaseSubCommand
-	httpEndpoint string
-	rpcEndpoints string
+	*Base
 	log string
 	clean bool
 
@@ -39,18 +38,22 @@ type GitInitCmd struct {
 	transport *transport.Transport
 }
 
-func NewGitInitCmd(s *BaseSubCommand) SubCommand {
-	c := &GitInitCmd{BaseSubCommand: s}
-	c.FS.StringVar(&c.httpEndpoint, "http", "http://localhost:3000/v1",
-		"bard http endpoint")
-	c.FS.StringVar(&c.rpcEndpoints, "rpc", "http://localhost:3000/v1",
-		"bard rpc endpoints separated by comma")
-	c.FS.StringVar(&c.log, "log", "WARNING", "barc logging level")
-	c.FS.BoolVar(&c.clean, "clean", false, "uninstall bar")
+func NewGitInitCmd(s *Base) SubCommand {
+	c := &GitInitCmd{Base: s}
 	return c
 }
 
-func (c *GitInitCmd) Do() (err error) {
+func (c *GitInitCmd) Init(fs *flag.FlagSet) {
+	fs.StringVar(&c.log, "log", "WARNING", "barc logging level")
+	fs.BoolVar(&c.clean, "clean", false, "uninstall bar")
+}
+
+func (c *GitInitCmd) Description() (res string) {
+	res = "Install bar to git repo"
+	return
+}
+
+func (c *GitInitCmd) Do(args []string) (err error) {
 	mod, err := model.New(c.WD, true, proto.CHUNK_SIZE, 16)
 	if err != nil {
 		return
@@ -62,7 +65,7 @@ func (c *GitInitCmd) Do() (err error) {
 		return
 	}
 
-	c.transport = transport.NewTransport(mod, c.httpEndpoint, c.rpcEndpoints, 10)
+	c.transport = transport.NewTransport(mod, "", c.BaseOptions.endpoints, 10)
 	defer c.transport.Close()
 
 	var opts proto.ServerInfo
@@ -72,7 +75,7 @@ func (c *GitInitCmd) Do() (err error) {
 
 	if err = c.git.SetHook("pre-commit",
 		fmt.Sprintf(hook,
-			c.log, c.httpEndpoint, strings.Join(opts.RPCEndpoints, ","),
+			c.log, "", strings.Join(opts.RPCEndpoints, ","),
 			opts.ChunkSize, opts.PoolSize)); err != nil {
 		return
 	}
@@ -121,7 +124,6 @@ func (c *GitInitCmd) configVals(info proto.ServerInfo) map[string]string {
 
 // Prepare to install. Check endpoint, pre-commit hook
 func (c *GitInitCmd) precheck() (res proto.ServerInfo, err error) {
-	logx.Debugf("requesting endpoint %s", c.httpEndpoint)
 	if res, err = c.transport.ServerInfo(); err != nil {
 		return
 	}

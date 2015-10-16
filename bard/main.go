@@ -16,8 +16,6 @@ var logLevel string
 var httpAddr string
 var rpcAddr string
 
-var poolConns int
-
 var barExe string
 
 var storageType string

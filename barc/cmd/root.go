@@ -2,33 +2,83 @@ package cmd
 
 import (
 	"flag"
-	"fmt"
 	"github.com/tamtam-im/flags"
 	"github.com/tamtam-im/logx"
-	"io"
+	"path/filepath"
 )
-
-var logLevel string
 
 type SubCommand interface {
 
+	Init(fs *flag.FlagSet)
+
 	// Do subcommand
-	Do() (err error)
+	Do(args []string) (err error)
+
+	Description() string
+
+	Help() string
+	Summary() string
 }
 
-type SubCommandFactory func(*BaseSubCommand) SubCommand
+type SubCommandFactory func(*Base) SubCommand
 
-// Subcommand environment
-type BaseSubCommand struct {
-	WD string
-	FS *flag.FlagSet
-	Stdin io.Reader
-	Stdout io.Writer
-	StdErr io.Writer
+type RootCmd struct {
+	*Base
 }
 
-func route(s string, base *BaseSubCommand) (res SubCommand, err error) {
-	factory, ok := (map[string]SubCommandFactory{
+func NewRootCmd(b *Base) (res *RootCmd, err error) {
+	res = &RootCmd{b}
+	return
+}
+
+func (r *RootCmd) Do(wd string, args []string) (err error) {
+	f := flags.New(r.Base.FS).
+		SetPrefix("BAR").
+		SetSummary(r.Summary()).
+		SetHelp(r.Help())
+	f.Boot(args)
+
+	if r.Base.WD != "" {
+		r.Base.WD = filepath.Clean(filepath.Join(wd, r.Base.WD))
+	}
+
+	logx.SetLevel(r.Base.LogLevel)
+	logx.SetOutput(r.Stderr)
+
+	if len(r.FS.Args()) == 0 {
+		r.FS.Usage()
+	}
+	subFactory, ok := r.getRoute()[r.FS.Args()[0]]
+	if !ok {
+		r.FS.Usage()
+	}
+
+	sub := subFactory(r.Base)
+	subFS := flag.NewFlagSet(r.FS.Args()[0], flag.ExitOnError)
+	sub.Init(subFS)
+
+	flags.New(subFS).
+		SetPrefix("BAR").
+		SetHelp(sub.Help()).
+		SetSummary(sub.Summary()).
+		Boot(f.FlagSet.Args())
+
+	logx.Debugf("invoking %s in %s with %s",
+		f.FlagSet.Args()[0], wd, f.FlagSet.Args())
+	err = sub.Do(f.FlagSet.Args()[1:])
+	return
+}
+
+func (r *RootCmd) Help() string {
+	return flags.DEFAULT_HELP
+}
+
+func (r *RootCmd) Usage() string {
+	return flags.DEFAULT_SUMMARY
+}
+
+func (r *RootCmd) getRoute() map[string]SubCommandFactory {
+	return map[string]SubCommandFactory{
 		"git-init":       NewGitInitCmd,
 		"git-clean":      NewGitCleanCommand,
 		"git-smudge":     NewGitSmudgeCmd,
@@ -36,43 +86,7 @@ func route(s string, base *BaseSubCommand) (res SubCommand, err error) {
 		"up":             NewUpCmd,
 		"down":           NewDownCmd,
 		"ls":             NewLsCmd,
-		"git-diff":       NewGitDiffCmd,
 		"spec-export":    NewSpecExportCmd,
 		"spec-import":    NewSpecImportCmd,
-	})[s]
-	if !ok {
-		err = fmt.Errorf("command %s not found", s)
 	}
-
-	return factory(base), err
-}
-
-func Root(wd string, args []string, in io.Reader, out, errOut io.Writer) (err error) {
-	flag.StringVar(&logLevel, "log-level", logx.DEBUG, "logging level")
-
-	f := flags.New(flag.CommandLine)
-	f.Boot(args)
-
-	logx.SetLevel(logLevel)
-	logx.SetOutput(errOut)
-
-	// route subcommand
-	if len(f.FlagSet.Args()) == 0 {
-		f.Usage()
-	}
-	subFS := flag.NewFlagSet(f.FlagSet.Args()[0], flag.ExitOnError)
-
-	sub, err := route(f.FlagSet.Args()[0], &BaseSubCommand{
-		wd, subFS, in, out, errOut,
-	})
-	if err != nil {
-		return
-	}
-
-	flags.New(subFS).Boot(f.FlagSet.Args())
-
-	logx.Debugf("invoking %s in %s with %s",
-		f.FlagSet.Args()[0], wd, f.FlagSet.Args())
-	err = sub.Do()
-	return
 }

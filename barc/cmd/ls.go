@@ -8,6 +8,7 @@ import (
 	"text/tabwriter"
 	"strings"
 	"sort"
+	"flag"
 )
 
 /*
@@ -22,12 +23,7 @@ List bar blobs
 
 */
 type LsCmd struct {
-	*BaseSubCommand
-
-	httpEndpoint string
-	rpcEndpoints string
-	pool int
-
+	*Base
 	useGit bool
 
 	noHeader bool
@@ -42,44 +38,43 @@ type LsCmd struct {
 	noSize bool
 }
 
-func NewLsCmd(s *BaseSubCommand) SubCommand {
-	c := &LsCmd{BaseSubCommand: s}
-	c.FS.StringVar(&c.httpEndpoint, "http", "http://localhost:3000/v1",
-		"bard http endpoint")
-	c.FS.StringVar(&c.rpcEndpoints, "rpc", "http://localhost:3000/v1",
-		"bard rpc endpoints separated by comma")
-	c.FS.IntVar(&c.pool, "pool", 16, "pools size")
+func NewLsCmd(s *Base) SubCommand {
+	c := &LsCmd{Base: s}
 
-	c.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
-
-	c.FS.BoolVar(&c.noHeader, "no-header", false, "do not print header")
-	c.FS.BoolVar(&c.fullID, "full-id", false, "print full BLOB IDs")
-
-	c.FS.BoolVar(&c.noBlobs, "no-blobs", false, "do not collect BLOBs")
-	c.FS.BoolVar(&c.noManifests, "no-manifests", false,
-		"do not collect manifests")
-
-	c.FS.BoolVar(&c.noRemote, "no-remote", false,
-		"do not request bard for BLOBs states")
-	c.FS.BoolVar(&c.noName, "no-name", false, "do not print BLOB filenames")
-	c.FS.BoolVar(&c.noID, "no-id", false, "do not print BLOB IDs")
-	c.FS.BoolVar(&c.noSize, "no-size", false, "do not print BLOB sizes")
 	return c
 }
 
-func (c *LsCmd) Do() (err error) {
+func (c *LsCmd) Init(fs *flag.FlagSet) {
+	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
+
+	fs.BoolVar(&c.noHeader, "no-header", false, "do not print header")
+	fs.BoolVar(&c.fullID, "full-id", false, "print full BLOB IDs")
+
+	fs.BoolVar(&c.noBlobs, "no-blobs", false, "do not collect BLOBs")
+	fs.BoolVar(&c.noManifests, "no-manifests", false,
+		"do not collect manifests")
+
+	fs.BoolVar(&c.noRemote, "no-remote", false,
+		"do not request bard for BLOBs states")
+	fs.BoolVar(&c.noName, "no-name", false, "do not print BLOB filenames")
+	fs.BoolVar(&c.noID, "no-id", false, "do not print BLOB IDs")
+	fs.BoolVar(&c.noSize, "no-size", false, "do not print BLOB sizes")
+
+}
+
+func (c *LsCmd) Do(args []string) (err error) {
 
 	if c.noBlobs && c.noManifests {
 		err = fmt.Errorf("both -no-blobs and -no-manifests are on")
 		return
 	}
 
-	mod, err := model.New(c.WD, c.useGit, proto.CHUNK_SIZE, c.pool)
+	mod, err := model.New(c.WD, c.useGit, proto.CHUNK_SIZE, c.PoolSize)
 	if err != nil {
 		return
 	}
 
-	feed := lists.NewFileList(c.FS.Args()...).ListDir(c.WD)
+	feed := lists.NewFileList(args...).ListDir(c.WD)
 
 	var dirty map[string]struct{}
 	if c.useGit {
@@ -104,7 +99,7 @@ func (c *LsCmd) Do() (err error) {
 	missingOnRemote := map[proto.ID]struct{}{}
 	if !c.noRemote {
 		var exists []proto.ID
-		trans := transport.NewTransport(mod, c.httpEndpoint, c.rpcEndpoints, c.pool)
+		trans := transport.NewTransport(mod, "", c.endpoints, c.PoolSize)
 		if exists, err = trans.Check(blobs.IDMap().IDs()); err != nil {
 			return
 		}

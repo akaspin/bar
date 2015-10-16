@@ -1,6 +1,5 @@
 package cmd
 import (
-	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/model"
 	"fmt"
 	"github.com/akaspin/bar/barc/transport"
@@ -26,29 +25,18 @@ git pre-commit hook MUST be registered:
 */
 
 type GitPreCommitCmd struct {
-	*BaseSubCommand
-
-	httpEndpoint string
-	rpcEndpoints string
-	chunkSize int64
-	pool int
+	*Base
 
 	model *model.Model
 }
 
-func NewGitPreCommitCmd(s *BaseSubCommand) SubCommand {
-	c := &GitPreCommitCmd{BaseSubCommand: s}
-	c.FS.StringVar(&c.httpEndpoint, "http", "http://localhost:3000/v1",
-		"bard http endpoint")
-	c.FS.StringVar(&c.rpcEndpoints, "rpc", "http://localhost:3000/v1",
-		"bard rpc endpoints separated by comma")
-	c.FS.Int64Var(&c.chunkSize, "chunk", proto.CHUNK_SIZE, "preferred chunk size")
-	c.FS.IntVar(&c.pool, "pool", 16, "pool size")
+func NewGitPreCommitCmd(s *Base) SubCommand {
+	c := &GitPreCommitCmd{Base: s}
 	return c
 }
 
-func (c *GitPreCommitCmd) Do() (err error) {
-	if c.model, err = model.New(c.WD, true, c.chunkSize, c.pool); err != nil {
+func (c *GitPreCommitCmd) Do(args []string) (err error) {
+	if c.model, err = model.New(c.WD, true, c.ChunkSize, c.PoolSize); err != nil {
 		return
 	}
 
@@ -71,7 +59,7 @@ func (c *GitPreCommitCmd) Do() (err error) {
 		return
 	}
 
-	trans := transport.NewTransport(c.model, c.httpEndpoint, c.rpcEndpoints, c.pool)
+	trans := transport.NewTransport(c.model, "", c.endpoints, c.PoolSize)
 	err = trans.Upload(blobs)
 
 	return

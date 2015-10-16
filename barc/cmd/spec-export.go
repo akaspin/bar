@@ -10,44 +10,37 @@ import (
 	"time"
 	"os"
 	"path/filepath"
+	"flag"
 )
 
 /*
 Export spec to bard
 */
 type SpecExportCmd struct {
-	*BaseSubCommand
-
-	httpEndpoint string
-	rpcEndpoints string
+	*Base
 
 	useGit bool
-	chunkSize int64
-	pool int
 
 	upload bool
 	doCC bool
 	track bool
 }
 
-func NewSpecExportCmd(s *BaseSubCommand) SubCommand  {
-	c := &SpecExportCmd{BaseSubCommand: s}
-	c.FS.StringVar(&c.httpEndpoint, "http", "http://localhost:3000/v1",
-		"bard http endpoint")
-	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
-		"bard rpc endpoints separated by comma")
-	s.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
-	s.FS.Int64Var(&c.chunkSize, "chunk", proto.CHUNK_SIZE, "preferred chunk size")
-	s.FS.IntVar(&c.pool, "pool", 16, "pool sizes")
-
-	s.FS.BoolVar(&c.upload, "upload", false, "upload spec to bard and print URL")
-	s.FS.BoolVar(&c.doCC, "cc", false, "create spec carbon copy")
+func NewSpecExportCmd(s *Base) SubCommand  {
+	c := &SpecExportCmd{Base: s}
 	return c
 }
 
-func (c *SpecExportCmd) Do() (err error) {
+func (c *SpecExportCmd) Init(fs *flag.FlagSet) {
+	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
+	fs.BoolVar(&c.upload, "upload", false, "upload spec to bard and print URL")
+	fs.BoolVar(&c.doCC, "cc", false, "create spec carbon copy")
+}
+
+
+func (c *SpecExportCmd) Do(args []string) (err error) {
 	var mod *model.Model
-	if mod, err = model.New(c.WD, c.useGit, c.chunkSize, c.pool); err != nil {
+	if mod, err = model.New(c.WD, c.useGit, c.ChunkSize, c.PoolSize); err != nil {
 		return
 	}
 
@@ -104,7 +97,7 @@ func (c *SpecExportCmd) Do() (err error) {
 		return
 	}
 
-	trans := transport.NewTransport(mod, c.httpEndpoint, c.rpcEndpoints, c.pool)
+	trans := transport.NewTransport(mod, "", c.endpoints, c.PoolSize)
 	if err = trans.UploadSpec(spec); err != nil {
 		return
 	}

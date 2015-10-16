@@ -1,9 +1,9 @@
 package cmd
 import (
-	"github.com/akaspin/bar/proto"
 	"fmt"
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/barc/model"
+	"flag"
 )
 
 /*
@@ -27,29 +27,28 @@ STDIN is cat of file in working tree. Git will place STDOUT to stage area.
 Optional filename is always relative to git root.
 */
 type GitCleanCommand struct {
-	*BaseSubCommand
+	*Base
 
 	id bool
-	chunkSize int64
-	pool int
 
 	Model *model.Model
 }
 
-func NewGitCleanCommand(s *BaseSubCommand) SubCommand {
-	c := &GitCleanCommand{BaseSubCommand: s}
-	c.FS.BoolVar(&c.id, "id", false, "print only id")
-	c.FS.Int64Var(&c.chunkSize, "chunk", proto.CHUNK_SIZE, "preferred chunk size")
-	c.FS.IntVar(&c.pool, "pool", 16, "pool size")
+func NewGitCleanCommand(s *Base) SubCommand {
+	c := &GitCleanCommand{Base: s}
 	return c
 }
 
-func (c *GitCleanCommand) Do() (err error) {
-	c.Model, err = model.New(c.WD, true, c.chunkSize, c.pool)
+func (c *GitCleanCommand) Init(fs *flag.FlagSet) {
+	fs.BoolVar(&c.id, "id", false, "print only id")
+}
+
+func (c *GitCleanCommand) Do(args []string) (err error) {
+	c.Model, err = model.New(c.WD, true, c.ChunkSize, c.PoolSize)
 
 	var name string
-	if len(c.FS.Args()) > 0 {
-		name = c.FS.Args()[0]
+	if len(args) > 0 {
+		name = args[0]
 	}
 
 

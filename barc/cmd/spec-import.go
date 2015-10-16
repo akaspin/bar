@@ -1,6 +1,6 @@
 package cmd
 import (
-	"github.com/akaspin/bar/proto"
+	"flag"
 )
 
 
@@ -14,33 +14,25 @@ Import spec from bard and populate manifests
 
 */
 type SpecImportCmd struct  {
-	*BaseSubCommand
+	*Base
 
-	httpEndpoint string
-	rpcEndpoints string
 	useGit bool
-	chunkSize int64
-	pool int
-
 	raw bool
 	noop bool
 }
 
-func NewSpecImportCmd(s *BaseSubCommand) SubCommand  {
-	c := &SpecImportCmd{BaseSubCommand: s}
-	c.FS.StringVar(&c.httpEndpoint, "http", "http://localhost:3000/v1",
-		"bard http endpoint")
-	c.FS.StringVar(&c.rpcEndpoints, "rpc", "http://localhost:3000/v1",
-		"bard rpc endpoints separated by comma")
-	s.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
-	s.FS.Int64Var(&c.chunkSize, "chunk", proto.CHUNK_SIZE, "preferred chunk size")
-	s.FS.IntVar(&c.pool, "pool", 16, "pool sizes")
-	s.FS.BoolVar(&c.raw, "raw", false, "read spec from STDIN")
-	s.FS.BoolVar(&c.noop, "noop", false, "just print without local changes")
+func NewSpecImportCmd(s *Base) SubCommand  {
+	c := &SpecImportCmd{Base: s}
 	return c
 }
 
-func (c *SpecImportCmd) Do() (err error) {
+func (c *SpecImportCmd) Init(fs *flag.FlagSet) {
+	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
+	fs.BoolVar(&c.raw, "raw", false, "read spec from STDIN")
+	fs.BoolVar(&c.noop, "noop", false, "just print without local changes")
+}
+
+func (c *SpecImportCmd) Do(args []string) (err error) {
 	// get spec first
 //	var spec lists.BlobMap
 //	mod, err := model.New(c.WD, c.useGit, c.chunkSize, c.pool)

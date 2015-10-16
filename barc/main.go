@@ -11,7 +11,13 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
-	err = cmd.Root(cwd, os.Args, os.Stdin, os.Stdout, os.Stderr)
+	base := cmd.NewBaseCmd(os.Args, os.Stdin, os.Stdout, os.Stderr)
+	root, err := cmd.NewRootCmd(base)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	err = root.Do(cwd, os.Args)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)

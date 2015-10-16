@@ -22,28 +22,19 @@ By default smudge just parse manifest from STDIN and pass to STDOUT. If STDIN
 is BLOB - it will be uploaded to bard.
 */
 type GitSmudgeCmd struct {
-	*BaseSubCommand
+	*Base
 
-	chunkSize int64
-	maxConn int
 }
 
-func NewGitSmudgeCmd(s *BaseSubCommand) SubCommand {
-	c := &GitSmudgeCmd{BaseSubCommand: s}
-
-	c.FS.Int64Var(&c.chunkSize, "chunk", proto.CHUNK_SIZE, "preferred chunk size")
-	c.FS.IntVar(&c.maxConn, "pool", 16, "pool size")
+func NewGitSmudgeCmd(s *Base) SubCommand {
+	c := &GitSmudgeCmd{Base: s}
 	return c
 }
 
-func (c *GitSmudgeCmd) Do() (err error) {
-	name := c.FS.Args()[0]
-//	r, isManifest, err := shadow.Peek(c.in)
-//	if isManifest {
-//
-//	}
+func (c *GitSmudgeCmd) Do(args []string) (err error) {
+	name := args[0]
 
-	m, err := proto.NewFromAny(c.Stdin, c.chunkSize)
+	m, err := proto.NewFromAny(c.Stdin, c.ChunkSize)
 	logx.Debugf("smudge manifest for %s", name, m.ID)
 	err = m.Serialize(c.Stdout)
 	return

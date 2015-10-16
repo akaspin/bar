@@ -1,11 +1,11 @@
 package cmd
 import (
 
-	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/barc/model"
 	"github.com/akaspin/bar/barc/lists"
 	"fmt"
 	"github.com/akaspin/bar/barc/transport"
+	"flag"
 )
 
 /*
@@ -15,36 +15,28 @@ Replace local shadows with downloaded BLOBs.
 
  */
 type DownCmd struct {
-	*BaseSubCommand
-
-	endpoint string
-	rpcEndpoints string
+	*Base
 	useGit bool
-	maxPool int
-	chunkSize int64
 
 	model *model.Model
 }
 
-func NewDownCmd(s *BaseSubCommand) SubCommand {
-	c := &DownCmd{BaseSubCommand: s}
-	c.FS.StringVar(&c.endpoint, "http", "http://localhost:3000/v1",
-		"bard endpoint")
-	c.FS.StringVar(&c.rpcEndpoints, "rpc", "localhost:3001",
-		"bard rpc endpoints separated by comma")
-	c.FS.BoolVar(&c.useGit, "git", false, "use git infrastructure")
-	c.FS.IntVar(&c.maxPool, "pool", 16, "pool size")
-	c.FS.Int64Var(&c.chunkSize, "chunk", proto.CHUNK_SIZE, "chunk size")
+func NewDownCmd(s *Base) SubCommand {
+	c := &DownCmd{Base: s}
 
 	return c
 }
 
-func (c *DownCmd) Do() (err error) {
-	if c.model, err = model.New(c.WD, c.useGit, c.chunkSize, c.maxPool); err != nil {
+func (c *DownCmd) Init(fs *flag.FlagSet) {
+	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
+}
+
+func (c *DownCmd) Do(args []string) (err error) {
+	if c.model, err = model.New(c.WD, c.useGit, c.ChunkSize, c.PoolSize); err != nil {
 		return
 	}
 
-	feed := lists.NewFileList(c.FS.Args()...).ListDir(c.WD)
+	feed := lists.NewFileList(args...).ListDir(c.WD)
 
 	isDirty, dirty, err := c.model.Check(feed...)
 	if err != nil {
@@ -65,7 +57,7 @@ func (c *DownCmd) Do() (err error) {
 		return
 	}
 
-	trans := transport.NewTransport(c.model, c.endpoint, c.rpcEndpoints, c.maxPool)
+	trans := transport.NewTransport(c.model, "", c.endpoints, c.PoolSize)
 	if err = trans.Download(blobs); err != nil {
 		return
 	}
