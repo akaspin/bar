@@ -17,13 +17,11 @@ Replace local shadows with downloaded BLOBs.
 type DownCmd struct {
 	*Base
 	useGit bool
-
 	model *model.Model
 }
 
 func NewDownCmd(s *Base) SubCommand {
 	c := &DownCmd{Base: s}
-
 	return c
 }
 
@@ -57,7 +55,7 @@ func (c *DownCmd) Do(args []string) (err error) {
 		return
 	}
 
-	trans := transport.NewTransport(c.model, "", c.endpoints, c.PoolSize)
+	trans := transport.NewTransport(c.model, "", c.Endpoints, c.PoolSize)
 	if err = trans.Download(blobs); err != nil {
 		return
 	}

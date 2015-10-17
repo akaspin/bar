@@ -48,9 +48,8 @@ func (c *GitInitCmd) Init(fs *flag.FlagSet) {
 	fs.BoolVar(&c.clean, "clean", false, "uninstall bar")
 }
 
-func (c *GitInitCmd) Description() (res string) {
-	res = "Install bar to git repo"
-	return
+func (c *GitInitCmd) Description() string {
+	return "Install bar to git repo"
 }
 
 func (c *GitInitCmd) Do(args []string) (err error) {
@@ -65,7 +64,7 @@ func (c *GitInitCmd) Do(args []string) (err error) {
 		return
 	}
 
-	c.transport = transport.NewTransport(mod, "", c.BaseOptions.endpoints, 10)
+	c.transport = transport.NewTransport(mod, "", c.BaseOptions.Endpoints, 10)
 	defer c.transport.Close()
 
 	var opts proto.ServerInfo

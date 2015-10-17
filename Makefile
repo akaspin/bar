@@ -54,10 +54,12 @@ dist/%/barc: ${SRC}
 	@mkdir -p ${@D}
 	CGO_ENABLED=0 GOOS=$* go build ${GOOPTS} -o $@ ${REPO}/$(@F)
 
-install: ${INSTALL_DIR}/bard ${INSTALL_DIR}/barc
+install: install-barc ${INSTALL_DIR}/barc
+
+install-barc: ${INSTALL_DIR}/barc
 
 uninstall:
-	rm ${INSTALL_DIR}/bard ${INSTALL_DIR}/barc
+	-rm ${INSTALL_DIR}/bard ${INSTALL_DIR}/barc
 
 ${INSTALL_DIR}/bard: ${SRC}
 	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}/bard

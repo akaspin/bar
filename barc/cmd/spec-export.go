@@ -44,7 +44,7 @@ func (c *SpecExportCmd) Do(args []string) (err error) {
 		return
 	}
 
-	feed := lists.NewFileList(c.FS.Args()...).ListDir(c.WD)
+	feed := lists.NewFileList(args...).ListDir(c.WD)
 
 	isDirty, dirty, err := mod.Check(feed...)
 	if err != nil {
@@ -97,7 +97,7 @@ func (c *SpecExportCmd) Do(args []string) (err error) {
 		return
 	}
 
-	trans := transport.NewTransport(mod, "", c.endpoints, c.PoolSize)
+	trans := transport.NewTransport(mod, "", c.Endpoints, c.PoolSize)
 	if err = trans.UploadSpec(spec); err != nil {
 		return
 	}

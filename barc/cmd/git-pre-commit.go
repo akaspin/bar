@@ -59,7 +59,7 @@ func (c *GitPreCommitCmd) Do(args []string) (err error) {
 		return
 	}
 
-	trans := transport.NewTransport(c.model, "", c.endpoints, c.PoolSize)
+	trans := transport.NewTransport(c.model, "", c.Endpoints, c.PoolSize)
 	err = trans.Upload(blobs)
 
 	return

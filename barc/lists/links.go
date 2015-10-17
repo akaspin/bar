@@ -19,6 +19,18 @@ type ChunkLink struct {
 // Reverse mapping from id to names
 type IDMap map[proto.ID][]string
 
+func (i IDMap) ToBlobMap(manifests []proto.Manifest) (res BlobMap) {
+	res = BlobMap{}
+	for _, manifest := range manifests {
+		if names, ok := i[manifest.ID]; ok {
+			for _, name := range names {
+				res[name] = manifest
+			}
+		}
+	}
+	return
+}
+
 func (i IDMap) IDs() (res []proto.ID) {
 	for id, _ := range i {
 		res = append(res, id)

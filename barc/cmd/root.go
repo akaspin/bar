@@ -5,6 +5,8 @@ import (
 	"github.com/tamtam-im/flags"
 	"github.com/tamtam-im/logx"
 	"path/filepath"
+	"fmt"
+	"sort"
 )
 
 type SubCommand interface {
@@ -15,28 +17,29 @@ type SubCommand interface {
 	Do(args []string) (err error)
 
 	Description() string
-
-	Help() string
-	Summary() string
+	Help()
+	Summary()
 }
 
 type SubCommandFactory func(*Base) SubCommand
 
 type RootCmd struct {
 	*Base
+	baseSummary func()
 }
 
 func NewRootCmd(b *Base) (res *RootCmd, err error) {
-	res = &RootCmd{b}
+	res = &RootCmd{Base: b}
 	return
 }
 
 func (r *RootCmd) Do(wd string, args []string) (err error) {
-	f := flags.New(r.Base.FS).
-		SetPrefix("BAR").
-		SetSummary(r.Summary()).
-		SetHelp(r.Help())
-	f.Boot(args)
+	r.Base.Flags.Help = r.Help
+	r.Base.Flags.Summary = r.Summary
+
+	if res, err := r.Base.Flags.Boot(args); err != nil || res() {
+		return err
+	}
 
 	if r.Base.WD != "" {
 		r.Base.WD = filepath.Clean(filepath.Join(wd, r.Base.WD))
@@ -45,36 +48,49 @@ func (r *RootCmd) Do(wd string, args []string) (err error) {
 	logx.SetLevel(r.Base.LogLevel)
 	logx.SetOutput(r.Stderr)
 
-	if len(r.FS.Args()) == 0 {
-		r.FS.Usage()
+	if len(r.Flags.Args()) == 0 {
+		err = fmt.Errorf("no subcommand")
+		r.Flags.Usage()
 	}
-	subFactory, ok := r.getRoute()[r.FS.Args()[0]]
+	subFactory, ok := r.getRoute()[r.Flags.Args()[0]]
 	if !ok {
-		r.FS.Usage()
+		err = fmt.Errorf("invalid subcommand")
+		r.Flags.Usage()
 	}
 
 	sub := subFactory(r.Base)
-	subFS := flag.NewFlagSet(r.FS.Args()[0], flag.ExitOnError)
+	subFS := flag.NewFlagSet(r.Flags.Args()[0], flag.ExitOnError)
 	sub.Init(subFS)
 
-	flags.New(subFS).
-		SetPrefix("BAR").
-		SetHelp(sub.Help()).
-		SetSummary(sub.Summary()).
-		Boot(f.FlagSet.Args())
+	subFlags := flags.New(subFS).SetPrefix("BAR")
+	subFlags.Help = sub.Help
+	subFlags.Summary = sub.Summary
+
+	if stop, err := subFlags.Boot(r.Flags.FlagSet.Args()); err != nil || stop() {
+		return err
+	}
 
 	logx.Debugf("invoking %s in %s with %s",
-		f.FlagSet.Args()[0], wd, f.FlagSet.Args())
-	err = sub.Do(f.FlagSet.Args()[1:])
+		r.Flags.FlagSet.Args()[0], wd, r.Flags.FlagSet.Args())
+	err = sub.Do(r.Flags.FlagSet.Args()[1:])
 	return
 }
 
-func (r *RootCmd) Help() string {
-	return flags.DEFAULT_HELP
+func (r *RootCmd) Help() {
+	fmt.Println("bar [OPTIONS] SUBCOMMAND [OPTIONS] ...\n")
 }
 
-func (r *RootCmd) Usage() string {
-	return flags.DEFAULT_SUMMARY
+func (r *RootCmd) Summary() {
+	fmt.Fprintln(r.Stderr, "\nsubcommands\n")
+	var names sort.StringSlice
+	route := r.getRoute()
+	for n, _ := range route {
+		names = append(names, n)
+	}
+	names.Sort()
+	for _, n := range names {
+		fmt.Fprintf(r.Stderr, "  %s\n    \t%s\n", n,route[n](r.Base).Description())
+	}
 }
 
 func (r *RootCmd) getRoute() map[string]SubCommandFactory {
@@ -88,5 +104,6 @@ func (r *RootCmd) getRoute() map[string]SubCommandFactory {
 		"ls":             NewLsCmd,
 		"spec-export":    NewSpecExportCmd,
 		"spec-import":    NewSpecImportCmd,
+		"sneak":          NewSneakCmd,
 	}
 }

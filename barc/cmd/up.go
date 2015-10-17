@@ -40,7 +40,7 @@ func (c *UpCmd) Do(args []string) (err error) {
 		return
 	}
 
-	feed := lists.NewFileList(c.FS.Args()...).ListDir(c.WD)
+	feed := lists.NewFileList(args...).ListDir(c.WD)
 
 	isDirty, dirty, err := c.model.Check(feed...)
 	if err != nil {
@@ -63,7 +63,7 @@ func (c *UpCmd) Do(args []string) (err error) {
 
 	logx.Debugf("collected blobs %s", blobs.IDMap())
 
-	trans := transport.NewTransport(c.model, "", c.endpoints, c.PoolSize)
+	trans := transport.NewTransport(c.model, "", c.Endpoints, c.PoolSize)
 
 	err = trans.Upload(blobs)
 	if err != nil {
