@@ -1,17 +1,17 @@
 package cmd
 import (
 
-	"github.com/akaspin/bar/barc/model"
-	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/bar/model"
+	"github.com/akaspin/bar/bar/lists"
 	"fmt"
-	"github.com/akaspin/bar/barc/transport"
+	"github.com/akaspin/bar/bar/transport"
 	"flag"
 )
 
 /*
 Replace local shadows with downloaded BLOBs.
 
-	$ barc down my/blobs
+	$ bar down my/blobs
 
  */
 type DownCmd struct {
@@ -65,4 +65,19 @@ func (c *DownCmd) Do(args []string) (err error) {
 	}
 
 	return
+}
+
+func (c *DownCmd) Help()  {
+	fmt.Fprintln(c.Stderr, "down [OPTIONS] [PATH [PATH] ...]\n")
+}
+
+func (c *DownCmd) Summary() {
+	fmt.Fprintln(c.Stderr, `
+Use bar down to replace manifests in working tree with BLOBs from bard server.
+`)
+	fmt.Fprintln(c.Stderr, pathTpl)
+}
+
+func (c *DownCmd) Description() string {
+	return "download blobs from bar server"
 }

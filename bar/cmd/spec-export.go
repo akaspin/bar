@@ -1,10 +1,10 @@
 package cmd
 import (
 	"github.com/akaspin/bar/proto"
-	"github.com/akaspin/bar/barc/model"
-	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/bar/model"
+	"github.com/akaspin/bar/bar/lists"
 	"fmt"
-	"github.com/akaspin/bar/barc/transport"
+	"github.com/akaspin/bar/bar/transport"
 	"encoding/json"
 	"github.com/tamtam-im/logx"
 	"time"
@@ -103,4 +103,8 @@ func (c *SpecExportCmd) Do(args []string) (err error) {
 	}
 	fmt.Fprint(c.Stdout, spec.ID)
 	return
+}
+
+func (c *SpecExportCmd) Description() string  {
+	return "export spec to bar server"
 }

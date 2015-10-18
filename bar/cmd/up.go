@@ -1,10 +1,10 @@
 package cmd
 import (
-	"github.com/akaspin/bar/barc/model"
+	"github.com/akaspin/bar/bar/model"
 	"fmt"
-	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/bar/lists"
 	"github.com/tamtam-im/logx"
-	"github.com/akaspin/bar/barc/transport"
+	"github.com/akaspin/bar/bar/transport"
 	"flag"
 )
 
@@ -33,6 +33,10 @@ func (c *UpCmd) Init(fs *flag.FlagSet) {
 	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
 	fs.BoolVar(&c.squash, "squash", false,
 		"replace local BLOBs with shadows after upload")
+}
+
+func (c *UpCmd) Description() string {
+	return "upload bar-tracked blobs to bard server"
 }
 
 func (c *UpCmd) Do(args []string) (err error) {

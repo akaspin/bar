@@ -5,7 +5,7 @@ import (
 	"github.com/akaspin/go-contentaddressable"
 	"golang.org/x/crypto/sha3"
 	"path/filepath"
-	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/bar/lists"
 	"os"
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/proto"

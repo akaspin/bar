@@ -4,8 +4,13 @@ import (
 	"time"
 )
 
+type dummy struct {}
+
+func (d *dummy) Close() {}
+
 type Lock struct {
 	pool *LocksPool
+	n int
 	IsClosed bool
 }
 
@@ -35,14 +40,11 @@ func (p *LocksPool) Take() (res *Lock, err error) {
 		return
 	}
 	res = r.(*Lock)
-//	go func() {
-//		select {
-//		case <-time.After(p.timeout):
-//			res.Close()
-//		}
-//	}()
-
 	return
+}
+
+func (p *LocksPool) TakeN(n int) {
+
 }
 
 func (p *LocksPool) factory() (res pools.Resource, err error) {

@@ -14,14 +14,14 @@ import (
 const export_bat_tpl = `
 @echo off
 
-@WHERE barc
+@WHERE bar
 IF %ERRORLEVEL% NEQ 0 (
-	ECHO barc is not found. downloading...
-	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"{{.HTTPEndpoint}}/win/barc.exe\", \"barc.exe\")"
+	ECHO bar is not found. downloading...
+	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"{{.HTTPEndpoint}}/win/bar.exe\", \"bar.exe\")"
 )
 
-barc -log-level=DEBUG up -http={{.HTTPEndpoint}} -rpc={{.JoinRPCEndpoints}} -chunk={{.ChunkSize}} -pool={{.PoolSize}} !bar*.bat !bar-spec*.json !barc.exe !desktop.ini
-for /f %%i in ('barc -log-level=DEBUG spec-export -http={{.HTTPEndpoint}} -rpc={{.JoinRPCEndpoints}} -chunk={{.ChunkSize}} -pool={{.PoolSize}} -upload -cc !bar*.bat !bar-spec*.json !barc.exe !desktop.ini') do set VAR=%%i
+bar -log-level=DEBUG up -http={{.HTTPEndpoint}} -rpc={{.JoinRPCEndpoints}} -chunk={{.ChunkSize}} -pool={{.PoolSize}} !bar*.bat !bar-spec*.json !bar.exe !desktop.ini
+for /f %%i in ('bar -log-level=DEBUG spec-export -http={{.HTTPEndpoint}} -rpc={{.JoinRPCEndpoints}} -chunk={{.ChunkSize}} -pool={{.PoolSize}} -upload -cc !bar*.bat !bar-spec*.json !bar.exe !desktop.ini') do set VAR=%%i
 
 start {{.HTTPEndpoint}}/spec/%VAR%
 
@@ -32,14 +32,14 @@ pause >nul
 const import_bat_tpl = `
 @echo off
 
-@WHERE barc
+@WHERE bar
 IF %ERRORLEVEL% NEQ 0 (
-	ECHO barc is not found. downloading...
-	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"{{.Info.HTTPEndpoint}}/win/barc.exe\", \"barc.exe\")"
+	ECHO bar is not found. downloading...
+	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"{{.Info.HTTPEndpoint}}/win/bar.exe\", \"bar.exe\")"
 )
 
-for /f %%i in ('barc -log-level=DEBUG spec-import -http={{.Info.HTTPEndpoint}} -rpc={{.Info.JoinRPCEndpoints}} -chunk={{.Info.ChunkSize}} -pool={{.Info.PoolSize}} {{.ID}}') do set VAR=%%i
-barc -log-level=DEBUG down -http={{.Info.HTTPEndpoint}} -rpc={{.Info.JoinRPCEndpoints}} -chunk={{.Info.ChunkSize}} -pool={{.Info.PoolSize}} %VAR%
+for /f %%i in ('bar -log-level=DEBUG spec-import -http={{.Info.HTTPEndpoint}} -rpc={{.Info.JoinRPCEndpoints}} -chunk={{.Info.ChunkSize}} -pool={{.Info.PoolSize}} {{.ID}}') do set VAR=%%i
+bar -log-level=DEBUG down -http={{.Info.HTTPEndpoint}} -rpc={{.Info.JoinRPCEndpoints}} -chunk={{.Info.ChunkSize}} -pool={{.Info.PoolSize}} %VAR%
 
 echo press any key...
 pause >nul

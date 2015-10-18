@@ -24,10 +24,10 @@ Consider the following scenario:
 
 > For now assume what `bard` is deployed and listening at `:3000`.
 
-To set the bar in the repository use `barc git-init` command. Only one 
+To set the bar in the repository use `bar git-init` command. Only one 
 important flag "endpoint" is just HTTP endpoint of `bard` server. 
     
-    $ barc git-init -endpoint=http://localhost:3000/v1
+    $ bar -endpoint=localhost:3000 git-init
     
 Bar-tracked BLOBs are defined by git attributes.
 
@@ -129,17 +129,17 @@ Use `bard -help` to get available options.
 
 Bar doesn't require git to work. All `git bar-*` commands is just git aliases:
 
-    git bar-squash  ->  barc up -squash
-    git bar-up      ->  barc up
-    git bar-down    ->  barc down
-    git bar-ls      ->  barc ls
+    git bar-squash  ->  bar up -squash
+    git bar-up      ->  bar up
+    git bar-down    ->  bar down
+    git bar-ls      ->  bar ls
     
 To use git infrastructure use `up`, `down` and `ls` with `-git` flag.
 
 ## Specs
 
 Specs is just filename->id maps. Specs can be exported and imported by 
-`barc spec-export` and `barc spec-export`. Specs can be generated locally 
+`bar spec-export` and `bar spec-export`. Specs can be generated locally 
 or uploaded to bard.
 
 ### Windows, brains and two buttons 

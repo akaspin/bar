@@ -2,7 +2,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/tamtam-im/logx"
-	"github.com/akaspin/bar/barc/model"
+	"github.com/akaspin/bar/bar/model"
 	"flag"
 )
 
@@ -18,7 +18,7 @@ To use with git register bar in git:
 
 	# .git/config
 	[filter "bar"]
-		clean = barc git-clean -endpoint=http://my.bar.server/v1 %f
+		clean = bar git-clean -endpoint=http://my.bar.server/v1 %f
 
 	# .gitattributes
 	my/blobs    filter=bar
@@ -51,7 +51,6 @@ func (c *GitCleanCommand) Do(args []string) (err error) {
 		name = args[0]
 	}
 
-
 	s, err := c.Model.GetManifest(name, c.Stdin)
 	if err != nil {
 		return
@@ -64,6 +63,9 @@ func (c *GitCleanCommand) Do(args []string) (err error) {
 	} else {
 		err = s.Serialize(c.Stdout)
 	}
-
 	return
+}
+
+func (c *GitCleanCommand) Description() string {
+	return "git clean filter"
 }

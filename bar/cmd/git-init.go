@@ -1,11 +1,11 @@
 package cmd
 import (
-	"github.com/akaspin/bar/barc/git"
-	"github.com/akaspin/bar/barc/transport"
+	"github.com/akaspin/bar/bar/git"
+	"github.com/akaspin/bar/bar/transport"
 	"fmt"
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/proto"
-	"github.com/akaspin/bar/barc/model"
+	"github.com/akaspin/bar/bar/model"
 	"strings"
 	"flag"
 )
@@ -14,20 +14,20 @@ const hook  = `#!/bin/sh
 # bar pre-commit hook
 set -e
 
-barc -log-level=%s -endpoint=%s -chunk=%d -pool=%d git-pre-commit
+bar -log-level=%s -endpoint=%s -chunk=%d -pool=%d git-pre-commit
 `
 
 /*
 Install bar for git infrastructure
 
-	$ barc git-init -endpoint=http://my.bar.server/v1
+	$ bar git-init -endpoint=http://my.bar.server/v1
 
 This command installs git infrastructure to use with bar:
 
 1. Adds bar filter to .git/config
 2. Adds bar diff to .git/config
 3. Adds pre-commit hook to .git/hooks
-4. Adds git aliases for `barc up`, `barc down` and `barc ls`
+4. Adds git aliases for `bar up`, `bar down` and `bar ls`
 */
 type GitInitCmd struct {
 	*Base
@@ -44,12 +44,12 @@ func NewGitInitCmd(s *Base) SubCommand {
 }
 
 func (c *GitInitCmd) Init(fs *flag.FlagSet) {
-	fs.StringVar(&c.log, "log", "WARNING", "barc logging level")
+	fs.StringVar(&c.log, "log", logx.INFO, "bar logging level")
 	fs.BoolVar(&c.clean, "clean", false, "uninstall bar")
 }
 
 func (c *GitInitCmd) Description() string {
-	return "Install bar to git repo"
+	return "install bar to git repo"
 }
 
 func (c *GitInitCmd) Do(args []string) (err error) {
@@ -93,31 +93,34 @@ func (c *GitInitCmd) configVals(info proto.ServerInfo) map[string]string {
 	rpc := strings.Join(info.RPCEndpoints, ",")
 	return map[string]string{
 //		"diff.bar.command": fmt.Sprintf(
-//			"barc -log-level=%s git-diff -chunk=%d", c.log, info.ChunkSize),
+//			"bar -log-level=%s git-diff -chunk=%d", c.log, info.ChunkSize),
 		"filter.bar.clean": fmt.Sprintf(
-			"barc -log-level=%s git-clean -chunk=%d -pool=%d %%f",
+			"bar -log-level=%s -chunk=%d -pool=%d git-clean %%f",
 			c.log, info.ChunkSize, info.PoolSize),
 		"filter.bar.smudge": fmt.Sprintf(
-			"barc -log-level=%s git-smudge -chunk=%d -pool=%d %%f",
+			"bar -log-level=%s -chunk=%d -pool=%d git-smudge %%f",
 			c.log, info.ChunkSize, info.PoolSize),
 		"alias.bar-squash": fmt.Sprintf(
-			"!barc -log-level=%s up -squash -http=%s -rpc=%s -chunk=%d -pool=%d -git",
-			c.log, info.HTTPEndpoint, rpc, info.ChunkSize, info.PoolSize),
+			"!bar -log-level=%s -endpoint=%s -chunk=%d -pool=%d up -squash -git",
+			c.log, rpc, info.ChunkSize, info.PoolSize),
 		"alias.bar-up": fmt.Sprintf(
-			"!barc -log-level=%s up -http=%s -rpc=%s -git -chunk=%d -pool=%d",
-			c.log, info.HTTPEndpoint, rpc, info.ChunkSize, info.PoolSize),
+			"!bar -log-level=%s -endpoint=%s -chunk=%d -pool=%d up -git",
+			c.log, rpc, info.ChunkSize, info.PoolSize),
 		"alias.bar-down": fmt.Sprintf(
-			"!barc -log-level=%s down -http=%s -rpc=%s -git -chunk=%d -pool=%d",
-			c.log, info.HTTPEndpoint, rpc, info.ChunkSize, info.PoolSize),
+			"!bar -log-level=%s -endpoint=%s -chunk=%d -pool=%d down -git",
+			c.log, rpc, info.ChunkSize, info.PoolSize),
 		"alias.bar-ls": fmt.Sprintf(
-			"!barc -log-level=%s ls -http=%s -rpc=%s -git -pool=%d",
-			c.log, info.HTTPEndpoint, rpc, info.PoolSize),
+			"!bar -log-level=%s -endpoint=%s -chunk=%d -pool=%d ls -git",
+			c.log, rpc, info.PoolSize),
 		"alias.bar-export": fmt.Sprintf(
-			"!barc -log-level=%s spec-export -upload -http=%s -rpc=%s -git -chunk=%d -pool=%d",
-			c.log, info.HTTPEndpoint, rpc, info.ChunkSize, info.PoolSize),
+			"!bar -log-level=%s -endpoint=%s -chunk=%d -pool=%d spec-export -upload -git",
+			c.log, rpc, info.ChunkSize, info.PoolSize),
 		"alias.bar-import": fmt.Sprintf(
-			"!barc -log-level=%s spec-import -http=%s -rpc=%s -git -chunk=%d -pool=%d",
-			c.log, info.HTTPEndpoint, rpc, info.ChunkSize, info.PoolSize),
+			"!bar -log-level=%s -endpoint=%s -chunk=%d -pool=%d spec-import -git -squash",
+			c.log, rpc, info.ChunkSize, info.PoolSize),
+		"alias.bar-spec-ls": fmt.Sprintf(
+			"!bar -log-level=%s -endpoint=%s -chunk=%d -pool=%d spec-import -git -squash",
+			c.log, rpc, info.ChunkSize, info.PoolSize),
 	}
 }
 

@@ -1,6 +1,6 @@
 package main
 import (
-	"github.com/akaspin/bar/barc/cmd"
+	"github.com/akaspin/bar/bar/cmd"
 	"os"
 	"github.com/tamtam-im/logx"
 )

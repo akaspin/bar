@@ -26,8 +26,8 @@ const spec_tpl string = `
 	<a href="{{.Info.HTTPEndpoint}}/win/bar-import/{{.ID}}/bar-import-{{.ShortID}}.bat"><code>bar-import-{{.ShortID}}.bat</code></a>,
 	save in root of the working tree and run.</p>
 <p>This script is no-brain solution to import spec {{.ShortID}}. It automatically
-download <code>barc.exe</code> if it is not found and download spec and BLOBs from bard</p>
-<p>You can also download <a href="{{.Info.HTTPEndpoint}}/win/barc.exe"><code>barc.exe</code></a> and save
+download <code>bar.exe</code> if it is not found and download spec and BLOBs from bard</p>
+<p>You can also download <a href="{{.Info.HTTPEndpoint}}/win/bar.exe"><code>bar.exe</code></a> and save
 	it root of the working tree or somewhere in PATH.</p>
 </body>
 </html>

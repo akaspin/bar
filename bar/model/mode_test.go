@@ -3,8 +3,8 @@ import (
 	"testing"
 	"github.com/akaspin/bar/fixtures"
 	"github.com/stretchr/testify/assert"
-	"github.com/akaspin/bar/barc/lists"
-	"github.com/akaspin/bar/barc/model"
+	"github.com/akaspin/bar/bar/lists"
+	"github.com/akaspin/bar/bar/model"
 )
 
 func Test_Model_IsBlobs(t *testing.T)  {

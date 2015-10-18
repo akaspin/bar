@@ -1,12 +1,12 @@
 package model
 import (
-	"github.com/akaspin/bar/barc/git"
+	"github.com/akaspin/bar/bar/git"
 	"io"
 	"github.com/akaspin/bar/proto"
 	"os"
 	"github.com/tamtam-im/logx"
 	"path/filepath"
-	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/bar/lists"
 	"time"
 	"github.com/akaspin/bar/concurrent"
 	"golang.org/x/net/context"

@@ -63,6 +63,7 @@ func (r *RootCmd) Do(wd string, args []string) (err error) {
 	sub.Init(subFS)
 
 	subFlags := flags.New(subFS).SetPrefix("BAR")
+	subFlags.UseVersion = false
 	subFlags.Help = sub.Help
 	subFlags.Summary = sub.Summary
 
@@ -104,6 +105,5 @@ func (r *RootCmd) getRoute() map[string]SubCommandFactory {
 		"ls":             NewLsCmd,
 		"spec-export":    NewSpecExportCmd,
 		"spec-import":    NewSpecImportCmd,
-		"sneak":          NewSneakCmd,
 	}
 }

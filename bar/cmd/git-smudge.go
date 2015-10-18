@@ -23,7 +23,6 @@ is BLOB - it will be uploaded to bard.
 */
 type GitSmudgeCmd struct {
 	*Base
-
 }
 
 func NewGitSmudgeCmd(s *Base) SubCommand {
@@ -38,4 +37,8 @@ func (c *GitSmudgeCmd) Do(args []string) (err error) {
 	logx.Debugf("smudge manifest for %s", name, m.ID)
 	err = m.Serialize(c.Stdout)
 	return
+}
+
+func (c *GitSmudgeCmd) Description() string {
+	return "git smudge filter"
 }

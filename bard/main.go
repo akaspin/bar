@@ -40,8 +40,8 @@ func init() {
 		"preferred conns from one client")
 	flag.IntVar(&serverInfo.BufferSize, "buffer", 1024 * 1024 * 8, "thrift buffer size")
 
-	flag.StringVar(&barExe, "barc-exe", "",
-		"path to windows barc executable")
+	flag.StringVar(&barExe, "bar-exe", "",
+		"path to windows bar executable")
 
 	flag.StringVar(&storageType, "storage-type", "block", "storage type")
 

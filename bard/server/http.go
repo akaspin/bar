@@ -26,7 +26,7 @@ func (s *BardHttpServer) Start() (err error) {
 	mux.Handle("/", &handler.FrontHandler{s.ServerInfo})
 	mux.Handle("/v1/win/bar-export.bat", &handler.ExportBatHandler{s.ServerInfo})
 	mux.Handle("/v1/win/bar-import/", &handler.ImportBatHandler{s.ServerInfo})
-	mux.Handle("/v1/win/barc.exe", &handler.ExeHandler{s.BarExe})
+	mux.Handle("/v1/win/bar.exe", &handler.ExeHandler{s.BarExe})
 	mux.Handle("/v1/spec/", &handler.SpecHandler{
 		s.Storage, s.ServerInfo, s.BarExe})
 //	mux.Handle("/v1/rpc", s.service)

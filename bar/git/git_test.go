@@ -1,12 +1,12 @@
 package git_test
 import (
 	"testing"
-	"github.com/akaspin/bar/barc/git"
+	"github.com/akaspin/bar/bar/git"
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/fixtures"
 	"os"
 	"path/filepath"
-	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/bar/lists"
 	"github.com/akaspin/bar/proto"
 )
 
@@ -23,7 +23,7 @@ func Test_DirtyFiles(t *testing.T) {
 
 func Test_FilterByDiff(t *testing.T) {
 	wd, _ := os.Getwd()
-	cm := filepath.Clean(filepath.Join(wd, "../../barc"))
+	cm := filepath.Clean(filepath.Join(wd, "../../bar"))
 
 	g, err := git.NewGit(cm)
 	assert.NoError(t, err)

@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"io/ioutil"
-	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/bar/lists"
 	"github.com/akaspin/bar/proto"
 	"github.com/tamtam-im/logx"
 )

@@ -1,10 +1,10 @@
 package cmd
 import (
-	"github.com/akaspin/bar/barc/model"
+	"github.com/akaspin/bar/bar/model"
 	"github.com/akaspin/bar/proto"
-	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/bar/lists"
 	"fmt"
-	"github.com/akaspin/bar/barc/transport"
+	"github.com/akaspin/bar/bar/transport"
 	"text/tabwriter"
 	"strings"
 	"sort"
@@ -14,7 +14,7 @@ import (
 /*
 List bar blobs
 
-	$ barc ls my
+	$ bar ls my
 	NAME                BLOB    SYNC    GIT     ID              SIZE
 	my/blob             no      yes     ok      3d3463063cb1    1930746935
 	my/other/blob       yes     no      dirty   309a34901901    3
@@ -199,3 +199,6 @@ func (c *LsCmd) Do(args []string) (err error) {
 	return
 }
 
+func (c *LsCmd) Description() string {
+	return "show information about bar-tracked blobs"
+}

@@ -1,8 +1,8 @@
 package cmd
 import (
-	"github.com/akaspin/bar/barc/model"
+	"github.com/akaspin/bar/bar/model"
 	"fmt"
-	"github.com/akaspin/bar/barc/transport"
+	"github.com/akaspin/bar/bar/transport"
 )
 
 
@@ -63,4 +63,8 @@ func (c *GitPreCommitCmd) Do(args []string) (err error) {
 	err = trans.Upload(blobs)
 
 	return
+}
+
+func (c *GitPreCommitCmd) Description() string  {
+	return "git pre-commit hook"
 }

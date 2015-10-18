@@ -22,10 +22,16 @@ const front_tpl = `
 	<a href="{{.Info.HTTPEndpoint}}/win/bar-export.bat"><code>bar-export.bat</code></a>
 	and save in root of the working tree.</p>
 <p>This script is no-brain solution to export bar specs. It automatically
-download <code>barc.exe</code> if it is not found and upload BLOBs and spec
+download <code>bar.exe</code> if it is not found and upload BLOBs and spec
 to bard</p>
-<p>You can also download <a href="{{.Info.HTTPEndpoint}}/win/barc.exe"><code>barc.exe</code></a> and save
+<p>You can also download <a href="{{.Info.HTTPEndpoint}}/win/bar.exe"><code>bar.exe</code></a> and save
 	it beside <code>bar-export.bat</code> or somewhere in PATH.</p>
+
+<h2>Git users</h2>
+<p>To install bar into git repository use <code>bar git-inir</code></p>
+<pre>
+$ bar -endpoint={{.Info.JoinRPCEndpoints}} git-init
+</pre>
 </body>
 </html>
 `

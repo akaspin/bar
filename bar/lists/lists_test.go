@@ -2,7 +2,7 @@ package lists_test
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
-	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/bar/lists"
 )
 
 func Test_Filelist1(t *testing.T)  {

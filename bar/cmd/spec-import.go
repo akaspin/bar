@@ -1,12 +1,12 @@
 package cmd
 import (
 	"flag"
-	"github.com/akaspin/bar/barc/model"
-	"github.com/akaspin/bar/barc/transport"
+	"github.com/akaspin/bar/bar/model"
+	"github.com/akaspin/bar/bar/transport"
 	"encoding/json"
 	"github.com/akaspin/bar/proto"
 	"github.com/tamtam-im/logx"
-	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/bar/lists"
 	"fmt"
 	"path/filepath"
 )
@@ -132,6 +132,6 @@ func (c *SpecImportCmd) Help() {
 }
 
 func (c *SpecImportCmd) Description() string {
-	return "Import spec from bar server"
+	return "import spec from bar server"
 }
 

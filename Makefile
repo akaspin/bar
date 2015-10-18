@@ -33,48 +33,45 @@ distclean:
 clean:
 	-find . -type d -name testdata* -exec rm -rf '{}' ';'
 
-dist/bar-${V}-windows-amd64.zip: dist/windows/barc.exe
+dist/bar-${V}-windows-amd64.zip: dist/windows/bar.exe
 	zip -r -j -D $@ ${<D}
 
-dist/bar-${V}-windows-amd64.tar.gz: dist/windows/barc.exe
-	tar -czf $@ -C ${<D} .
-
-dist/bar-${V}-%-amd64.tar.gz: dist/%/barc dist/%/bard
+dist/bar-${V}-%-amd64.tar.gz: dist/%/bar dist/%/bard
 	tar -czf $@ -C ${<D} .
 
 dist/windows/%.exe: ${SRC}
 	@mkdir -p ${@D}
 	CGO_ENABLED=0 GOOS=windows go build ${GOOPTS} -o $@ ${REPO}/$*
 
+dist/%/bar: ${SRC}
+	@mkdir -p ${@D}
+	CGO_ENABLED=0 GOOS=$* go build ${GOOPTS} -o $@ ${REPO}/$(@F)
+
 dist/%/bard: ${SRC}
 	@mkdir -p ${@D}
 	CGO_ENABLED=0 GOOS=$* go build ${GOOPTS} -o $@ ${REPO}/$(@F)
 
-dist/%/barc: ${SRC}
-	@mkdir -p ${@D}
-	CGO_ENABLED=0 GOOS=$* go build ${GOOPTS} -o $@ ${REPO}/$(@F)
+install: install-bar ${INSTALL_DIR}/bard
 
-install: install-barc ${INSTALL_DIR}/barc
-
-install-barc: ${INSTALL_DIR}/barc
+install-bar: ${INSTALL_DIR}/bar
 
 uninstall:
-	-rm ${INSTALL_DIR}/bard ${INSTALL_DIR}/barc
+	-rm ${INSTALL_DIR}/bard ${INSTALL_DIR}/bar
 
-${INSTALL_DIR}/bard: ${SRC}
-	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}/bard
+${INSTALL_DIR}/%: ${SRC}
+	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}/$*
 
-${INSTALL_DIR}/barc: ${SRC}
-	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}/barc
+#${INSTALL_DIR}/bar: ${SRC}
+#	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}/bar
 
-run-server: ${INSTALL_DIR}/bard dist/windows/barc.exe
+run-server: ${INSTALL_DIR}/bard dist/windows/bar.exe
 	bard -log-level=DEBUG \
 		-bind-http=:3000 \
 		-bind-rpc=:3001 \
 		-storage-block-root=testdata \
 		-rpc=${HOSTNAME}:3001 \
 		-http=http://${HOSTNAME}:3000/v1 \
-		-barc-exe=dist/windows/barc.exe
+		-bar-exe=dist/windows/bar.exe
 
 bench-mem:
 	go test -run=XXX -bench=${BENCH} -benchmem ./...

@@ -1,7 +1,7 @@
 package lists_test
 import (
 	"testing"
-	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/bar/lists"
 	"github.com/stretchr/testify/assert"
 )
 

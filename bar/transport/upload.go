@@ -1,7 +1,7 @@
 package transport
 import (
 	"github.com/nu7hatch/gouuid"
-	"github.com/akaspin/bar/barc/lists"
+	"github.com/akaspin/bar/bar/lists"
 	"time"
 	"github.com/akaspin/bar/proto"
 )
