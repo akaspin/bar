@@ -2,6 +2,7 @@ package concurrent
 import (
 	"github.com/vireshas/minimal_vitess_pool/pools"
 	"time"
+	"sync/atomic"
 )
 
 type dummy struct {}
@@ -10,14 +11,32 @@ func (d *dummy) Close() {}
 
 type Lock struct {
 	pool *LocksPool
-	n int
-	IsClosed bool
+	n *int32
+}
+
+func newLock(p *LocksPool, n int) (res *Lock, err error) {
+	var n1 int32
+	res = &Lock{p, &n1}
+	for i := 0; i < n; i++ {
+		atomic.AddInt32(res.n, 1)
+		if _, err = p.pool.Get(p.timeout); err != nil {
+			res.close()
+			return
+		}
+	}
+	return
 }
 
 func (l *Lock) Close() {
-	if !l.IsClosed {
-		l.IsClosed = true
+	l.close()
+}
+
+func (l *Lock) close() {
+	n1 := atomic.LoadInt32(l.n)
+	var i int32
+	for i = 0; i < n1; i++ {
 		l.pool.pool.Put(nil)
+		atomic.AddInt32(l.n, -1)
 	}
 }
 
@@ -34,20 +53,13 @@ func NewLockPool(n int, timeout time.Duration) (res *LocksPool) {
 	return 
 }
 
+// Take single lock
 func (p *LocksPool) Take() (res *Lock, err error) {
-	r, err := p.pool.Get(p.timeout)
-	if err != nil {
-		return
-	}
-	res = r.(*Lock)
+	res, err = newLock(p, 1)
 	return
 }
 
-func (p *LocksPool) TakeN(n int) {
-
-}
-
 func (p *LocksPool) factory() (res pools.Resource, err error) {
-	res = &Lock{p, false}
+	res = &dummy{}
 	return
 }
