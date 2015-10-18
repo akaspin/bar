@@ -53,6 +53,24 @@ func NewLockPool(n int, timeout time.Duration) (res *LocksPool) {
 	return 
 }
 
+func (p *LocksPool) Available() (res int64) {
+	return p.pool.Available()
+}
+
+func (p *LocksPool) With(n int, fn func()) (err error) {
+	l, err := p.TakeN(n)
+	if err != nil {
+		return
+	}
+	defer l.Close()
+	fn()
+	return
+}
+
+func (p *LocksPool) TakeN(n int) (res *Lock, err error)  {
+	return newLock(p, n)
+}
+
 // Take single lock
 func (p *LocksPool) Take() (res *Lock, err error) {
 	res, err = newLock(p, 1)
