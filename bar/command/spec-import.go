@@ -1,56 +1,46 @@
-package cmd
+package command
 import (
-	"flag"
+"github.com/spf13/cobra"
+"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/bar/model"
-	"github.com/akaspin/bar/bar/transport"
+"github.com/akaspin/bar/bar/transport"
 	"encoding/json"
-	"github.com/akaspin/bar/proto"
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/bar/lists"
 	"fmt"
 	"path/filepath"
 )
 
+type SpecImportCmd struct {
+	*Environment
+	*CommonOptions
 
-/*
-Import spec from bard and populate manifests
-
-	$ cat spec.json | bar spec-import -raw
-	$ bar spec-import 1bcaa5...578bd24
-	$ bar spec-import http://localhost:3000/v1/spec/1bcaa5...578bd24
-	$ bar spec-import http://localhost:3000/v1/spec/1bcaa5...578bd24.json
-
-*/
-type SpecImportCmd struct  {
-	*Base
-
-	useGit bool
-	raw bool
-	squash bool
+	UseGit bool
+	Raw bool
+	Squash bool
 }
 
-func NewSpecImportCmd(s *Base) SubCommand  {
-	c := &SpecImportCmd{Base: s}
-	return c
+func (c *SpecImportCmd) Init(cc *cobra.Command) {
+	cc.Use = "import"
+	cc.Short = "import spec from bard server"
+
+	cc.Flags().BoolVarP(&c.UseGit, "git", "", false, "use git infrastructure")
+	cc.Flags().BoolVarP(&c.Raw, "raw", "", false,
+		"read spec from STDIN instead request from bar server")
+	cc.Flags().BoolVarP(&c.Squash, "squash", "", false,
+		"write manifests after import")
 }
 
-func (c *SpecImportCmd) Init(fs *flag.FlagSet) {
-	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
-	fs.BoolVar(&c.raw, "raw", false, "read spec from STDIN")
-	fs.BoolVar(&c.squash, "squash", false, "squash modified blobs")
-}
-
-func (c *SpecImportCmd) Do(args []string) (err error) {
-	// get spec first
+func (c *SpecImportCmd) Run(args ...string) (err error) {
 	var spec proto.Spec
 
-	mod, err := model.New(c.WD, c.useGit, c.ChunkSize, c.PoolSize)
+	mod, err := model.New(c.WD, c.UseGit, c.ChunkSize, c.PoolSize)
 	if err != nil {
 		return
 	}
-	trans := transport.NewTransport(mod, "", c.Endpoints, c.PoolSize)
+	trans := transport.NewTransport(mod, "", c.Endpoint, c.PoolSize)
 
-	if c.raw {
+	if c.Raw {
 		if err = json.NewDecoder(c.Stdin).Decode(&spec); err != nil {
 			return
 		}
@@ -79,7 +69,7 @@ func (c *SpecImportCmd) Do(args []string) (err error) {
 
 	logx.Debugf("importing %s", names)
 
-	if c.useGit {
+	if c.UseGit {
 		// If git is used - check names for attrs
 		byAttr, err := mod.Git.FilterByAttr("bar", names...)
 		if err != nil {
@@ -116,7 +106,7 @@ func (c *SpecImportCmd) Do(args []string) (err error) {
 		}
 	}
 
-	if c.squash {
+	if c.Squash {
 		if err = mod.SquashBlobs(toSquash); err != nil {
 			return
 		}
@@ -126,12 +116,3 @@ func (c *SpecImportCmd) Do(args []string) (err error) {
 	}
 	return
 }
-
-func (c *SpecImportCmd) Help() {
-	fmt.Fprintln(c.Stderr, "bar spec-import [OPTIONS] [SPEC-ID]\n")
-}
-
-func (c *SpecImportCmd) Description() string {
-	return "import spec from bar server"
-}
-

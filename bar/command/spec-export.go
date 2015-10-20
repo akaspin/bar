@@ -1,46 +1,40 @@
-package cmd
+package command
 import (
-	"github.com/akaspin/bar/proto"
+	"github.com/spf13/cobra"
 	"github.com/akaspin/bar/bar/model"
 	"github.com/akaspin/bar/bar/lists"
 	"fmt"
-	"github.com/akaspin/bar/bar/transport"
-	"encoding/json"
-	"github.com/tamtam-im/logx"
+"github.com/akaspin/bar/proto"
 	"time"
+	"github.com/tamtam-im/logx"
 	"os"
 	"path/filepath"
-	"flag"
+	"encoding/json"
+	"github.com/akaspin/bar/bar/transport"
 )
 
-/*
-Export spec to bard
-*/
 type SpecExportCmd struct {
-	*Base
+	*Environment
+	*CommonOptions
 
-	useGit bool
+	UseGit bool
 
-	upload bool
-	doCC bool
-	track bool
+	Upload bool
+	DoCC bool
 }
 
-func NewSpecExportCmd(s *Base) SubCommand  {
-	c := &SpecExportCmd{Base: s}
-	return c
+func (c *SpecExportCmd) Init(cc *cobra.Command) {
+	cc.Use = "export"
+	cc.Short = "export spec"
+
+	cc.Flags().BoolVarP(&c.UseGit, "git", "", false, "use git infrastructure")
+	cc.Flags().BoolVarP(&c.Upload, "upload", "u", false, "upload spec to bar server")
+	cc.Flags().BoolVarP(&c.DoCC, "cc", "", false, "create carbon copy")
 }
 
-func (c *SpecExportCmd) Init(fs *flag.FlagSet) {
-	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
-	fs.BoolVar(&c.upload, "upload", false, "upload spec to bard and print URL")
-	fs.BoolVar(&c.doCC, "cc", false, "create spec carbon copy")
-}
-
-
-func (c *SpecExportCmd) Do(args []string) (err error) {
+func (c *SpecExportCmd) Run(args ...string) (err error) {
 	var mod *model.Model
-	if mod, err = model.New(c.WD, c.useGit, c.ChunkSize, c.PoolSize); err != nil {
+	if mod, err = model.New(c.WD, c.UseGit, c.ChunkSize, c.PoolSize); err != nil {
 		return
 	}
 
@@ -55,7 +49,7 @@ func (c *SpecExportCmd) Do(args []string) (err error) {
 		return
 	}
 
-	if c.useGit {
+	if c.UseGit {
 		// filter by attrs
 		feed, err = mod.Git.FilterByAttr("bar", feed...)
 	}
@@ -77,7 +71,7 @@ func (c *SpecExportCmd) Do(args []string) (err error) {
 	}
 
 
-	if c.doCC {
+	if c.DoCC {
 		ccName := fmt.Sprintf("bar-spec-%d-%s.json",
 			time.Now().UnixNano(), spec.ID)
 		logx.Infof("storing carbon copy to %s", ccName)
@@ -92,19 +86,15 @@ func (c *SpecExportCmd) Do(args []string) (err error) {
 		}
 	}
 
-	if !c.upload {
+	if !c.Upload {
 		err = json.NewEncoder(c.Stdout).Encode(&spec)
 		return
 	}
 
-	trans := transport.NewTransport(mod, "", c.Endpoints, c.PoolSize)
+	trans := transport.NewTransport(mod, "", c.Endpoint, c.PoolSize)
 	if err = trans.UploadSpec(spec); err != nil {
 		return
 	}
 	fmt.Fprint(c.Stdout, spec.ID)
 	return
-}
-
-func (c *SpecExportCmd) Description() string  {
-	return "export spec to bar server"
 }

@@ -1,75 +1,67 @@
-package cmd
+package command
 import (
+	"github.com/spf13/cobra"
+	"fmt"
 	"github.com/akaspin/bar/bar/model"
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/bar/lists"
-	"fmt"
 	"github.com/akaspin/bar/bar/transport"
 	"text/tabwriter"
-	"strings"
+"strings"
 	"sort"
-	"flag"
 )
 
-/*
-List bar blobs
-
-	$ bar ls my
-	NAME                BLOB    SYNC    GIT     ID              SIZE
-	my/blob             no      yes     ok      3d3463063cb1    1930746935
-	my/other/blob       yes     no      dirty   309a34901901    3
-	my/bad/blob         no      no      dirty   3d3463063cb1    1930746935
-
-
-*/
 type LsCmd struct {
-	*Base
-	useGit bool
+	*Environment
+	*CommonOptions
 
-	noHeader bool
-	fullID bool
+	UseGit bool
 
-	noBlobs bool
-	noManifests bool
+	NoHeader bool
+	FullID bool
 
-	noRemote bool
-	noName bool
-	noID bool
-	noSize bool
+	NoBlobs bool
+	NoManifests bool
+
+	NoRemote bool
+	NoName bool
+	NoID bool
+	NoSize bool
 }
 
-func NewLsCmd(s *Base) SubCommand {
-	c := &LsCmd{Base: s}
+func (c *LsCmd) Init(cc *cobra.Command) {
+	cc.Use = "ls"
+	cc.Short = "show info about bar-tracked BLOBs"
 
-	return c
-}
+	cc.Flags().BoolVarP(&c.UseGit, "git", "", false, "use git infrastructure")
 
-func (c *LsCmd) Init(fs *flag.FlagSet) {
-	fs.BoolVar(&c.useGit, "git", false, "use git infrastructure")
+	cc.Flags().BoolVarP(&c.NoHeader, "no-header", "", false,
+		"do not print header")
+	cc.Flags().BoolVarP(&c.FullID, "full-id", "", false,
+		"do not trim blob IDs")
 
-	fs.BoolVar(&c.noHeader, "no-header", false, "do not print header")
-	fs.BoolVar(&c.fullID, "full-id", false, "print full BLOB IDs")
-
-	fs.BoolVar(&c.noBlobs, "no-blobs", false, "do not collect BLOBs")
-	fs.BoolVar(&c.noManifests, "no-manifests", false,
+	cc.Flags().BoolVarP(&c.NoBlobs, "no-blobs", "", false,
+		"do not collect BLOBs")
+	cc.Flags().BoolVarP(&c.NoManifests, "no-manifests", "", false,
 		"do not collect manifests")
 
-	fs.BoolVar(&c.noRemote, "no-remote", false,
+	cc.Flags().BoolVarP(&c.NoRemote, "no-remote", "", false,
 		"do not request bard for BLOBs states")
-	fs.BoolVar(&c.noName, "no-name", false, "do not print BLOB filenames")
-	fs.BoolVar(&c.noID, "no-id", false, "do not print BLOB IDs")
-	fs.BoolVar(&c.noSize, "no-size", false, "do not print BLOB sizes")
-
+	cc.Flags().BoolVarP(&c.NoName, "no-name", "", false,
+		"do not print BLOB filenames")
+	cc.Flags().BoolVarP(&c.NoID, "no-id", "", false, "do not print BLOB IDs")
+	cc.Flags().BoolVarP(&c.NoSize, "no-size", "", false,
+		"do not print BLOB sizes")
 }
 
-func (c *LsCmd) Do(args []string) (err error) {
+func (c *LsCmd) Run(args ...string) (err error) {
 
-	if c.noBlobs && c.noManifests {
+	if c.NoBlobs && c.NoManifests {
 		err = fmt.Errorf("both -no-blobs and -no-manifests are on")
 		return
 	}
 
-	mod, err := model.New(c.WD, c.useGit, proto.CHUNK_SIZE, c.PoolSize)
+	mod, err := model.New(c.WD, c.UseGit, proto.CHUNK_SIZE, c.PoolSize)
 	if err != nil {
 		return
 	}
@@ -77,7 +69,7 @@ func (c *LsCmd) Do(args []string) (err error) {
 	feed := lists.NewFileList(args...).ListDir(c.WD)
 
 	var dirty map[string]struct{}
-	if c.useGit {
+	if c.UseGit {
 		if feed, err = mod.Git.FilterByAttr("bar", feed...); err != nil {
 			return
 		}
@@ -91,15 +83,15 @@ func (c *LsCmd) Do(args []string) (err error) {
 		}
 	}
 
-	blobs, err := mod.FeedManifests(!c.noBlobs, !c.noManifests, true, feed...)
+	blobs, err := mod.FeedManifests(!c.NoBlobs, !c.NoManifests, true, feed...)
 	if err != nil {
 		return
 	}
 
 	missingOnRemote := map[proto.ID]struct{}{}
-	if !c.noRemote {
+	if !c.NoRemote {
 		var exists []proto.ID
-		trans := transport.NewTransport(mod, "", c.Endpoints, c.PoolSize)
+		trans := transport.NewTransport(mod, "", c.Endpoint, c.PoolSize)
 		if exists, err = trans.Check(blobs.IDMap().IDs()); err != nil {
 			return
 		}
@@ -121,23 +113,23 @@ func (c *LsCmd) Do(args []string) (err error) {
 		line = []string{}
 	}
 
-	if !c.noHeader {
-		if !c.noName {
+	if !c.NoHeader {
+		if !c.NoName {
 			toLine("NAME")
 		}
-		if !c.noBlobs && !c.noManifests {
+		if !c.NoBlobs && !c.NoManifests {
 			toLine("BLOB")
 		}
-		if !c.noRemote {
+		if !c.NoRemote {
 			toLine("SYNC")
 		}
-		if c.useGit {
+		if c.UseGit {
 			toLine("GIT")
 		}
-		if !c.noID {
+		if !c.NoID {
 			toLine("ID")
 		}
-		if !c.noSize {
+		if !c.NoSize {
 			toLine("SIZE")
 		}
 		flushLine()
@@ -150,45 +142,45 @@ func (c *LsCmd) Do(args []string) (err error) {
 	names.Sort()
 
 	var blobMap map[string]bool
-	if !c.noBlobs && !c.noManifests {
+	if !c.NoBlobs && !c.NoManifests {
 		if blobMap, err = mod.IsBlobs(names...); err != nil {
 			return
 		}
 	}
 
 	for _, name := range names {
-		if !c.noName {
+		if !c.NoName {
 			toLine(name)
 		}
-		if !c.noBlobs && !c.noManifests {
+		if !c.NoBlobs && !c.NoManifests {
 			if blobMap[name] {
 				toLine("yes")
 			} else {
 				toLine("no")
 			}
 		}
-		if !c.noRemote {
+		if !c.NoRemote {
 			if _, missing := missingOnRemote[blobs[name].ID]; missing {
 				toLine("no")
 			} else {
 				toLine("yes")
 			}
 		}
-		if c.useGit {
+		if c.UseGit {
 			if _, bad := dirty[name]; !bad {
 				toLine("ok")
 			} else {
 				toLine("dirty")
 			}
 		}
-		if !c.noID {
-			if !c.fullID {
+		if !c.NoID {
+			if !c.FullID {
 				toLine(blobs[name].ID.String()[:12])
 			} else {
 				toLine(blobs[name].ID.String())
 			}
 		}
-		if !c.noSize {
+		if !c.NoSize {
 			toLine(fmt.Sprintf("%d", blobs[name].Size))
 		}
 
@@ -197,8 +189,4 @@ func (c *LsCmd) Do(args []string) (err error) {
 	w.Flush()
 
 	return
-}
-
-func (c *LsCmd) Description() string {
-	return "show information about bar-tracked blobs"
 }
