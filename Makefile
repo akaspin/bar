@@ -64,7 +64,7 @@ ${INSTALL_DIR}/%: ${SRC}
 #${INSTALL_DIR}/bar: ${SRC}
 #	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}/bar
 
-run-server: ${INSTALL_DIR}/bard dist/windows/bar.exe
+run-server: ${INSTALL_DIR}/bard
 	bard -log-level=DEBUG \
 		-bind-http=:3000 \
 		-bind-rpc=:3001 \

@@ -35,6 +35,7 @@ func NewTransport(mod *model.Model, endpoint string, rpcEndpoints string, n int)
 func (t *Transport) Close() {
 	t.rpcPool.Close()
 	t.tPool.Close()
+	t.BatchPool.Close()
 }
 
 func (t *Transport) ServerInfo() (res proto.ServerInfo, err error) {

@@ -273,3 +273,7 @@ func (m *Model) getGitReader(name string) (res io.Reader) {
 	return
 }
 
+func (m *Model) Close() {
+	m.FdLocks.Close()
+	m.BatchPool.Close()
+}

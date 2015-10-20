@@ -21,7 +21,7 @@ func (c *RootCmd) Init(cc *cobra.Command) {
 		"logging level")
 	pf.StringVarP(&c.WD, "work-dir", "C", "", "work directory")
 
-	pf.StringVarP(&c.Endpoint, "endpoint", "", ":3000",
+	pf.StringVarP(&c.Endpoint, "endpoint", "", ":3001",
 		"bar server endpoint")
 	pf.Int64VarP(&c.ChunkSize, "chunk", "", proto.CHUNK_SIZE,
 		"preferred chunk size")

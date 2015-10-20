@@ -77,6 +77,10 @@ func (p *LocksPool) Take() (res *Lock, err error) {
 	return
 }
 
+func (p *LocksPool) Close() {
+	p.pool.Close()
+}
+
 func (p *LocksPool) factory() (res pools.Resource, err error) {
 	res = &dummy{}
 	return

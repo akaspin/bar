@@ -2,7 +2,9 @@ package command
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/tamtam-im/logx"
+	"github.com/akaspin/bar/bar/model"
+	"github.com/akaspin/bar/bar/git"
+	"github.com/akaspin/bar/proto"
 )
 
 type GitUninstallCmd struct  {
@@ -19,6 +21,14 @@ func (c *GitUninstallCmd) Init(cc *cobra.Command) {
 }
 
 func (c *GitUninstallCmd) Run(args ...string) (err error) {
-	logx.Debug(c)
+	var mod *model.Model
+
+	if mod, err = model.New(c.WD, true, c.ChunkSize, c.PoolSize); err != nil {
+		return
+	}
+
+	config := git.NewConfig(proto.ServerInfo{}, mod.Git)
+	err = config.Uninstall()
+
 	return
 }
