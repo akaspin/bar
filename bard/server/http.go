@@ -21,15 +21,18 @@ func (s *BardHttpServer) Start() (err error) {
 		return
 	}
 
+	hs, err := handler.NewHandlers(s.Storage, s.ServerInfo, s.BarExe)
+	if err != nil {
+		return
+	}
+
 	// make http frontend
 	mux := http.NewServeMux()
-	mux.Handle("/", &handler.FrontHandler{s.ServerInfo})
-	mux.Handle("/v1/win/bar-export.bat", &handler.ExportBatHandler{s.ServerInfo})
-	mux.Handle("/v1/win/bar-import/", &handler.ImportBatHandler{s.ServerInfo})
-	mux.Handle("/v1/win/bar.exe", &handler.ExeHandler{s.BarExe})
-	mux.Handle("/v1/spec/", &handler.SpecHandler{
-		s.Storage, s.ServerInfo, s.BarExe})
-//	mux.Handle("/v1/rpc", s.service)
+	mux.HandleFunc("/", hs.HandleFront)
+	mux.HandleFunc("/v1/win/bar-export.bat", hs.HandleExportBat)
+	mux.HandleFunc("/v1/win/bar-import/", hs.HandleImportBat)
+	mux.HandleFunc("/v1/win/bar.exe", hs.HandleBarExe)
+	mux.HandleFunc("/v1/spec/", hs.HandleSpec)
 	logx.Debugf("bard http serving at http://%s/v1", s.HttpBind)
 	srv := &http.Server{Handler:mux}
 	err = srv.Serve(s.Listener)
