@@ -22,12 +22,12 @@ Consider the following scenario:
 
 ## Basic usage
 
-> For now assume what `bard` is deployed and listening at `:3000`.
+> For now assume what `bard` is deployed and listening at `:3001`.
 
 To set the bar in the repository use `bar git-init` command. Only one 
 important flag "endpoint" is just HTTP endpoint of `bard` server. 
     
-    $ bar -endpoint=localhost:3000 git-init
+    $ bar git install --endpoint=localhost:3001
     
 Bar-tracked BLOBs are defined by git attributes.
 
@@ -43,7 +43,7 @@ changed BLOBs to `bard` server on commit.
     ...
 
 For this moment all is simple. To transform BLOBs to manifests 
-use `git bar-squash`:
+use `git bar squash`:
 
     $ git bar-squash
     ...
@@ -118,9 +118,12 @@ somewhere to `PATH`.
 For `bard` is quick and dirty HTTP file server with block backend:
 
     $ bard \
-        -bind=0.0.0.0:3000 \
-        -storage-block-root=bard/blobs \
-        -logging-level=DEBUG 
+        -bind-http=:3000 \
+        -bind-rpc=:3001 \
+        -storage-block-root=testdata \
+        -rpc=${HOSTNAME}:3001 \
+        -http=http://${HOSTNAME}:3000/v1 \
+        -bar-exe=dist/windows/bar.exe
     DEBUG server.go:23: serving at http://0.0.0.0:3000/v1
 
 Use `bard -help` to get available options.
@@ -129,7 +132,7 @@ Use `bard -help` to get available options.
 
 Bar doesn't require git to work. All `git bar-*` commands is just git aliases:
 
-    git bar-squash  ->  bar up -squash
+    git bar-squash  ->  bar up --squash
     git bar-up      ->  bar up
     git bar-down    ->  bar down
     git bar-ls      ->  bar ls
@@ -139,10 +142,11 @@ To use git infrastructure use `up`, `down` and `ls` with `-git` flag.
 ## Specs
 
 Specs is just filename->id maps. Specs can be exported and imported by 
-`bar spec-export` and `bar spec-export`. Specs can be generated locally 
+`bar spec export` and `bar spec import`. Specs can be generated locally 
 or uploaded to bard.
 
 ### Windows, brains and two buttons 
 
-Under windows you can use one-button no-brain solution. 
+Under windows you can use one-button no-brain solution. Just go to HTTP 
+host:port and follow instructions in browser.
 
