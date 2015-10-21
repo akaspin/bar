@@ -61,9 +61,6 @@ uninstall:
 ${INSTALL_DIR}/%: ${SRC}
 	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}/$*
 
-#${INSTALL_DIR}/bar: ${SRC}
-#	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}/bar
-
 run-server: ${INSTALL_DIR}/bard
 	bard -log-level=DEBUG \
 		-bind-http=:3000 \
