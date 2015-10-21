@@ -54,7 +54,8 @@ func (c *SpecImportCmd) Run(args ...string) (err error) {
 		}
 	}
 
-	var idm lists.IDMap
+
+	idm := lists.IDMap{}
 	for n, id := range spec.BLOBs {
 		idm[id] = append(idm[id], n)
 	}
@@ -66,6 +67,10 @@ func (c *SpecImportCmd) Run(args ...string) (err error) {
 	}
 	feed := idm.ToBlobMap(mans)
 	names := feed.Names()
+
+	if len(names) == 0 {
+		logx.Fatalf("no manifests on server %s", names)
+	}
 
 	logx.Debugf("importing %s", names)
 

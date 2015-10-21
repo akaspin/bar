@@ -1,15 +1,15 @@
 package command
+
 import (
-	"io"
+	"github.com/akaspin/bar/proto"
 	"github.com/spf13/cobra"
 	"github.com/tamtam-im/logx"
+	"io"
 	"os"
 	"path/filepath"
-	"github.com/akaspin/bar/proto"
 )
 
-
-type RootCmd struct  {
+type RootCmd struct {
 	*Environment
 	*CommonOptions
 }
@@ -17,7 +17,7 @@ type RootCmd struct  {
 func (c *RootCmd) Init(cc *cobra.Command) {
 	cc.Use = "bar"
 	pf := cc.PersistentFlags()
-	pf.StringVarP(&c.LoggingLevel, "log-level", "", logx.DEBUG,
+	pf.StringVarP(&c.LoggingLevel, "log-level", "", logx.INFO,
 		"logging level")
 	pf.StringVarP(&c.WD, "work-dir", "C", "", "work directory")
 
@@ -26,7 +26,7 @@ func (c *RootCmd) Init(cc *cobra.Command) {
 	pf.Int64VarP(&c.ChunkSize, "chunk", "", proto.CHUNK_SIZE,
 		"preferred chunk size")
 	pf.IntVarP(&c.PoolSize, "pool", "", 16, "pool size")
-	pf.IntVarP(&c.BufferSize, "buffer", "", 1024 * 1024 * 8,
+	pf.IntVarP(&c.BufferSize, "buffer", "", 1024*1024*8,
 		"thrift buffer size per connection")
 
 	cc.PersistentPreRunE = func(cc *cobra.Command, args []string) (err error) {
@@ -45,28 +45,32 @@ func (c *RootCmd) Init(cc *cobra.Command) {
 
 func (c *RootCmd) Run(args ...string) (err error) { return }
 
-
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) (err error) {
 	env := &Environment{stdin, stdout, stderr}
 	cOpts := &CommonOptions{}
 
 	root := Attach(
 		&RootCmd{Environment: env, CommonOptions: cOpts}, env,
-			Attach(&LsCmd{Environment: env, CommonOptions: cOpts}, env),
-			Attach(&UpCmd{Environment: env, CommonOptions: cOpts}, env),
-			Attach(&DownCmd{Environment: env, CommonOptions: cOpts}, env),
-			Attach(&GitCmd{}, env,
-				Attach(&GitInstallCmd{Environment: env, CommonOptions: cOpts}, env),
-				Attach(&GitUninstallCmd{Environment: env, CommonOptions: cOpts}, env),
-				Attach(&GitCleanCmd{Environment: env, CommonOptions: cOpts}, env),
-				Attach(&GitSmudgeCmd{Environment: env, CommonOptions: cOpts}, env),
-				Attach(&GitPreCommitCmd{Environment: env, CommonOptions: cOpts}, env),
-			),
-			Attach(&SpecRootCmd{}, env,
-				Attach(&SpecExportCmd{Environment: env, CommonOptions: cOpts}, env),
-				Attach(&SpecImportCmd{Environment: env, CommonOptions: cOpts}, env),
-			),
-			Attach(&PingCmd{Environment: env, CommonOptions: cOpts}, env),
+		Attach(&LsCmd{Environment: env, CommonOptions: cOpts}, env),
+		Attach(&UpCmd{Environment: env, CommonOptions: cOpts}, env),
+		Attach(&DownCmd{Environment: env, CommonOptions: cOpts}, env),
+		Attach(&GitCmd{}, env,
+			Attach(&GitInstallCmd{Environment: env, CommonOptions: cOpts}, env),
+			Attach(&GitUninstallCmd{Environment: env, CommonOptions: cOpts}, env),
+			Attach(&GitCleanCmd{Environment: env, CommonOptions: cOpts}, env),
+			Attach(&GitSmudgeCmd{Environment: env, CommonOptions: cOpts}, env),
+			Attach(&GitPreCommitCmd{Environment: env, CommonOptions: cOpts}, env),
+		),
+//		Attach(&GitDivertRoot{}, env,
+//			Attach(&GitDivertBegin{Environment: env, CommonOptions: cOpts}, env),
+//			Attach(&GitDivertFinish{Environment: env, CommonOptions: cOpts}, env),
+//			Attach(&GitDivertAbort{Environment: env, CommonOptions: cOpts}, env),
+//		),
+		Attach(&SpecRootCmd{}, env,
+			Attach(&SpecExportCmd{Environment: env, CommonOptions: cOpts}, env),
+			Attach(&SpecImportCmd{Environment: env, CommonOptions: cOpts}, env),
+		),
+		Attach(&PingCmd{Environment: env, CommonOptions: cOpts}, env),
 	)
 	root.SetArgs(args)
 	err = root.Execute()

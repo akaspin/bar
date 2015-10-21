@@ -13,6 +13,9 @@ type GitInstallCmd struct  {
 
 	// Installable logging lenel
 	Log string
+
+	// Diversion camp location
+//	DivertDir string
 }
 
 func (c *GitInstallCmd) Init(cc *cobra.Command) {
@@ -21,6 +24,8 @@ func (c *GitInstallCmd) Init(cc *cobra.Command) {
 
 	cc.Flags().StringVarP(&c.Log, "log", "", logx.DEBUG,
 		"installable logging level")
+
+	cc.Flags()
 }
 
 func (c *GitInstallCmd) Run(args ...string) (err error) {

@@ -120,7 +120,7 @@ func (s *BlockStorage) GetManifests(ids []proto.ID) (res []proto.Manifest, err e
 	if err = s.BatchPool.Do(
 		func(ctx context.Context, in interface{}) (out interface{}, err error) {
 			r := in.(proto.ID)
-			out, err = s.readManifest(s.idPath(manifests_ns, r))
+			out, err = s.readManifest(s.idPath(manifests_ns, r) + ".json")
 			return
 		}, &req, &res1, concurrent.DefaultBatchOptions(),
 	); err != nil {

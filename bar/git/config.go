@@ -71,15 +71,15 @@ func (c *Config) getConfigLines() map[string]string {
 		"filter.bar.smudge": `bar git clean --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}}`,
 
 		// basic
-		"alias.bar-up": `bar up --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
-		"alias.bar-down": `bar down --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
-		"alias.bar-squash": `bar up --git --squash --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
-		"alias.bar-ls": `bar ls --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-up": `!bar up --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-down": `!bar down --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-squash": `!bar up --git --squash --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-ls": `!bar ls --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
 
 		// spec
-		"alias.bar-spec-export": `bar spec export --git --upload --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
-		"alias.bar-spec-import": `bar spec import --git --squash --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
-		"alias.bar-spec-ls": `bar spec import --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-spec-export": `!bar spec export --git --upload --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-spec-import": `!bar spec import --git --squash --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-spec-ls": `!bar spec import --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
 	}
 }
 

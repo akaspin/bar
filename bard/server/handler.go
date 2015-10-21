@@ -7,6 +7,7 @@ import (
 	"github.com/nu7hatch/gouuid"
 	"time"
 	"fmt"
+	"github.com/tamtam-im/logx"
 )
 
 type BardTHandler struct {
@@ -87,13 +88,17 @@ func (h *BardTHandler) GetManifests(ids [][]byte) (r []*wire.Manifest, err error
 	if err = (&req).UnmarshalThrift(ids); err != nil {
 		return
 	}
+	logx.Debugf("serving manifests %s", req)
 
 	res, err := h.Storage.GetManifests(req)
 	if err != nil {
+		logx.Error(err)
 		return
 	}
 
 	r, err = proto.ManifestSlice(res).MarshalThrift()
+	logx.Debugf("manifests served %s", req)
+
 	return
 }
 
