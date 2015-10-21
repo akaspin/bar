@@ -22,8 +22,6 @@ func (c *GitCleanCmd) Init(cc *cobra.Command) {
 }
 
 func (c *GitCleanCmd) Run(args ...string) (err error) {
-	logx.Debugf("clean %s", args)
-
 	mod, err := model.New(c.WD, true, c.ChunkSize, c.PoolSize)
 
 	var name string
