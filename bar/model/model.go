@@ -77,6 +77,9 @@ func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (r
 			if err != nil {
 				return nil, err
 			}
+			if res2 == nil {
+				return
+			}
 			out = struct{
 				name string
 				manifest *proto.Manifest

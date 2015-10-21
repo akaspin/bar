@@ -65,7 +65,10 @@ func (h *BardTHandler) FinishUpload(uploadId []byte) (err error) {
 	if err != nil {
 		return
 	}
-	err = h.Storage.FinishUploadSession(*reqUploadID)
+	if err = h.Storage.FinishUploadSession(*reqUploadID); err != nil {
+		return
+	}
+	logx.Debugf("upload %s finished successfully", reqUploadID)
 	return
 }
 

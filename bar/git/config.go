@@ -67,8 +67,8 @@ func (c *Config) Uninstall() (err error) {
 func (c *Config) getConfigLines() map[string]string {
 	return map[string]string{
 		// filters
-		"filter.bar.clean": `bar git clean --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}}`,
-		"filter.bar.smudge": `bar git clean --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}}`,
+		"filter.bar.clean": `bar git clean --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} %f`,
+		"filter.bar.smudge": `bar git clean --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} %f`,
 
 		// basic
 		"alias.bar-up": `!bar up --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
