@@ -123,7 +123,9 @@ func Test_Git_Divert1(t *testing.T)  {
 
 	// Run divert on "in-other" and "one"
 	divert := git.NewDivert(g)
-	err = divert.Begin("other", "in-other", "one", "two/file-four with spaces.bin")
+	spec, err := divert.PrepareBegin("other", "in-other", "one", "two/file-four with spaces.bin")
+	assert.NoError(t, err)
+	err = divert.Begin(spec)
 	assert.NoError(t, err)
 
 	// Make two blobs and collect their manifests
@@ -138,13 +140,13 @@ func Test_Git_Divert1(t *testing.T)  {
 	assert.NoError(t, err)
 
 	// commit
-	spec, err := divert.ReadSpec()
+	spec1, err := divert.ReadSpec()
 	assert.NoError(t, err)
 
-	err = divert.Commit(spec, "from-master")
+	err = divert.Commit(spec1, "from-master")
 	assert.NoError(t, err)
 
-	err = divert.Cleanup(spec)
+	err = divert.Cleanup(spec1)
 	assert.NoError(t, err)
 
 	err = divert.CleanSpec()

@@ -50,9 +50,8 @@ func NewDivert(host *Git) *Divert {
 	return &Divert{host}
 }
 
-// Begin diversion to on branch where "names"
-// is git-specific <tree-ish>
-func (d *Divert) Begin(branch string, names ...string) (err error) {
+// Consistency checks before begin diversion and return spec
+func (d *Divert) PrepareBegin(branch string, names ...string) (res DivertSpec, err error) {
 	inProgress, err := d.IsInProgress()
 	if err != nil {
 		return
@@ -89,25 +88,23 @@ func (d *Divert) Begin(branch string, names ...string) (err error) {
 		return
 	}
 
-	spec := DivertSpec{
-		Head: head,
-		TargetBranch: branch,
-	}
+	res.Head = head
+	res.TargetBranch = branch
 
 	// Collect and check recoverable files
-	if spec.ToRecover, err = d.Git.LsTree(head, names...); err != nil {
+	if res.ToRecover, err = d.Git.LsTree(head, names...); err != nil {
 		return
 	}
-	if len(spec.ToRecover) > 0 {
+	if len(res.ToRecover) > 0 {
 		var dirty []string
-		if dirty, err = d.Git.DiffFiles(spec.ToRecover...); err != nil {
+		if dirty, err = d.Git.DiffFiles(res.ToRecover...); err != nil {
 			return
 		}
 		if len(dirty) > 0 {
 			err = fmt.Errorf("working tree is dirty %s. ", dirty)
 			return
 		}
-		if dirty, err = d.Git.DiffIndex(spec.ToRecover...); err != nil {
+		if dirty, err = d.Git.DiffIndex(res.ToRecover...); err != nil {
 			return
 		}
 		if len(dirty) > 0 {
@@ -117,24 +114,31 @@ func (d *Divert) Begin(branch string, names ...string) (err error) {
 	}
 
 	// collect target files
-	if spec.TargetFiles, err = d.Git.LsTree(branch, names...); err != nil {
+	if res.TargetFiles, err = d.Git.LsTree(branch, names...); err != nil {
 		return
 	}
-	if len(spec.TargetFiles) == 0 {
+	if len(res.TargetFiles) == 0 {
 		err = fmt.Errorf("no files found in target branch")
 		return
 	}
+
+	return
+}
+
+// Begin diversion to on branch where "names"
+// is git-specific <tree-ish>
+func (d *Divert) Begin(spec DivertSpec) (err error) {
 
 	if err = d.writeSpec(spec); err != nil {
 		return
 	}
 
 	// OOOK!!! Let's play with hammer!
-	if err = d.Git.Reset(branch); err != nil {
+	if err = d.Git.Reset(spec.TargetBranch); err != nil {
 		return
 	}
 
-	if err = d.Git.Checkout(branch, spec.TargetFiles...); err != nil {
+	if err = d.Git.Checkout(spec.TargetBranch, spec.TargetFiles...); err != nil {
 		return
 	}
 
@@ -157,6 +161,7 @@ func (d *Divert) Commit(spec DivertSpec, message string) (err error) {
 	if err = d.Git.BranchRecreate(spec.TargetBranch); err != nil {
 		return
 	}
+	logx.Infof("diversion commited")
 	return
 }
 
@@ -187,7 +192,7 @@ func (d *Divert) Cleanup(spec DivertSpec) (err error) {
 		return
 	}
 
-	logx.Info("diversion finished")
+	logx.Info("cleanup finished")
 	return
 }
 

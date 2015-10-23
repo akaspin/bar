@@ -34,7 +34,12 @@ func (c *GitDivertBeginCmd) Run(args ...string) (err error) {
 		return
 	}
 	divert := git.NewDivert(mod.Git)
-	if err = divert.Begin(branch, names...); err == nil {
+	var spec git.DivertSpec
+	if spec, err = divert.PrepareBegin(branch, names...); err != nil {
+		return
+	}
+
+	if err = divert.Begin(spec); err == nil {
 		return
 	}
 
