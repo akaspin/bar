@@ -347,10 +347,23 @@ func (g *Git) Cat(oid string) (res io.Reader, err error) {
 //
 //    $ git diff --cached --staged --full-index --no-color HEAD
 //
-func (g *Git) Diff() (res io.Reader, err error) {
-	raw, err := g.Run("diff",
-		"--cached", "--staged", "--full-index", "--no-color",
-		"-U99999999999999", "--no-prefix")
+func (g *Git) Diff(filenames ...string) (res io.Reader, err error) {
+	if filenames, err = g.ToRoot(filenames...); err != nil {
+		return
+	}
+	if len(filenames) > 0 {
+		filenames = append([]string{"--"}, g.ToShell(filenames...)...)
+	}
+
+	raw, err := g.Run("diff", append([]string{
+		"--cached",
+		"--staged",
+		"--full-index",
+		"--no-color",
+		"-U99999999999999",
+		"--no-prefix"},
+		filenames...,
+	)...)
 	if err != nil {
 		return
 	}

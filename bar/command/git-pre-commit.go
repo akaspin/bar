@@ -4,6 +4,7 @@ import (
 	"github.com/akaspin/bar/bar/model"
 	"fmt"
 "github.com/akaspin/bar/bar/transport"
+	"github.com/akaspin/bar/bar/git"
 )
 
 type GitPreCommitCmd struct {
@@ -17,12 +18,27 @@ func (c *GitPreCommitCmd) Init(cc *cobra.Command) {
 }
 
 func (c *GitPreCommitCmd) Run(args ...string) (err error)  {
+	var filenames []string
 	var mod *model.Model
 	if mod, err = model.New(c.WD, true, c.ChunkSize, c.PoolSize); err != nil {
 		return
 	}
 
-	isDirty, dirty, err := mod.Check()
+	// In divert we need restrict check by target filenames
+	divert := git.NewDivert(mod.Git)
+	isInDivert, err := divert.IsInProgress()
+	if err != nil {
+		return
+	}
+	if isInDivert {
+		var spec git.DivertSpec
+		if spec, err = divert.ReadSpec(); err != nil {
+			return
+		}
+		filenames = spec.TargetFiles
+	}
+
+	isDirty, dirty, err := mod.Check(filenames...)
 	if err != nil {
 		return
 	}
@@ -31,7 +47,7 @@ func (c *GitPreCommitCmd) Run(args ...string) (err error)  {
 		return
 	}
 
-	feedR, err := mod.Git.Diff()
+	feedR, err := mod.Git.Diff(filenames...)
 	if err != nil {
 		return
 	}

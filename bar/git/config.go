@@ -82,7 +82,7 @@ func (c *Config) getConfigLines() map[string]string {
 		"alias.bar-spec-ls": `!bar spec import --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
 
 		// divert
-		"alias.bar-divert-begin": `!bar divert begin --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-divert": `!bar divert begin --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
 		"alias.bar-divert-finish": `!bar divert finish --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
 		"alias.bar-divert-abort": `!bar divert abort --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
 		"alias.bar-divert-status": `!bar divert status --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,

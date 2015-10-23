@@ -5,6 +5,7 @@ import (
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/bar/model"
 	"fmt"
+	"github.com/akaspin/bar/bar/git"
 )
 
 type GitCleanCmd struct  {
@@ -27,6 +28,30 @@ func (c *GitCleanCmd) Run(args ...string) (err error) {
 	var name string
 	if len(args) > 0 {
 		name = args[0]
+	}
+
+	// check divert
+	divert := git.NewDivert(mod.Git)
+	isInProgress, err := divert.IsInProgress()
+	if err != nil {
+		return
+	}
+	if isInProgress {
+		var spec git.DivertSpec
+		if spec, err = divert.ReadSpec(); err != nil {
+			return
+		}
+		var exists bool
+		for _, n := range spec.TargetFiles {
+			if n == name {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			err = fmt.Errorf("wan't clean non-target file %s while divert in progress", name)
+			return
+		}
 	}
 
 	s, err := mod.GetManifest(name, c.Stdin)

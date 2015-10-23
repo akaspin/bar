@@ -107,7 +107,23 @@ To check status of bar-tracked BLOBs use `git bar-ls`
     $ git bar-ls
     NAME                BLOB    SYNC    ID                  SIZE
     my/blobs/test.txt   no      yes     309a349019013151    4
+
+## Covert ops
+
+With `bar divert` you can change specific files from inactive branch without 
+touching other files in working tree.
+
+    $ git bar-divert other-branch my/pretty/dir "my pretty/file"
+    ...
     
+    $ git bar-divert-finish
+    # or
+    $ git bar-divert-abort
+    
+To check divert status use `bar divert status`
+
+    $ git bar-divert-status
+   
 ## Installation
 
 To install just grab latest binaries archive from releases and unpack 
