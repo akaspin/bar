@@ -412,8 +412,6 @@ Extract manifests from diff
 	+size 6
 	+offset 0
 	+
-
-
 */
 func (g *Git) ManifestsFromDiff(r io.Reader) (res lists.BlobMap, err error) {
 	res = lists.BlobMap{}
