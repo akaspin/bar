@@ -1,6 +1,5 @@
 package fixtures
 import (
-	"os/exec"
 	"os"
 	"path/filepath"
 	"time"
@@ -84,16 +83,6 @@ func (f *Tree) Squash() (err error) {
 	return
 }
 
-func (f *Tree) Run(name string, arg ...string) (res *exec.Cmd) {
-	res = exec.Command(name, arg...)
-	res.Dir = f.CWD
-	return
-}
-
-func (f *Tree) InitGit() (err error) {
-	_, err = f.Run("git", "init", ).Output()
-	return
-}
 
 
 

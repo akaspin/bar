@@ -40,10 +40,19 @@ func (m *Model) Check(names ...string) (isDirty bool, dirty []string, err error)
 		return
 	}
 
-	dirty, err = m.Git.DiffFilesWithAttr(names...)
+	delta, err := m.Git.DiffFiles(names...)
 	if err != nil {
 		return
 	}
+	if len(delta) == 0 {
+		return
+	}
+
+	dirty, err = m.Git.FilterByAttr("bar", delta...)
+	if err != nil {
+		return
+	}
+
 	isDirty = len(dirty) > 0
 	return
 }

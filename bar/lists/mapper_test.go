@@ -3,10 +3,11 @@ import (
 	"testing"
 	"github.com/akaspin/bar/bar/lists"
 	"github.com/stretchr/testify/assert"
+	"path/filepath"
 )
 
 
-func Test_MapperToRoot(t *testing.T) {
+func Test_Mapper_ToRoot(t *testing.T) {
 	root := "/home/user"
 	cwd := "/home/user/wd"
 	mapper := lists.NewMapper(cwd, root)
@@ -18,7 +19,7 @@ func Test_MapperToRoot(t *testing.T) {
 
 }
 
-func Test_MapperFromRoot(t *testing.T) {
+func Test_Mapper_FromRoot(t *testing.T) {
 	root := "/home/user"
 	cwd := "/home/user/wd"
 	mapper := lists.NewMapper(cwd, root)
@@ -27,5 +28,14 @@ func Test_MapperFromRoot(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"a1/b", "a2"}, res)
+}
 
+func Test_Mapper_Wrap(t *testing.T) {
+	data := []string{"file/one", "file/with spaces.bin", "dir/with spaces/file"}
+	var res []string
+	for _, i := range data {
+		res = append(res, filepath.FromSlash(i))
+	}
+
+	t.Log(res)
 }

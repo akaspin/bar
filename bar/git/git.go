@@ -50,9 +50,6 @@ func NewGit(cwd string) (res *Git, err error) {
 		return
 	}
 	root := strings.TrimSpace(string(raw))
-
-
-
 	res = &Git{lists.NewMapper(cwd, root)}
 	return
 }
@@ -73,6 +70,7 @@ func (g *Git) Run(sub string, arg ...string) (res string, err error) {
 		err = fmt.Errorf("%s %s", err, stderr.String())
 	}
 	res = out.String()
+	logx.Tracef("git >>> %s", res)
 	return
 }
 
@@ -132,18 +130,118 @@ func (g *Git) hookName(name string) (res string) {
 	return filepath.Join(g.Root, ".git", "hooks", name)
 }
 
-// Returns dirty files with filter=bar
-func (g *Git) DiffFilesWithAttr(arg ...string) (res []string, err error) {
-	delta, err := g.DiffFiles(arg...)
+func (g *Git) GetBranches() (current string, other []string, err error) {
+	var raw string
+	if raw, err = g.Run("branch", "--list", "--no-color"); err != nil {
+		return
+	}
+	lines, err := g.readLines(strings.NewReader(raw))
 	if err != nil {
 		return
 	}
-	if len(delta) == 0 {
+	for _, line := range lines {
+		line := strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "*") {
+			other = append(other, line)
+		} else {
+			current = strings.TrimPrefix(line, "* ")
+		}
+	}
+	return
+}
+
+func (g *Git) LsTree(what string, paths ...string) (res []string, err error) {
+	if paths, err = g.ToRoot(paths...); err != nil {
+		return
+	}
+	raw, err := g.Run("ls-tree", append(
+		[]string{"-r", "--name-only", "--full-name", what},
+		paths...)...)
+	if err != nil {
+		return
+	}
+	if res, err = g.readLines(strings.NewReader(raw)); err != nil {
 		return
 	}
 
-	res, err = g.FilterByAttr("bar", delta...)
+	res, err = g.FromRoot(res...)
+	return
+}
+
+func (g *Git) GetRevParse(what string) (res string, err error) {
+	if res, err = g.Run("rev-parse", what); err != nil {
+		return
+	}
+	res = strings.TrimSpace(res)
+	return
+}
+
+func (g *Git) Checkout(what string, filenames ...string) (err error) {
+	if filenames, err = g.ToRoot(filenames...); err != nil {
+		return
+	}
+	if len(filenames) > 0 {
+		filenames = append([]string{"--"}, g.ToShell(filenames...)...)
+	}
+	if _, err = g.Run("checkout", append([]string{what}, filenames...)...); err != nil {
+		return
+	}
+
+	return
+}
+
+func (g *Git) Add(filenames ...string) (err error) {
+	if len(filenames) > 0 {
+		if filenames, err = g.ToRoot(filenames...); err != nil {
+			return
+		}
+	} else {
+		filenames = []string{"-A"}
+	}
+
+	_, err = g.Run("add", filenames...)
+	return
+}
+
+//  git branch -f <branch>
+func (g *Git) BranchRecreate(branch string) (err error) {
+	_, err = g.Run("branch", "-f", branch)
+	return
+}
+
+func (g *Git) Commit(message string) (err error) {
+	var params []string
+	if message != "" {
+		params = []string{"-m", fmt.Sprintf(`"%s"`, message)}
+	}
+	_, err = g.Run("commit", params...)
+	return
+}
+
+func (g *Git) Reset(to string) (err error) {
+	_, err = g.Run("reset", to)
+	return
+}
+
+// Get list of non-commited files in staging area
+//
+//    git diff-index HEAD
+//
+func (g *Git) DiffIndex(filenames ...string) (res []string, err error) {
+	if filenames, err = g.ToRoot(filenames...); err != nil {
+		return
+	}
+	if len(filenames) > 0 {
+		filenames = append([]string{"--"}, g.ToShell(filenames...)...)
+	}
+
+	raw, err := g.Run("diff-index", append([]string{"--name-only", "HEAD"},
+		filenames...)...)
 	if err != nil {
+		return
+	}
+
+	if res, err = g.readLines(strings.NewReader(raw)); err != nil {
 		return
 	}
 	res, err = g.FromRoot(res...)
@@ -154,14 +252,16 @@ func (g *Git) DiffFilesWithAttr(arg ...string) (res []string, err error) {
 //
 //    $ git diff-files --name-only
 //
-// This command always takes filenames relative to CWD
-func (g *Git) DiffFiles(what ...string) (res []string, err error) {
-	if what, err = g.ToRoot(what...); err != nil {
+func (g *Git) DiffFiles(filenames ...string) (res []string, err error) {
+	if filenames, err = g.ToRoot(filenames...); err != nil {
 		return
+	}
+	if len(filenames) > 0 {
+		filenames = append([]string{"--"}, g.ToShell(filenames...)...)
 	}
 
 	rawFiles, err := g.Run("diff-files",
-		append([]string{"--name-only", "-z"}, what...)...)
+		append([]string{"--name-only", "-z"}, filenames...)...)
 	if err != nil {
 		return
 	}
@@ -170,7 +270,7 @@ func (g *Git) DiffFiles(what ...string) (res []string, err error) {
 			res = append(res, f)
 		}
 	}
-	res, err = g.ToRoot(res...)
+	res, err = g.FromRoot(res...)
 	return
 }
 
@@ -215,12 +315,12 @@ func (g *Git) FilterByAttr(diff string, filenames ...string) (res []string, err 
 //
 //    $ git ls-files --cached -s --full-name <file>
 //
-
 func (g *Git) GetOID(filename string) (res string, err error) {
 	rooted, err := g.ToRoot(filename)
 	if err != nil {
 		return
 	}
+//	rooted = g.ToShell(rooted...)
 	raw, err := g.Run("ls-files", "--cached", "-s", "--full-name", "-z", rooted[0])
 	if err != nil {
 		return
@@ -373,62 +473,20 @@ func (g *Git) ManifestsFromDiff(r io.Reader) (res lists.BlobMap, err error) {
 	return
 }
 
-// Get BLOBs to upload for pre-commit hook.
-//
-//    diff --git a/fixtures/bb.txt b/fixtures/bb.txt
-//    index 1b28d39c1a2600a86355cd90b25d32e273e91f57..39599d03bfcccc04f209e2bbf74b75b7878b837f 100644
-//    --- a/fixtures/bb.txt
-//    +++ b/fixtures/bb.txt
-//    @@ -1 +1 @@
-//    -BAR-SHADOW-BLOB 8d52e76479a51b51135c493c56c2ee32f64866af0d518f97e0c3432bc057b0b7
-//    +BAR-SHADOW-BLOB a554e7d8ecf0c26939167320c04c386f4d19efc74881e905fa5c5934501abeca
-//
-// where:
-//
-//    diff --git <skip>                 <- detect new file
-//    index <skip>...<OID> <skip>       <- extract OID
-//    <skip>
-//    +++ b/<Filename>                  <- extract filename
-//    <skip>
-//    +BAR-SHADOW-BLOB <ID>             <- Assume as BLOB and extract ID
-//
-func (g *Git) ParseDiff(r io.Reader) (res []DiffEntry, err error) {
+func (g *Git) readLines(r io.Reader) (res []string, err error)  {
+	attrReader := bufio.NewReader(r)
 	var data []byte
 	var line string
-	buf := bufio.NewReader(r)
-
-	var oid, id, filename string
 	for {
-		data, _, err = buf.ReadLine()
+		data, _, err = attrReader.ReadLine()
 		if err == io.EOF {
 			err = nil
-			return
+			break
 		} else if err != nil {
 			return
 		}
-		line = strings.TrimSpace(string(data))
-
-		if strings.HasPrefix(line, "diff --git ") {
-			// New file
-			oid, id, filename = "", "", ""
-			continue
-		}
-
-		if strings.HasPrefix(line, "index") {
-			oid = line[48:88]
-			continue
-		}
-
-		if strings.HasPrefix(line, "+++ b/") {
-			filename = strings.TrimPrefix(line, "+++ b/")
-			continue
-		}
-
-		if strings.HasPrefix(line, "+BAR-SHADOW-BLOB ") {
-			id = strings.TrimPrefix(line, "+BAR-SHADOW-BLOB ")
-			res = append(res, DiffEntry{oid, id, filename})
-			continue
-		}
+		line = string(data)
+		res = append(res, line)
 	}
 	return
 }

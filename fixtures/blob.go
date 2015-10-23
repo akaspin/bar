@@ -9,6 +9,7 @@ import (
 	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/proto"
+	"path/filepath"
 )
 
 // Make temporary BLOB
@@ -45,6 +46,7 @@ func MakeBLOBPure(size int64) (name string, err error)  {
 }
 
 func MakeNamedBLOB(name string, size int64) (err error) {
+	os.MkdirAll(filepath.Dir(name), 0755)
 	f, err := os.Create(name)
 	if err != nil {
 		return
