@@ -7,7 +7,8 @@ import (
 	"github.com/akaspin/bar/bar/lists"
 	"os"
 	"path/filepath"
-	"github.com/tamtam-im/logx"
+	"github.com/akaspin/bar/bar/model"
+	"github.com/akaspin/bar/proto"
 )
 
 func Test_Git_LsTree(t *testing.T) {
@@ -105,20 +106,36 @@ func Test_Git_Divert1(t *testing.T)  {
 
 	tree := fixtures.NewTree("Git_divert", "")
 	assert.NoError(t, tree.Populate())
-//	defer tree.Squash()
+	defer tree.Squash()
 
 	g, err := gitFixture(tree)
 	assert.NoError(t, err)
 
-	logx.SetLevel(logx.TRACE)
+//	logx.SetLevel(logx.TRACE)
+
+	// get blobmap for further checks
+	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
+	assert.NoError(t, err)
+
+	names := lists.NewFileList().ListDir(tree.CWD)
+	mans1, err := mod.FeedManifests(true, true, true, names...)
+	assert.NoError(t, err)
 
 	// Run divert on "in-other" and "one"
 	divert := git.NewDivert(g)
 	err = divert.Begin("other", "in-other", "one", "two/file-four with spaces.bin")
 	assert.NoError(t, err)
 
-	fixtures.MakeNamedBLOB(filepath.Join(tree.CWD, "in-other", "blob.bin"), 110)
-	fixtures.MakeNamedBLOB(filepath.Join(tree.CWD, "one", "file-one.bin"), 200)
+	// Make two blobs and collect their manifests
+	bn1 := filepath.Join(tree.CWD, "in-other", "blob.bin")
+	bn2 := filepath.Join(tree.CWD, "one", "file-one.bin")
+	fixtures.MakeNamedBLOB(bn1, 110)
+	fixtures.MakeNamedBLOB(bn2, 200)
+
+	oMan1, err := fixtures.NewShadowFromFile(bn1)
+	assert.NoError(t, err)
+	oMan2, err := fixtures.NewShadowFromFile(bn2)
+	assert.NoError(t, err)
 
 	// commit
 	spec, err := divert.ReadSpec()
@@ -132,8 +149,30 @@ func Test_Git_Divert1(t *testing.T)  {
 
 	err = divert.CleanSpec()
 	assert.NoError(t, err)
-}
 
+	// Final checks
+	branch, _, err := g.GetBranches()
+	assert.NoError(t, err)
+	assert.Equal(t, "master", branch)
+
+	// check master files
+	names = lists.NewFileList().ListDir(tree.CWD)
+	mans2, err := mod.FeedManifests(true, true, true, names...)
+	assert.NoError(t, err)
+	assert.EqualValues(t, mans1, mans2)
+
+	// check stored branch
+	err = g.Checkout("other")
+	assert.NoError(t, err)
+
+	oMan1p, err := fixtures.NewShadowFromFile(bn1)
+	assert.NoError(t, err)
+	assert.EqualValues(t, oMan1, oMan1p)
+
+	oMan2p, err := fixtures.NewShadowFromFile(bn2)
+	assert.NoError(t, err)
+	assert.EqualValues(t, oMan2, oMan2p)
+}
 
 func gitFixture(tree *fixtures.Tree) (res *git.Git, err error)  {
 	res = &git.Git{lists.NewMapper(tree.CWD, tree.CWD)}
