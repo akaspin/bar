@@ -24,6 +24,34 @@ const (
 	upload_ns = "uploads"
 )
 
+func BlockStorageFactory(opts map[string]string) (res Storage, err error) {
+	op := &BlockStorageOptions{"data", 2, 32, 32}
+	var ok bool
+	var tmp string
+
+	if tmp, ok = opts["root"]; ok {
+		op.Root = tmp
+	}
+	if tmp, ok = opts["split"]; ok {
+		if _, err = fmt.Sscanf(tmp, "%d", op.Split); err != nil {
+			return
+		}
+	}
+	if tmp, ok = opts["max-files"]; ok {
+		if _, err = fmt.Sscanf(tmp, "%d", op.MaxFiles); err != nil {
+			return
+		}
+	}
+	if tmp, ok = opts["pool"]; ok {
+		if _, err = fmt.Sscanf(tmp, "%d", op.PoolSize); err != nil {
+			return
+		}
+	}
+
+	res = NewBlockStorage(op)
+	return
+}
+
 type BlockStorageOptions struct {
 	// Storage root
 	Root string
@@ -34,7 +62,6 @@ type BlockStorageOptions struct {
 	MaxFiles int
 	PoolSize int
 }
-
 
 // Simple block device storage
 type BlockStorage struct {
