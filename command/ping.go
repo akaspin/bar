@@ -1,8 +1,8 @@
 package command
 import (
 	"github.com/spf13/cobra"
-	"github.com/akaspin/bar/bar/model"
-	"github.com/akaspin/bar/bar/transport"
+	"github.com/akaspin/bar/client/model"
+	"github.com/akaspin/bar/client/transport"
 	"github.com/tamtam-im/logx"
 )
 

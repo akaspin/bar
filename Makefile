@@ -93,3 +93,9 @@ proto/wire/ttypes.go: proto/proto.thrift
 		go:package=wire,package_prefix=github.com/akaspin/bar/proto,thrift_import=github.com/apache/thrift/lib/go/thrift,ignore_initialisms \
 		$<
 	rm -rf ${@D}/bar-remote
+
+docs: doc/proto.html
+	-rm -f doc/index.html
+
+doc/proto.html: proto/proto.thrift
+	thrift -out ./doc --gen html:standalone proto/proto.thrift

@@ -3,10 +3,10 @@ import (
 	"testing"
 	"github.com/akaspin/bar/fixtures"
 	"github.com/stretchr/testify/assert"
-	"github.com/akaspin/bar/bar/transport"
-	"github.com/akaspin/bar/bar/model"
+	"github.com/akaspin/bar/client/transport"
+	"github.com/akaspin/bar/client/model"
 	"github.com/akaspin/bar/proto"
-	"github.com/akaspin/bar/bar/lists"
+	"github.com/akaspin/bar/client/lists"
 	"time"
 	"fmt"
 )

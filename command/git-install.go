@@ -2,20 +2,18 @@ package command
 import (
 	"github.com/spf13/cobra"
 	"github.com/tamtam-im/logx"
-	"github.com/akaspin/bar/bar/model"
-	"github.com/akaspin/bar/bar/transport"
-	"github.com/akaspin/bar/bar/git"
+	"github.com/akaspin/bar/client/model"
+	"github.com/akaspin/bar/client/transport"
+	"github.com/akaspin/bar/client/git"
 )
 
 type GitInstallCmd struct  {
 	*Environment
 	*CommonOptions
 
-	// Installable logging lenel
+	// Installable logging level
 	Log string
 
-	// Diversion camp location
-//	DivertDir string
 }
 
 func (c *GitInstallCmd) Init(cc *cobra.Command) {

@@ -3,9 +3,9 @@ package command
 import (
 	"github.com/spf13/cobra"
 	"github.com/tamtam-im/logx"
-	"github.com/akaspin/bar/bar/model"
+	"github.com/akaspin/bar/client/model"
 	"fmt"
-	"github.com/akaspin/bar/bar/git"
+	"github.com/akaspin/bar/client/git"
 )
 
 type GitCleanCmd struct  {

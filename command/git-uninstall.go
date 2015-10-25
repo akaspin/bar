@@ -2,8 +2,8 @@ package command
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/akaspin/bar/bar/model"
-	"github.com/akaspin/bar/bar/git"
+	"github.com/akaspin/bar/client/model"
+	"github.com/akaspin/bar/client/git"
 	"github.com/akaspin/bar/proto"
 )
 

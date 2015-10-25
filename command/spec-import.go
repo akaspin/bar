@@ -2,11 +2,11 @@ package command
 import (
 "github.com/spf13/cobra"
 "github.com/akaspin/bar/proto"
-	"github.com/akaspin/bar/bar/model"
-"github.com/akaspin/bar/bar/transport"
+	"github.com/akaspin/bar/client/model"
+	"github.com/akaspin/bar/client/transport"
 	"encoding/json"
 	"github.com/tamtam-im/logx"
-	"github.com/akaspin/bar/bar/lists"
+	"github.com/akaspin/bar/client/lists"
 	"fmt"
 	"path/filepath"
 )

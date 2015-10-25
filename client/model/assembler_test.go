@@ -1,7 +1,7 @@
 package model_test
 import (
 	"testing"
-	"github.com/akaspin/bar/bar/model"
+	"github.com/akaspin/bar/client/model"
 	"os"
 	"path/filepath"
 	"github.com/akaspin/bar/proto"
@@ -11,7 +11,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"github.com/akaspin/bar/fixtures"
-	"github.com/akaspin/bar/bar/lists"
+	"github.com/akaspin/bar/client/lists"
 )
 
 func Test_Assembler_StoreChunk(t *testing.T) {

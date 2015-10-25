@@ -2,10 +2,10 @@ package command
 import (
 	"github.com/spf13/cobra"
 	"fmt"
-	"github.com/akaspin/bar/bar/model"
+	"github.com/akaspin/bar/client/model"
 	"github.com/akaspin/bar/proto"
-	"github.com/akaspin/bar/bar/lists"
-	"github.com/akaspin/bar/bar/transport"
+	"github.com/akaspin/bar/client/lists"
+	"github.com/akaspin/bar/client/transport"
 	"text/tabwriter"
 "strings"
 	"sort"
