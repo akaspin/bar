@@ -19,7 +19,7 @@ TESTS=.
 .PHONY: clean uninstall test bench
 
 
-dist: dist-win dist-linux dist-darwin
+dist: dist-win dist-linux dist-darwin bindir
 
 dist-win: dist/bar-${V}-windows-amd64.zip
 

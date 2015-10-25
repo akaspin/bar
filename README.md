@@ -129,20 +129,18 @@ To check divert status use `bar divert status`
 To install just grab latest binaries archive from releases and unpack 
 somewhere to `PATH`.
 
-## `bard` BLOB server
+## `bar server` BLOB server
 
-For `bard` is quick and dirty HTTP file server with block backend:
-
-    $ bard \
-        -bind-http=:3000 \
-        -bind-rpc=:3001 \
-        -storage-block-root=testdata \
-        -rpc=${HOSTNAME}:3001 \
-        -http=http://${HOSTNAME}:3000/v1 \
-        -bar-exe=dist/windows/bar.exe
+    $ bar server run \
+        --bind-http=:3000 \
+        --bind-rpc=:3001 \
+        --storage=block:root=testdata \
+        --endpoint=${HOSTNAME}:3001 \
+        --endpoint-http=http://${HOSTNAME}:3000/v1 \
+        --bindir=dist/bindir
     DEBUG server.go:23: serving at http://0.0.0.0:3000/v1
 
-Use `bard -help` to get available options.
+Use `bar server run -help` to get available options.
 
 ## Gitless usage
 
