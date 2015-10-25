@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"github.com/akaspin/bar/server"
 )
 
 type RootCmd struct {
@@ -49,7 +48,7 @@ func (c *RootCmd) Run(args ...string) (err error) { return }
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) (err error) {
 	env := &Environment{stdin, stdout, stderr}
 	cOpts := &CommonOptions{}
-	serverOpts := &server.ServerOptions{}
+	serverOpts := &ServerOptions{}
 
 	root := Attach(
 		&RootCmd{Environment: env, CommonOptions: cOpts}, env,

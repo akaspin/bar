@@ -1,4 +1,4 @@
-package handler
+package front
 
 const export_bat_tpl = `
 @echo off

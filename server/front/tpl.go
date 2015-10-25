@@ -1,4 +1,4 @@
-package handler
+package front
 import (
 	"io"
 	"strings"
@@ -6,7 +6,7 @@ import (
 	h_template "html/template"
 )
 
-
+// weird. needs refactoring
 type HttpTpl struct {
 	tpls map[string]func(data map[string]interface{}, w io.Writer) (err error)
 }

@@ -1,25 +1,29 @@
-package server
+package thrift
+
 import (
-	"github.com/akaspin/bar/proto/wire"
-	"github.com/akaspin/bar/proto"
-	"github.com/akaspin/bar/bard/storage"
 	"bytes"
-	"github.com/nu7hatch/gouuid"
-	"time"
 	"fmt"
+	"github.com/akaspin/bar/proto"
+	"github.com/akaspin/bar/proto/wire"
+	"github.com/akaspin/bar/server/storage"
+	"github.com/nu7hatch/gouuid"
 	"github.com/tamtam-im/logx"
+	"time"
+	"golang.org/x/net/context"
 )
 
-type BardTHandler struct {
+// Bar server thrift handler
+type Handler struct {
+	ctx context.Context
 	*proto.ServerInfo
 	storage.Storage
 }
 
-func NewBardTHandler(options *BardServerOptions) *BardTHandler {
-	return &BardTHandler{options.ServerInfo, options.Storage}
+func NewHandler(ctx context.Context, info *proto.ServerInfo, stor storage.Storage) *Handler {
+	return &Handler{ctx, info, stor}
 }
 
-func (h *BardTHandler) GetInfo() (r *wire.ServerInfo, err error) {
+func (h *Handler) GetInfo() (r *wire.ServerInfo, err error) {
 
 	r1, err := h.ServerInfo.MarshalThrift()
 	if err != nil {
@@ -29,7 +33,7 @@ func (h *BardTHandler) GetInfo() (r *wire.ServerInfo, err error) {
 	return
 }
 
-func (h *BardTHandler) CreateUpload(id []byte, manifests []*wire.Manifest, ttl int64) (r [][]byte, err error) {
+func (h *Handler) CreateUpload(id []byte, manifests []*wire.Manifest, ttl int64) (r [][]byte, err error) {
 	reqUploadID, err := uuid.Parse(id)
 	if err != nil {
 		return
@@ -47,7 +51,7 @@ func (h *BardTHandler) CreateUpload(id []byte, manifests []*wire.Manifest, ttl i
 	return
 }
 
-func (h *BardTHandler) UploadChunk(uploadId []byte, chunkId wire.ID, body []byte) (err error) {
+func (h *Handler) UploadChunk(uploadId []byte, chunkId wire.ID, body []byte) (err error) {
 	reqUploadID, err := uuid.Parse(uploadId)
 	if err != nil {
 		return
@@ -60,7 +64,7 @@ func (h *BardTHandler) UploadChunk(uploadId []byte, chunkId wire.ID, body []byte
 	return
 }
 
-func (h *BardTHandler) FinishUpload(uploadId []byte) (err error) {
+func (h *Handler) FinishUpload(uploadId []byte) (err error) {
 	reqUploadID, err := uuid.Parse(uploadId)
 	if err != nil {
 		return
@@ -72,7 +76,7 @@ func (h *BardTHandler) FinishUpload(uploadId []byte) (err error) {
 	return
 }
 
-func (h *BardTHandler) GetMissingBlobIds(ids [][]byte) (r [][]byte, err error) {
+func (h *Handler) GetMissingBlobIds(ids [][]byte) (r [][]byte, err error) {
 	var req proto.IDSlice
 	if err = (&req).UnmarshalThrift(ids); err != nil {
 		return
@@ -86,7 +90,7 @@ func (h *BardTHandler) GetMissingBlobIds(ids [][]byte) (r [][]byte, err error) {
 	return
 }
 
-func (h *BardTHandler) GetManifests(ids [][]byte) (r []*wire.Manifest, err error) {
+func (h *Handler) GetManifests(ids [][]byte) (r []*wire.Manifest, err error) {
 	var req proto.IDSlice
 	if err = (&req).UnmarshalThrift(ids); err != nil {
 		return
@@ -105,7 +109,7 @@ func (h *BardTHandler) GetManifests(ids [][]byte) (r []*wire.Manifest, err error
 	return
 }
 
-func (h *BardTHandler) FetchChunk(blobID wire.ID, chunk *wire.Chunk) (r []byte, err error) {
+func (h *Handler) FetchChunk(blobID wire.ID, chunk *wire.Chunk) (r []byte, err error) {
 	w := new(bytes.Buffer)
 	var id proto.ID
 	if err = (&id).UnmarshalThrift(blobID); err != nil {
@@ -118,7 +122,7 @@ func (h *BardTHandler) FetchChunk(blobID wire.ID, chunk *wire.Chunk) (r []byte, 
 	return
 }
 
-func (h *BardTHandler) UploadSpec(spec *wire.Spec) (err error) {
+func (h *Handler) UploadSpec(spec *wire.Spec) (err error) {
 	var req proto.Spec
 	if err = (&req).UnmarshalThrift(*spec); err != nil {
 		return
@@ -148,7 +152,7 @@ func (h *BardTHandler) UploadSpec(spec *wire.Spec) (err error) {
 	return
 }
 
-func (h *BardTHandler) FetchSpec(id wire.ID) (r *wire.Spec, err error) {
+func (h *Handler) FetchSpec(id wire.ID) (r *wire.Spec, err error) {
 	var req proto.ID
 	if err = (&req).UnmarshalThrift(id); err != nil {
 		return

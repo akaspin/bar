@@ -1,17 +1,21 @@
 package fixtures
 import (
-	"github.com/akaspin/bar/bard/storage"
+	"github.com/akaspin/bar/server/storage"
 	"time"
-	"github.com/akaspin/bar/bard/server"
 	"fmt"
 	"path/filepath"
 	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/proto"
 	"os"
+	"github.com/akaspin/bar/server"
+	"github.com/akaspin/bar/server/thrift"
+	"golang.org/x/net/context"
+	"github.com/akaspin/bar/server/front"
 )
 
 type FixtureServer struct {
-	*server.BardServer
+	server.Server
+	*proto.ServerInfo
 	Root string
 }
 
@@ -28,29 +32,32 @@ func NewFixtureServer(name string) (res *FixtureServer, err error) {
 		return
 	}
 
-	res = &FixtureServer{
-		BardServer: server.NewBardServer(&server.BardServerOptions{
-			HttpBind: fmt.Sprintf(":%d", ports[0]),
-			RPCBind: fmt.Sprintf(":%d", ports[1]),
-			ServerInfo: &proto.ServerInfo{
-				HTTPEndpoint: fmt.Sprintf("http://localhost:%d/v1", ports[0]),
-				RPCEndpoints: []string{fmt.Sprintf("localhost:%d", ports[1])},
-				ChunkSize: 1024 * 1024 * 2,
-				PoolSize: 16,
-				BufferSize: 1024 * 1024 * 8,
-			},
-			Storage: p,
-			BarExe: "",
-		}),
-		Root: rt,
+	ctx := context.Background()
+	info := &proto.ServerInfo{
+		HTTPEndpoint: fmt.Sprintf("http://localhost:%d/v1", ports[0]),
+		RPCEndpoints: []string{fmt.Sprintf("localhost:%d", ports[1])},
+		ChunkSize: 1024 * 1024 * 2,
+		PoolSize: 16,
+		BufferSize: 1024 * 1024 * 8,
 	}
-	go res.BardServer.Start()
-	time.Sleep(time.Millisecond * 200)
+
+	tServer := thrift.NewServer(ctx,
+		&thrift.Options{info, fmt.Sprintf(":%d", ports[1])}, p)
+	hServer := front.NewServer(ctx,
+		&front.Options{info, fmt.Sprintf(":%d", ports[0]), ""}, p)
+
+	res = &FixtureServer{
+		server.NewCompositeServer(ctx, tServer, hServer),
+		info,
+		rt,
+	}
+	go res.Start()
+	time.Sleep(time.Millisecond * 00)
 	return
 }
 
 func (s *FixtureServer) Stop() {
-	s.BardServer.Stop()
+	s.Server.Stop()
 	os.RemoveAll(s.Root)
 }
 

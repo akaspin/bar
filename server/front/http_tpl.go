@@ -1,4 +1,4 @@
-package handler
+package front
 
 const front_tpl = `
 <!DOCTYPE html>

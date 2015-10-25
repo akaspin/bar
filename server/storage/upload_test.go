@@ -5,7 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/bar/model"
 	"github.com/akaspin/bar/proto"
-	"github.com/akaspin/bar/bard/storage"
+	"github.com/akaspin/bar/server/storage"
 	"github.com/akaspin/bar/bar/lists"
 	"time"
 	"os"

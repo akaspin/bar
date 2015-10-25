@@ -33,42 +33,42 @@ distclean:
 clean:
 	-find . -type d -name testdata* -exec rm -rf '{}' ';'
 
-dist/bar-${V}-windows-amd64.zip: dist/windows/bar.exe
+dist/bar-${V}-windows-amd64.zip: dist/win/bar.exe
 	zip -r -j -D $@ ${<D}
 
-dist/bar-${V}-%-amd64.tar.gz: dist/%/bar dist/%/bard
+dist/bar-${V}-%-amd64.tar.gz: dist/%/bar
 	tar -czf $@ -C ${<D} .
 
-dist/windows/%.exe: ${SRC}
+dist/win/bar.exe: dist/windows/bar
 	@mkdir -p ${@D}
-	CGO_ENABLED=0 GOOS=windows go build ${GOOPTS} -o $@ ${REPO}/$*
+	cp dist/windows/bar dist/win/bar.exe
 
-dist/%/bar: ${SRC}
+dist/%/bar: stubs ${SRC}
 	@mkdir -p ${@D}
-	CGO_ENABLED=0 GOOS=$* go build ${GOOPTS} -o $@ ${REPO}/$(@F)
+	CGO_ENABLED=0 GOOS=$* go build ${GOOPTS} -o $@ ${REPO}
 
-dist/%/bard: ${SRC}
+dist/bindir/%: dist/%/bar
 	@mkdir -p ${@D}
-	CGO_ENABLED=0 GOOS=$* go build ${GOOPTS} -o $@ ${REPO}/$(@F)
+	cp dist/$*/bar dist/bindir/$*
 
-install: install-bar ${INSTALL_DIR}/bard
+bindir: dist/bindir/windows dist/bindir/linux dist/bindir/darwin
 
-install-bar: ${INSTALL_DIR}/bar
+install: ${INSTALL_DIR}/bar
 
 uninstall:
-	-rm ${INSTALL_DIR}/bard ${INSTALL_DIR}/bar
+	-rm ${INSTALL_DIR}/bar
 
-${INSTALL_DIR}/%: ${SRC}
-	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}/$*
+${INSTALL_DIR}/bar: ${SRC}
+	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}
 
-run-server: ${INSTALL_DIR}/bard
-	bard -log-level=DEBUG \
-		-bind-http=:3000 \
-		-bind-rpc=:3001 \
-		-storage-block-root=testdata \
-		-rpc=${HOSTNAME}:3001 \
-		-http=http://${HOSTNAME}:3000/v1 \
-		-bar-exe=dist/windows/bar.exe
+run-server: ${INSTALL_DIR}/bar
+	bar server run --log-level=DEBUG \
+		--bind-http=:3000 \
+		--bind-rpc=:3001 \
+		--storage=block:root=testdata \
+		--endpoint=${HOSTNAME}:3001 \
+		--endpoint-http=http://${HOSTNAME}:3000/v1 \
+		--bin-dir=dist/bindir
 
 bench-mem:
 	go test -run=XXX -bench=${BENCH} -benchmem ./...

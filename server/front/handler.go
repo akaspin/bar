@@ -1,27 +1,31 @@
-package handler
+package front
 import (
 	"github.com/akaspin/bar/proto"
 	"net/http"
 	"github.com/tamtam-im/logx"
 "strings"
-	"github.com/akaspin/bar/bard/storage"
+	"github.com/akaspin/bar/server/storage"
 	"bytes"
 	"os"
 	"io"
+	"golang.org/x/net/context"
 )
 
 
-
-
 type Handlers struct {
+	ctx context.Context
+	options *Options
 	storage.Storage
-	*proto.ServerInfo
-	BarExe string
+
 	*HttpTpl
 }
 
-func NewHandlers(s storage.Storage, info *proto.ServerInfo, exe string) (res *Handlers, err error) {
-	res = &Handlers{Storage: s, ServerInfo: info, BarExe: exe}
+func NewHandlers(ctx context.Context, options *Options, s storage.Storage) (res *Handlers, err error) {
+	res = &Handlers{
+		ctx: ctx,
+		options: options,
+		Storage: s,
+	}
 	res.HttpTpl, err = NewHttpTpls()
 	return
 }
@@ -30,7 +34,7 @@ func NewHandlers(s storage.Storage, info *proto.ServerInfo, exe string) (res *Ha
 func (h *Handlers) HandleFront(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	h.handleTpl(w, "front", map[string]interface{}{
-		"Info": h.ServerInfo,
+		"Info": h.options.Info,
 	})
 }
 
@@ -52,7 +56,7 @@ func (h *Handlers) HandleSpec(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	h.handleTpl(w, "spec", map[string]interface{}{
-		"Info": h.ServerInfo,
+		"Info": h.options.Info,
 		"ID": id,
 		"ShortID": id[:12],
 	})
@@ -61,7 +65,7 @@ func (h *Handlers) HandleSpec(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) HandleExportBat(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	h.handleWinTpl(w, "bar-export.bat", map[string]interface{}{
-		"Info": h.ServerInfo,
+		"Info": h.options.Info,
 	})
 }
 
@@ -69,13 +73,13 @@ func (h *Handlers) HandleImportBat(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/v1/win/bar-import/")[:64]
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	h.handleWinTpl(w, "bar-import.bat", map[string]interface{}{
-		"Info": h.ServerInfo,
+		"Info": h.options.Info,
 		"ID": id,
 	})
 }
 
 func (h *Handlers) HandleBarExe(w http.ResponseWriter, r *http.Request) {
-	f, err := os.Open(h.BarExe)
+	f, err := os.Open(h.options.BinDir)
 	if err != nil {
 		logx.Error(err)
 		w.WriteHeader(500)
