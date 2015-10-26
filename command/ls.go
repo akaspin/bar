@@ -102,7 +102,7 @@ func (c *LsCmd) Run(args ...string) (err error) {
 
 	// print this stuff
 	w := new(tabwriter.Writer)
-	w.Init(c.Stdout, 0, 8, 0, '\t', 0)
+	w.Init(c.Stdout, 0, 8, 2, '\t', 0)
 
 	var line []string
 	toLine := func(term string) {

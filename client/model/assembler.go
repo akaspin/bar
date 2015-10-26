@@ -127,6 +127,7 @@ func (a *Assembler) commitBlob(name string, id proto.ID) (err error) {
 		return
 	}
 	defer os.Remove(src)
+	defer os.Remove(bak)
 	return
 }
 
