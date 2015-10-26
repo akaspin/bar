@@ -9,6 +9,7 @@ import (
 	"os"
 	"io"
 	"golang.org/x/net/context"
+	"path/filepath"
 )
 
 
@@ -79,7 +80,7 @@ func (h *Handlers) HandleImportBat(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) HandleBarExe(w http.ResponseWriter, r *http.Request) {
-	f, err := os.Open(h.options.BinDir)
+	f, err := os.Open(filepath.Join(h.options.BinDir, "windows"))
 	if err != nil {
 		logx.Error(err)
 		w.WriteHeader(500)
