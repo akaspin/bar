@@ -10,3 +10,4 @@ test_srv_data*
 
 .kitchen/
 .kitchen.local.yml
+Berksfile.lock

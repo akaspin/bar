@@ -67,6 +67,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) (err error) {
 			Attach(&GitDivertBeginCmd{Environment: env, CommonOptions: cOpts}, env),
 			Attach(&GitDivertFinishCmd{Environment: env, CommonOptions: cOpts}, env),
 			Attach(&GitDivertAbortCmd{Environment: env, CommonOptions: cOpts}, env),
+			Attach(&GitDivertPushCmd{Environment: env, CommonOptions: cOpts}, env),
 		),
 		Attach(&SpecRootCmd{}, env,
 			Attach(&SpecExportCmd{Environment: env, CommonOptions: cOpts}, env),

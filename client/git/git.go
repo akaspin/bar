@@ -190,6 +190,14 @@ func (g *Git) Checkout(what string, filenames ...string) (err error) {
 	return
 }
 
+func (g *Git) Push(upstream, branch string) (err error) {
+	_, err = g.Run("push", []string{
+		upstream,
+		fmt.Sprintf("%s:refs/heads/%s", branch, branch),
+	}...)
+	return
+}
+
 func (g *Git) Add(filenames ...string) (err error) {
 	if len(filenames) > 0 {
 		if filenames, err = g.ToRoot(filenames...); err != nil {
