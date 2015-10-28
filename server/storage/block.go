@@ -15,6 +15,7 @@ import (
 	"strings"
 	"encoding/hex"
 	"github.com/tamtam-im/logx"
+"github.com/akaspin/concurrency"
 )
 
 const (
@@ -69,7 +70,7 @@ type BlockStorage struct {
 	*BlockStorageOptions
 
 	// Max Open files locker
-	FDLocks *concurrent.LocksPool
+	FDLocks *concurrency.Locks
 
 	*concurrent.BatchPool
 }
@@ -77,7 +78,7 @@ type BlockStorage struct {
 func NewBlockStorage(options *BlockStorageOptions) *BlockStorage {
 	return &BlockStorage{
 		BlockStorageOptions: options,
-		FDLocks: concurrent.NewLockPool(options.MaxFiles, time.Minute * 5),
+		FDLocks: concurrency.NewLocks(context.Background(), options.MaxFiles, time.Minute * 5),
 		BatchPool: concurrent.NewPool(options.PoolSize),
 	}
 }
@@ -87,7 +88,7 @@ func (s *BlockStorage) IsSpecExists(id proto.ID) (ok bool, err error) {
 	if err != nil {
 		return
 	}
-	defer lock.Close()
+	defer lock.Release()
 
 	_, err = os.Stat(s.idPath(spec_ns, id) + ".json")
 	if os.IsNotExist(err) {
@@ -105,7 +106,7 @@ func (s *BlockStorage) WriteSpec(in proto.Spec) (err error) {
 	if err != nil {
 		return
 	}
-	defer lock.Close()
+	defer lock.Release()
 
 	specName := s.idPath(spec_ns, in.ID) + ".json"
 	if err = os.MkdirAll(filepath.Dir(specName), 0755); err != nil {
@@ -126,7 +127,7 @@ func (s *BlockStorage) ReadSpec(id proto.ID) (res proto.Spec, err error) {
 	if err != nil {
 		return
 	}
-	defer lock.Close()
+	defer lock.Release()
 
 	r, err := os.Open(s.idPath(spec_ns, id) + ".json")
 	if err != nil {
@@ -166,7 +167,7 @@ func (s *BlockStorage) GetMissingBlobIDs(ids []proto.ID) (res []proto.ID, err er
 	if err != nil {
 		return
 	}
-	defer lock.Close()
+	defer lock.Release()
 
 	for _, id := range ids {
 		_, err = os.Stat(s.idPath(manifests_ns, id) + ".json")
@@ -187,7 +188,7 @@ func (s *BlockStorage) WriteChunk(blobID, chunkID proto.ID, size int64, r io.Rea
 	if err != nil {
 		return
 	}
-	defer lock.Close()
+	defer lock.Release()
 
 	n := filepath.Join(s.idPath(upload_ns, blobID), chunkID.String())
 	w, err := s.getCAFile(n)
@@ -215,7 +216,7 @@ func (s *BlockStorage) ReadChunkFromBlob(blobID proto.ID, size, offset int64, w 
 	if err != nil {
 		return
 	}
-	defer lock.Close()
+	defer lock.Release()
 
 	f, err := os.Open(s.idPath(blob_ns, blobID))
 	if err != nil {
@@ -247,7 +248,7 @@ func (s *BlockStorage) CreateUploadSession(uploadID uuid.UUID, in []proto.Manife
 	if err != nil {
 		return
 	}
-	defer lock.Close()
+	defer lock.Release()
 
 	// Create directories and write support data
 	base := filepath.Join(s.idPath(upload_ns,
@@ -306,7 +307,7 @@ func (s *BlockStorage) UploadChunk(uploadID uuid.UUID, chunkID proto.ID, r io.Re
 	if err != nil {
 		return
 	}
-	defer lock.Close()
+	defer lock.Release()
 	hexid := proto.ID(hex.EncodeToString(uploadID[:]))
 
 	n := filepath.Join(s.idPath(upload_ns, hexid), chunkID.String())
@@ -338,7 +339,7 @@ func (s *BlockStorage) FinishUploadSession(uploadID uuid.UUID) (err error) {
 		if err != nil {
 			return
 		}
-		defer lock.Close()
+		defer lock.Release()
 
 		err = filepath.Walk(manifests_base, func (path string, info os.FileInfo, ferr error) (err error){
 			if strings.HasSuffix(path, "-manifest.json") {
@@ -367,7 +368,7 @@ func (s *BlockStorage) FinishUploadSession(uploadID uuid.UUID) (err error) {
 			if err != nil {
 				return
 			}
-			defer lock.Close()
+			defer lock.Release()
 
 			m := in.(proto.Manifest)
 			target := s.idPath(blob_ns, m.ID)
@@ -388,7 +389,7 @@ func (s *BlockStorage) FinishUploadSession(uploadID uuid.UUID) (err error) {
 					if err != nil {
 						return
 					}
-					defer lock.Close()
+					defer lock.Release()
 
 					r, err := os.Open(filepath.Join(base, chunk.ID.String()))
 					if err != nil {
@@ -419,7 +420,7 @@ func (s *BlockStorage) readManifest(filename string) (res proto.Manifest, err er
 	if err != nil {
 		return
 	}
-	defer lock.Close()
+	defer lock.Release()
 
 	r, err := os.Open(filename)
 	if err != nil {

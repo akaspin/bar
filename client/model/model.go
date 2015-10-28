@@ -10,13 +10,14 @@ import (
 	"time"
 	"github.com/akaspin/bar/concurrent"
 	"golang.org/x/net/context"
+"github.com/akaspin/concurrency"
 )
 
 
 type Model struct {
 	WD string
 	Git *git.Git
-	FdLocks *concurrent.LocksPool
+	FdLocks *concurrency.Locks
 	*concurrent.BatchPool
 	chunkSize int64
 }
@@ -26,7 +27,7 @@ func New(wd string, useGit bool, chunkSize int64, pool int) (res *Model, err err
 		WD: wd,
 		BatchPool: concurrent.NewPool(pool * 32),
 		chunkSize: chunkSize,
-		FdLocks: concurrent.NewLockPool(pool, time.Minute * 5),
+		FdLocks: concurrency.NewLocks(context.Background(), pool, time.Minute * 5),
 	}
 	if useGit {
 		res.Git, err = git.NewGit(wd)
@@ -62,7 +63,7 @@ func (m *Model) ReadChunk(name string, chunk proto.Chunk, res []byte) (err error
 	if err != nil {
 		return
 	}
-	defer lock.Close()
+	defer lock.Release()
 
 	f, err := os.Open(filepath.Join(m.WD, name))
 	if err != nil {
@@ -113,7 +114,7 @@ func (m *Model) getManifest(name string, blobs, manifests bool) (res *proto.Mani
 	if err != nil {
 		return
 	}
-	defer lock.Close()
+	defer lock.Release()
 
 	f, err := os.Open(filepath.Join(m.WD, name))
 	if err != nil {
@@ -160,7 +161,7 @@ func (m *Model) IsBlobs(names ...string) (res map[string]bool, err error) {
 			if err != nil {
 				return
 			}
-			defer lock.Close()
+			defer lock.Release()
 
 			f, err := os.Open(filepath.Join(m.WD, in.(string)))
 			if err != nil {
@@ -200,7 +201,7 @@ func (m *Model) SquashBlobs(blobs lists.BlobMap) (err error) {
 			if err != nil {
 				return
 			}
-			defer lock.Close()
+			defer lock.Release()
 
 			absname := filepath.Join(m.WD, r.Name)
 			backName := absname + ".bar-backup"

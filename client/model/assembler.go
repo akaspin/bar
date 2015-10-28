@@ -34,7 +34,7 @@ func (a *Assembler) StoreChunk(r io.Reader, id proto.ID) (err error) {
 	if err != nil {
 		return
 	}
-	defer lock.Close()
+	defer lock.Release()
 
 	caOpts := contentaddressable.DefaultOptions()
 	caOpts.Hasher = sha3.New256()
@@ -89,7 +89,7 @@ func (a *Assembler) Done(what lists.BlobMap) (err error) {
 			if err != nil {
 				return
 			}
-			defer lock.Close()
+			defer lock.Release()
 
 			w, err := os.Create(filepath.Join(a.model.WD,
 				r.Name + r.Manifest.ID.String()))
@@ -136,7 +136,7 @@ func (a *Assembler) writeChunkTo(w io.Writer, id proto.ID) (err error) {
 	if err != nil {
 		return
 	}
-	defer lock.Close()
+	defer lock.Release()
 
 	name := filepath.Join(a.Where, id.String())
 	r, err := os.Open(name)
