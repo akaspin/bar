@@ -61,7 +61,7 @@ uninstall:
 ${INSTALL_DIR}/bar: ${SRC}
 	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}
 
-run-server: ${INSTALL_DIR}/bar
+run-server: install dist/bindir/windows
 	bar server run --log-level=DEBUG \
 		--bind-http=:3000 \
 		--bind-rpc=:3001 \

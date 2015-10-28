@@ -84,20 +84,17 @@ func NewBlockStorage(options *BlockStorageOptions) *BlockStorage {
 }
 
 func (s *BlockStorage) IsSpecExists(id proto.ID) (ok bool, err error) {
-	lock, err := s.FDLocks.Take()
-	if err != nil {
+	err = s.FDLocks.With(func() (err error) {
+		_, err = os.Stat(s.idPath(spec_ns, id) + ".json")
+		if os.IsNotExist(err) {
+			return nil
+		}
+		if err != nil {
+			return
+		}
+		ok = true
 		return
-	}
-	defer lock.Release()
-
-	_, err = os.Stat(s.idPath(spec_ns, id) + ".json")
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	if err != nil {
-		return
-	}
-	ok = true
+	})
 	return
 }
 
