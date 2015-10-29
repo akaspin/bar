@@ -20,7 +20,7 @@ func (c *GitInstallCmd) Init(cc *cobra.Command) {
 	cc.Use = "install"
 	cc.Short = "install bar support into git repo"
 
-	cc.Flags().StringVarP(&c.Log, "log", "", logx.DEBUG,
+	cc.Flags().StringVarP(&c.Log, "log", "", logx.INFO,
 		"installable logging level")
 
 	cc.Flags()
