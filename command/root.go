@@ -73,6 +73,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) (err error) {
 			Attach(&SpecExportCmd{Environment: env, CommonOptions: cOpts}, env),
 			Attach(&SpecImportCmd{Environment: env, CommonOptions: cOpts}, env),
 		),
+		Attach(&VersionCmd{Environment: env}, env),
 		Attach(&PingCmd{Environment: env, CommonOptions: cOpts}, env),
 		Attach(&ServerCmd{}, env,
 			Attach(&ServerRunCmd{

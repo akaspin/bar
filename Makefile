@@ -2,7 +2,8 @@ SRC=$(shell find . -type f \(  -iname '*.go' ! -iname "*_test.go" \))
 SRC_TEST=$(shell find . -type f -name '*_test.go')
 V=$(shell git describe --always --tags --dirty)
 REPO=github.com/akaspin/bar
-GOOPTS=-a -installsuffix cgo -ldflags '-s -X main.Version=${V}'
+GOOPTS=-a -installsuffix cgo -ldflags '-s -X github.com/akaspin/bar/command.Version=${V}'
+#GOOPTS=-a -installsuffix cgo -ldflags '-s -X bar/command/version.Version=${V}'
 
 HOSTNAME=$(shell ifconfig | grep 'inet ' | grep -v '127.0.0.1' | head -n1 | awk '{print $$2}')
 
@@ -64,7 +65,7 @@ uninstall:
 	-rm ${INSTALL_DIR}/bar
 
 ${INSTALL_DIR}/bar: ${SRC}
-	CGO_ENABLED=0 go install ${GOOPTS} ${REPO}
+	CGO_ENABLED=0 go install -v ${GOOPTS} ${REPO}
 
 run-server: install dist/bindir/windows
 	bar server run --log-level=DEBUG \
