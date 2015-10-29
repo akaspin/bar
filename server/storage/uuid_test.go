@@ -1,9 +1,10 @@
 package storage_test
+
 import (
-	"testing"
-	"github.com/nu7hatch/gouuid"
 	"github.com/akaspin/bar/proto"
+	"github.com/nu7hatch/gouuid"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func Test_Storage_UUID(t *testing.T) {

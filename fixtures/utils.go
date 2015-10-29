@@ -1,4 +1,5 @@
 package fixtures
+
 import (
 	"net"
 	"os"

@@ -1,20 +1,20 @@
 package front
+
 import (
-	"github.com/akaspin/bar/proto"
-	"net/http"
-	"github.com/tamtam-im/logx"
-"strings"
-	"github.com/akaspin/bar/server/storage"
 	"bytes"
-	"os"
-	"io"
+	"github.com/akaspin/bar/proto"
+	"github.com/akaspin/bar/server/storage"
+	"github.com/tamtam-im/logx"
 	"golang.org/x/net/context"
+	"io"
+	"net/http"
+	"os"
 	"path/filepath"
+	"strings"
 )
 
-
 type Handlers struct {
-	ctx context.Context
+	ctx     context.Context
 	options *Options
 	storage.Storage
 
@@ -23,7 +23,7 @@ type Handlers struct {
 
 func NewHandlers(ctx context.Context, options *Options, s storage.Storage) (res *Handlers, err error) {
 	res = &Handlers{
-		ctx: ctx,
+		ctx:     ctx,
 		options: options,
 		Storage: s,
 	}
@@ -57,8 +57,8 @@ func (h *Handlers) HandleSpec(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	h.handleTpl(w, "spec", map[string]interface{}{
-		"Info": h.options.Info,
-		"ID": id,
+		"Info":    h.options.Info,
+		"ID":      id,
 		"ShortID": id[:12],
 	})
 }
@@ -75,7 +75,7 @@ func (h *Handlers) HandleImportBat(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	h.handleWinTpl(w, "bar-import.bat", map[string]interface{}{
 		"Info": h.options.Info,
-		"ID": id,
+		"ID":   id,
 	})
 }
 

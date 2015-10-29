@@ -1,20 +1,20 @@
 package pb3_test
+
 import (
-	"net"
-	"golang.org/x/net/context"
-	"github.com/akaspin/bar/fixtures/protos/pb3"
-	"github.com/tamtam-im/logx"
-	"google.golang.org/grpc"
-	"testing"
 	"fmt"
 	"github.com/akaspin/bar/fixtures"
+	"github.com/akaspin/bar/fixtures/protos/pb3"
 	"github.com/stretchr/testify/assert"
+	"github.com/tamtam-im/logx"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"net"
 	"strings"
+	"testing"
 	"time"
 )
 
-
-type server struct {}
+type server struct{}
 
 func (s *server) Test(ctx context.Context, req *pb3.TestRep) (res *pb3.TestRep, err error) {
 	res = req
@@ -22,10 +22,10 @@ func (s *server) Test(ctx context.Context, req *pb3.TestRep) (res *pb3.TestRep, 
 }
 
 type GRPCServer struct {
-	l net.Listener
-	srv *grpc.Server
+	l    net.Listener
+	srv  *grpc.Server
 	Port int
-	err error
+	err  error
 }
 
 func (s *GRPCServer) Start() {
@@ -42,7 +42,6 @@ func (s *GRPCServer) Start() {
 	go s.srv.Serve(s.l)
 	time.Sleep(time.Millisecond * 100)
 }
-
 
 func Test_Proto_GRPC(t *testing.T) {
 	t.Skip()
@@ -107,7 +106,7 @@ func Test_Proto_GRPC_Large(t *testing.T) {
 
 	req := pb3.TestRep{
 		"test",
-		[]byte(strings.Repeat("m", 1024 * 1024)),
+		[]byte(strings.Repeat("m", 1024*1024)),
 	}
 	res, err := c.Test(context.Background(), &req)
 	assert.NoError(t, err)
@@ -131,16 +130,16 @@ func Benchmark_Proto_GRPC(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-			b.StartTimer()
-			req := pb3.TestRep{
-				fmt.Sprintf("%d", i),
-				[]byte("mama myla ramu"),
-			}
-			res, err := c.Test(context.Background(), &req)
-			b.StopTimer()
-			assert.NoError(b, err)
-			assert.EqualValues(b, req, *res)
-			b.SetBytes(int64(len(req.Body) * 2))
+		b.StartTimer()
+		req := pb3.TestRep{
+			fmt.Sprintf("%d", i),
+			[]byte("mama myla ramu"),
+		}
+		res, err := c.Test(context.Background(), &req)
+		b.StopTimer()
+		assert.NoError(b, err)
+		assert.EqualValues(b, req, *res)
+		b.SetBytes(int64(len(req.Body) * 2))
 	}
 }
 
@@ -161,15 +160,15 @@ func Benchmark_Proto_GRPC_Large(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-			b.StartTimer()
-			req := pb3.TestRep{
-				fmt.Sprintf("%d", i),
-				[]byte(strings.Repeat("m", 1024 * 1024)),
-			}
-			res, err := c.Test(context.Background(), &req)
-			b.StopTimer()
-			assert.NoError(b, err)
-			assert.EqualValues(b, req, *res)
-			b.SetBytes(int64(len(req.Body) * 2))
+		b.StartTimer()
+		req := pb3.TestRep{
+			fmt.Sprintf("%d", i),
+			[]byte(strings.Repeat("m", 1024*1024)),
+		}
+		res, err := c.Test(context.Background(), &req)
+		b.StopTimer()
+		assert.NoError(b, err)
+		assert.EqualValues(b, req, *res)
+		b.SetBytes(int64(len(req.Body) * 2))
 	}
 }

@@ -1,16 +1,17 @@
 package git
+
 import (
-	"strings"
 	"bufio"
 	"bytes"
-	"io"
 	"fmt"
-	"os"
-	"path/filepath"
-	"io/ioutil"
 	"github.com/akaspin/bar/client/lists"
 	"github.com/akaspin/bar/proto"
 	"github.com/tamtam-im/logx"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 // Extracted diff entry
@@ -26,13 +27,11 @@ type DiffEntry struct {
 	Filename string
 }
 
-
 // Git wrapper.
 // TODO: use native git (https://github.com/gogits/git)
 //
 // This wrapper always run git in repository root
 type Git struct {
-
 	*lists.Mapper
 }
 
@@ -91,7 +90,7 @@ func (g *Git) SetConfig(key, val string) (err error) {
 }
 
 // Unset config value
-func (g *Git) UnsetConfig(key string) (err error)  {
+func (g *Git) UnsetConfig(key string) (err error) {
 	_, err = g.Run("config", "--local", "--unset", key)
 	return
 }
@@ -328,7 +327,7 @@ func (g *Git) GetOID(filename string) (res string, err error) {
 	if err != nil {
 		return
 	}
-//	rooted = g.ToShell(rooted...)
+	//	rooted = g.ToShell(rooted...)
 	raw, err := g.Run("ls-files", "--cached", "-s", "--full-name", "-z", rooted[0])
 	if err != nil {
 		return
@@ -492,7 +491,7 @@ func (g *Git) ManifestsFromDiff(r io.Reader) (res lists.BlobMap, err error) {
 	return
 }
 
-func (g *Git) readLines(r io.Reader) (res []string, err error)  {
+func (g *Git) readLines(r io.Reader) (res []string, err error) {
 	attrReader := bufio.NewReader(r)
 	var data []byte
 	var line string
@@ -509,4 +508,3 @@ func (g *Git) readLines(r io.Reader) (res []string, err error)  {
 	}
 	return
 }
-

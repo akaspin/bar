@@ -1,19 +1,18 @@
 package protos_test
+
 import (
-	"net/rpc"
-	"net"
-	"github.com/akaspin/bar/fixtures"
 	"fmt"
+	"github.com/akaspin/bar/fixtures"
+	"net"
+	"net/rpc"
 )
 
-
 type TestMessage struct {
-	Id string
+	Id   string
 	Data []byte
 }
 
-type ServiceFixture struct {}
-
+type ServiceFixture struct{}
 
 func (s *ServiceFixture) Ping(req *TestMessage, res *TestMessage) (err error) {
 	*res = *req
@@ -46,4 +45,3 @@ func (s *baseTestServer) listen() (port int, err error) {
 func (s *baseTestServer) Stop() {
 	s.Listener.Close()
 }
-

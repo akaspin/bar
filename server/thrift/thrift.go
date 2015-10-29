@@ -1,24 +1,24 @@
 package thrift
 
 import (
-	t_thrift "github.com/apache/thrift/lib/go/thrift"
 	"github.com/akaspin/bar/proto/wire"
-	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/server/storage"
+	t_thrift "github.com/apache/thrift/lib/go/thrift"
+	"github.com/tamtam-im/logx"
 	"golang.org/x/net/context"
 )
 
 type ThriftServer struct {
-	ctx context.Context
-	cancel context.CancelFunc
+	ctx     context.Context
+	cancel  context.CancelFunc
 	options *Options
 	*Handler
 	t_thrift.TServer
 }
 
-func NewServer(ctx context.Context, opts *Options, stor storage.Storage) (res *ThriftServer)  {
+func NewServer(ctx context.Context, opts *Options, stor storage.Storage) (res *ThriftServer) {
 	res = &ThriftServer{
-		ctx: ctx,
+		ctx:     ctx,
 		options: opts,
 	}
 	res.ctx, res.cancel = context.WithCancel(ctx)

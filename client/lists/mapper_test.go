@@ -1,11 +1,11 @@
 package lists_test
+
 import (
-	"testing"
 	"github.com/akaspin/bar/client/lists"
 	"github.com/stretchr/testify/assert"
 	"path/filepath"
+	"testing"
 )
-
 
 func Test_Mapper_ToRoot(t *testing.T) {
 	root := "/home/user"

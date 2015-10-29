@@ -1,9 +1,10 @@
 package front
+
 import (
+	h_template "html/template"
 	"io"
 	"strings"
 	"text/template"
-	h_template "html/template"
 )
 
 // weird. needs refactoring

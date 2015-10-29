@@ -1,25 +1,26 @@
 package fixtures
+
 import (
-	"io/ioutil"
 	"bufio"
-	"os"
-	"io"
 	"bytes"
+	"github.com/akaspin/bar/proto"
+	"github.com/stretchr/testify/assert"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
-	"github.com/stretchr/testify/assert"
-	"github.com/akaspin/bar/proto"
-	"path/filepath"
 )
 
 // Make temporary BLOB
-func MakeBLOB(t *testing.T, size int64) (name string)  {
+func MakeBLOB(t *testing.T, size int64) (name string) {
 	name, err := MakeBLOBPure(size)
 	assert.NoError(t, err)
 	return
 }
 
-func MakeBLOBPure(size int64) (name string, err error)  {
+func MakeBLOBPure(size int64) (name string, err error) {
 	f, err := ioutil.TempFile("", "")
 	if err != nil {
 		return
@@ -31,7 +32,7 @@ func MakeBLOBPure(size int64) (name string, err error)  {
 	var j uint8
 	buf := bufio.NewWriter(f)
 
-	for i=0; i < size; i++ {
+	for i = 0; i < size; i++ {
 		_, err = buf.Write([]byte{j})
 		if err != nil {
 			return
@@ -57,7 +58,7 @@ func MakeNamedBLOB(name string, size int64) (err error) {
 	var j uint8
 	buf := bufio.NewWriter(f)
 
-	for i=0; i < size; i++ {
+	for i = 0; i < size; i++ {
 		_, err = buf.Write([]byte{j})
 		if err != nil {
 			return

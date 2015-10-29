@@ -1,13 +1,14 @@
 package command
+
 import (
-"github.com/spf13/cobra"
-"github.com/akaspin/bar/proto"
+	"encoding/json"
+	"fmt"
+	"github.com/akaspin/bar/client/lists"
 	"github.com/akaspin/bar/client/model"
 	"github.com/akaspin/bar/client/transport"
-	"encoding/json"
+	"github.com/akaspin/bar/proto"
+	"github.com/spf13/cobra"
 	"github.com/tamtam-im/logx"
-	"github.com/akaspin/bar/client/lists"
-	"fmt"
 	"path/filepath"
 )
 
@@ -16,12 +17,12 @@ type SpecImportCmd struct {
 	*CommonOptions
 
 	UseGit bool
-	Raw bool
+	Raw    bool
 	Squash bool
 }
 
 func (c *SpecImportCmd) Init(cc *cobra.Command) {
-	cc.Use = "import"
+	cc.Use = "import [spec-id]"
 	cc.Short = "import spec from bard server"
 
 	cc.Flags().BoolVarP(&c.UseGit, "git", "", false, "use git infrastructure")
@@ -53,7 +54,6 @@ func (c *SpecImportCmd) Run(args ...string) (err error) {
 			return
 		}
 	}
-
 
 	idm := lists.IDMap{}
 	for n, id := range spec.BLOBs {

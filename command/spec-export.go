@@ -1,16 +1,17 @@
 package command
+
 import (
-	"github.com/spf13/cobra"
-	"github.com/akaspin/bar/client/model"
-	"github.com/akaspin/bar/client/lists"
+	"encoding/json"
 	"fmt"
-"github.com/akaspin/bar/proto"
-	"time"
+	"github.com/akaspin/bar/client/lists"
+	"github.com/akaspin/bar/client/model"
+	"github.com/akaspin/bar/client/transport"
+	"github.com/akaspin/bar/proto"
+	"github.com/spf13/cobra"
 	"github.com/tamtam-im/logx"
 	"os"
 	"path/filepath"
-	"encoding/json"
-	"github.com/akaspin/bar/client/transport"
+	"time"
 )
 
 type SpecExportCmd struct {
@@ -20,11 +21,11 @@ type SpecExportCmd struct {
 	UseGit bool
 
 	Upload bool
-	DoCC bool
+	DoCC   bool
 }
 
 func (c *SpecExportCmd) Init(cc *cobra.Command) {
-	cc.Use = "export"
+	cc.Use = "export [# path]"
 	cc.Short = "export spec"
 
 	cc.Flags().BoolVarP(&c.UseGit, "git", "", false, "use git infrastructure")
@@ -69,7 +70,6 @@ func (c *SpecExportCmd) Run(args ...string) (err error) {
 	if err != nil {
 		return
 	}
-
 
 	if c.DoCC {
 		ccName := fmt.Sprintf("bar-spec-%d-%s.json",

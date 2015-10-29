@@ -1,8 +1,9 @@
 package storage_test
+
 import (
-	"testing"
-	"path/filepath"
 	"github.com/stretchr/testify/assert"
+	"path/filepath"
+	"testing"
 )
 
 func Test_Filepath_EmptyChunk(t *testing.T) {

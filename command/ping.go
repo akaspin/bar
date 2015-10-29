@@ -1,8 +1,9 @@
 package command
+
 import (
-	"github.com/spf13/cobra"
 	"github.com/akaspin/bar/client/model"
 	"github.com/akaspin/bar/client/transport"
+	"github.com/spf13/cobra"
 	"github.com/tamtam-im/logx"
 )
 
@@ -11,7 +12,7 @@ type PingCmd struct {
 	*CommonOptions
 }
 
-func (c *PingCmd) Init(cc *cobra.Command)  {
+func (c *PingCmd) Init(cc *cobra.Command) {
 	cc.Use = "ping"
 	cc.Short = "ping bar server"
 }

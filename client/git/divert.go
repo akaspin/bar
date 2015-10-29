@@ -1,10 +1,11 @@
 package git
+
 import (
-	"path/filepath"
-	"os"
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"github.com/tamtam-im/logx"
+	"os"
+	"path/filepath"
 )
 
 // Diversion spec
@@ -21,7 +22,6 @@ type DivertSpec struct {
 	// Target files
 	TargetFiles []string
 }
-
 
 /*
 Divert is ability to temporary switch branch preserving all blobs
@@ -41,7 +41,7 @@ in working tree.
 	# (two commits ago, the reset and the commit)
 	git reset HEAD@{2}
 */
-type Divert struct  {
+type Divert struct {
 	*Git
 }
 

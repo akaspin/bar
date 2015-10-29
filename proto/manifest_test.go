@@ -1,10 +1,11 @@
 package proto_test
+
 import (
-	"testing"
+	"github.com/akaspin/bar/fixtures"
 	"github.com/akaspin/bar/proto"
 	"github.com/stretchr/testify/assert"
-	"github.com/akaspin/bar/fixtures"
 	"golang.org/x/crypto/sha3"
+	"testing"
 )
 
 func Test_SHA3(t *testing.T) {
@@ -59,8 +60,8 @@ func Test_Shadow_New1(t *testing.T) {
 	assert.Equal(t, fixtures.FixStream(in), (*m).String())
 }
 
-func Test_Shadow_NewFromBLOB_20M(t *testing.T)  {
-	bn := fixtures.MakeBLOB(t, 1024 * 1024 * 20 + 5)
+func Test_Shadow_NewFromBLOB_20M(t *testing.T) {
+	bn := fixtures.MakeBLOB(t, 1024*1024*20+5)
 	defer fixtures.KillBLOB(bn)
 
 	m, err := fixtures.NewShadowFromFile(bn)
@@ -117,8 +118,8 @@ func Test_Shadow_NewFromBLOB_20M(t *testing.T)  {
 	`), (*m).String())
 }
 
-func Test_Shadow_NewFromBLOB_2M(t *testing.T)  {
-	bn := fixtures.MakeBLOB(t, 1024 * 1024 * 2 + 467)
+func Test_Shadow_NewFromBLOB_2M(t *testing.T) {
+	bn := fixtures.MakeBLOB(t, 1024*1024*2+467)
 	defer fixtures.KillBLOB(bn)
 
 	m, err := fixtures.NewShadowFromFile(bn)
@@ -139,8 +140,8 @@ func Test_Shadow_NewFromBLOB_2M(t *testing.T)  {
 	`), (*m).String())
 }
 
-func Test_Shadow_NewFromBLOB_2K(t *testing.T)  {
-	bn := fixtures.MakeBLOB(t, 1024 * 2)
+func Test_Shadow_NewFromBLOB_2K(t *testing.T) {
+	bn := fixtures.MakeBLOB(t, 1024*2)
 	defer fixtures.KillBLOB(bn)
 
 	m, err := fixtures.NewShadowFromFile(bn)
@@ -157,7 +158,7 @@ func Test_Shadow_NewFromBLOB_2K(t *testing.T)  {
 		`), (*m).String())
 }
 
-func Test_Shadow_NewFromBLOB_3b(t *testing.T)  {
+func Test_Shadow_NewFromBLOB_3b(t *testing.T) {
 	bn := fixtures.MakeBLOB(t, 3)
 	defer fixtures.KillBLOB(bn)
 
@@ -175,7 +176,7 @@ func Test_Shadow_NewFromBLOB_3b(t *testing.T)  {
 		`), (*m).String())
 }
 
-func Benchmark_Manifest_NewFromBLOB_500MB(b *testing.B)  {
+func Benchmark_Manifest_NewFromBLOB_500MB(b *testing.B) {
 	b.Skip()
 	bn, err := fixtures.MakeBLOBPure(1024 * 1024 * 500)
 	if err != nil {
@@ -188,4 +189,3 @@ func Benchmark_Manifest_NewFromBLOB_500MB(b *testing.B)  {
 		_, _ = fixtures.NewShadowFromFile(bn)
 	}
 }
-

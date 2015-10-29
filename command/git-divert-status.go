@@ -1,12 +1,13 @@
 package command
+
 import (
-	"github.com/spf13/cobra"
-	"github.com/akaspin/bar/client/model"
-	"github.com/akaspin/bar/client/git"
 	"fmt"
+	"github.com/akaspin/bar/client/git"
+	"github.com/akaspin/bar/client/model"
+	"github.com/spf13/cobra"
 )
 
-type GitDivertStatusCmd struct  {
+type GitDivertStatusCmd struct {
 	*Environment
 	*CommonOptions
 }

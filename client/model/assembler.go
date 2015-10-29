@@ -1,20 +1,21 @@
 package model
+
 import (
-	"io/ioutil"
-	"io"
-	"github.com/akaspin/go-contentaddressable"
-	"golang.org/x/crypto/sha3"
-	"path/filepath"
 	"github.com/akaspin/bar/client/lists"
-	"os"
-	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/proto"
-	"strings"
-	"golang.org/x/net/context"
 	"github.com/akaspin/concurrency"
+	"github.com/akaspin/go-contentaddressable"
+	"github.com/tamtam-im/logx"
+	"golang.org/x/crypto/sha3"
+	"golang.org/x/net/context"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
-type Assembler struct  {
+type Assembler struct {
 	Where string
 	model *Model
 }
@@ -92,7 +93,7 @@ func (a *Assembler) Done(what lists.BlobMap) (err error) {
 			defer lock.Release()
 
 			w, err := os.Create(filepath.Join(a.model.WD,
-				r.Name + r.Manifest.ID.String()))
+				r.Name+r.Manifest.ID.String()))
 			if err != nil {
 				return
 			}

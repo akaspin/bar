@@ -1,8 +1,8 @@
 package command
+
 import "github.com/spf13/cobra"
 
 type GitDivertRootCmd struct {
-
 }
 
 func (c *GitDivertRootCmd) Init(cc *cobra.Command) {
@@ -10,6 +10,6 @@ func (c *GitDivertRootCmd) Init(cc *cobra.Command) {
 	cc.Short = "git diversions"
 }
 
-func (c *GitDivertRootCmd) Run(args ...string) (err error)  {
+func (c *GitDivertRootCmd) Run(args ...string) (err error) {
 	return
 }

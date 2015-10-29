@@ -1,21 +1,21 @@
 package model
+
 import (
 	"github.com/akaspin/bar/client/git"
-	"io"
-	"github.com/akaspin/bar/proto"
-	"os"
-	"github.com/tamtam-im/logx"
-	"path/filepath"
 	"github.com/akaspin/bar/client/lists"
-	"time"
+	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/concurrency"
+	"github.com/tamtam-im/logx"
 	"golang.org/x/net/context"
+	"io"
+	"os"
+	"path/filepath"
+	"time"
 )
 
-
 type Model struct {
-	WD string
-	Git *git.Git
+	WD      string
+	Git     *git.Git
 	FdLocks *concurrency.Locks
 	*concurrency.BatchPool
 	chunkSize int64
@@ -23,10 +23,10 @@ type Model struct {
 
 func New(wd string, useGit bool, chunkSize int64, pool int) (res *Model, err error) {
 	res = &Model{
-		WD: wd,
+		WD:        wd,
 		BatchPool: concurrency.NewPool(pool * 32),
 		chunkSize: chunkSize,
-		FdLocks: concurrency.NewLocks(context.Background(), pool, time.Minute * 5),
+		FdLocks:   concurrency.NewLocks(context.Background(), pool, time.Minute*5),
 	}
 	if useGit {
 		res.Git, err = git.NewGit(wd)
@@ -89,8 +89,8 @@ func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (r
 			if res2 == nil {
 				return
 			}
-			out = struct{
-				name string
+			out = struct {
+				name     string
 				manifest *proto.Manifest
 			}{in.(string), res2}
 			return
@@ -99,8 +99,8 @@ func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (r
 	)
 	res = lists.BlobMap{}
 	for _, r := range res1 {
-		r1 := r.(struct{
-			name string
+		r1 := r.(struct {
+			name     string
 			manifest *proto.Manifest
 		})
 		res[r1.name] = *r1.manifest
@@ -171,14 +171,20 @@ func (m *Model) IsBlobs(names ...string) (res map[string]bool, err error) {
 			if err != nil {
 				return
 			}
-			out = struct{name string; isBlob bool}{in.(string), !isManifest}
+			out = struct {
+				name   string
+				isBlob bool
+			}{in.(string), !isManifest}
 			return
 		},
 		&req, &res1, concurrency.DefaultBatchOptions(),
 	)
 
 	for _, r := range res1 {
-		r1 := r.(struct{name string; isBlob bool})
+		r1 := r.(struct {
+			name   string
+			isBlob bool
+		})
 		res[r1.name] = r1.isBlob
 	}
 	return
@@ -204,7 +210,7 @@ func (m *Model) SquashBlobs(blobs lists.BlobMap) (err error) {
 
 			absname := filepath.Join(m.WD, r.Name)
 			backName := absname + ".bar-backup"
-			os.Rename(absname, absname + ".bar-backup")
+			os.Rename(absname, absname+".bar-backup")
 			os.MkdirAll(filepath.Dir(absname), 0755)
 
 			w, err := os.Create(absname)

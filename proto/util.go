@@ -1,9 +1,9 @@
 package proto
-import (
-	"io"
-	"bytes"
-)
 
+import (
+	"bytes"
+	"io"
+)
 
 // Peek blob kind from given reader
 func PeekManifest(in io.Reader) (r io.Reader, isShadow bool, err error) {

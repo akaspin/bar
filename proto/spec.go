@@ -1,12 +1,12 @@
 package proto
-import (
-	"golang.org/x/crypto/sha3"
-	"sort"
-	"encoding/hex"
-	"path/filepath"
-	"github.com/akaspin/bar/proto/wire"
-)
 
+import (
+	"encoding/hex"
+	"github.com/akaspin/bar/proto/wire"
+	"golang.org/x/crypto/sha3"
+	"path/filepath"
+	"sort"
+)
 
 // Tree spec
 type Spec struct {

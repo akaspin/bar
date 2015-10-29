@@ -1,10 +1,11 @@
 package command
+
 import (
-	"github.com/spf13/cobra"
-	"github.com/akaspin/bar/client/model"
 	"fmt"
-	"github.com/akaspin/bar/client/transport"
 	"github.com/akaspin/bar/client/git"
+	"github.com/akaspin/bar/client/model"
+	"github.com/akaspin/bar/client/transport"
+	"github.com/spf13/cobra"
 )
 
 type GitPreCommitCmd struct {
@@ -17,7 +18,7 @@ func (c *GitPreCommitCmd) Init(cc *cobra.Command) {
 	cc.Short = "git pre-commit hook"
 }
 
-func (c *GitPreCommitCmd) Run(args ...string) (err error)  {
+func (c *GitPreCommitCmd) Run(args ...string) (err error) {
 	var filenames []string
 	var mod *model.Model
 	if mod, err = model.New(c.WD, true, c.ChunkSize, c.PoolSize); err != nil {

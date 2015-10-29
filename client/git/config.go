@@ -1,14 +1,15 @@
 package git
+
 import (
-	"github.com/akaspin/bar/proto"
-	"html/template"
-	"strings"
 	"bytes"
 	"fmt"
+	"github.com/akaspin/bar/proto"
 	"github.com/tamtam-im/logx"
+	"html/template"
+	"strings"
 )
 
-const preCommitHook  = `#!/bin/sh
+const preCommitHook = `#!/bin/sh
 # bar pre-commit hook
 set -e
 
@@ -67,26 +68,26 @@ func (c *Config) Uninstall() (err error) {
 func (c *Config) getConfigLines() map[string]string {
 	return map[string]string{
 		// filters
-		"filter.bar.clean": `bar git clean --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} %f`,
+		"filter.bar.clean":  `bar git clean --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} %f`,
 		"filter.bar.smudge": `bar git clean --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} %f`,
 
 		// basic
-		"alias.bar-up": `!bar up --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
-		"alias.bar-down": `!bar down --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-up":     `!bar up --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-down":   `!bar down --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
 		"alias.bar-squash": `!bar up --git --squash --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
-		"alias.bar-ls": `!bar ls --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-ls":     `!bar ls --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
 
 		// spec
 		"alias.bar-spec-export": `!bar spec export --git --upload --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
 		"alias.bar-spec-import": `!bar spec import --git --squash --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
-		"alias.bar-spec-ls": `!bar spec import --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-spec-ls":     `!bar spec import --git --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
 
 		// divert
-		"alias.bar-divert": `!bar divert begin --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-divert":        `!bar divert begin --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
 		"alias.bar-divert-finish": `!bar divert finish --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
-		"alias.bar-divert-abort": `!bar divert abort --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-divert-abort":  `!bar divert abort --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
 		"alias.bar-divert-status": `!bar divert status --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
-		"alias.bar-divert-push": `!bar divert push --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
+		"alias.bar-divert-push":   `!bar divert push --log-level={{.LogLevel}} --endpoint={{Join .Info.RPCEndpoints ","}} --chunk={{.Info.ChunkSize}} --pool={{.Info.PoolSize}} --buffer={{.Info.BufferSize}}`,
 	}
 }
 
@@ -100,7 +101,7 @@ func (c *Config) runInfoTpl(what string, logLevel string, info proto.ServerInfo)
 	buf := new(bytes.Buffer)
 	if err = t.Execute(buf, map[string]interface{}{
 		"LogLevel": logLevel,
-		"Info": info,
+		"Info":     info,
 	}); err != nil {
 		return
 	}

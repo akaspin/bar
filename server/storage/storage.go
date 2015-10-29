@@ -1,14 +1,14 @@
 package storage
+
 import (
-	"io"
 	"github.com/akaspin/bar/proto"
-	"time"
 	"github.com/nu7hatch/gouuid"
+	"io"
+	"time"
 )
 
 // All operations in storage driver are independent to each other
 type Storage interface {
-
 	IsSpecExists(id proto.ID) (ok bool, err error)
 
 	// Write spec
@@ -36,5 +36,3 @@ type Storage interface {
 	// Finish upload session
 	FinishUploadSession(uploadID uuid.UUID) (err error)
 }
-
-

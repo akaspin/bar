@@ -1,17 +1,18 @@
 package model_test
+
 import (
-	"testing"
+	"bytes"
+	"encoding/hex"
+	"github.com/akaspin/bar/client/lists"
 	"github.com/akaspin/bar/client/model"
-	"os"
-	"path/filepath"
+	"github.com/akaspin/bar/fixtures"
 	"github.com/akaspin/bar/proto"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/sha3"
-	"encoding/hex"
-	"bytes"
 	"io/ioutil"
-	"github.com/akaspin/bar/fixtures"
-	"github.com/akaspin/bar/client/lists"
+	"os"
+	"path/filepath"
+	"testing"
 )
 
 func Test_Assembler_StoreChunk(t *testing.T) {
@@ -80,7 +81,6 @@ func Test_Assembler_Assemble(t *testing.T) {
 	// Kill some blobs
 	tree.KillBLOB("file-two.bin")
 	tree.KillBLOB("one/file-two.bin")
-
 
 	err = a.Done(mx)
 	assert.NoError(t, err)

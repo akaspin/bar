@@ -1,8 +1,9 @@
 package main
+
 import (
-	"os"
 	"github.com/akaspin/bar/command"
 	"github.com/tamtam-im/logx"
+	"os"
 )
 
 func main() {

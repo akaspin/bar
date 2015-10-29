@@ -1,9 +1,10 @@
 package proto_test
+
 import (
-	"testing"
-	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/fixtures"
+	"github.com/akaspin/bar/proto"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func Test_Manifest_MarshalThrift(t *testing.T) {

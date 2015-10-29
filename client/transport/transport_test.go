@@ -1,14 +1,15 @@
 package transport_test
+
 import (
-	"testing"
-	"github.com/akaspin/bar/fixtures"
-	"github.com/stretchr/testify/assert"
-	"github.com/akaspin/bar/client/transport"
-	"github.com/akaspin/bar/client/model"
-	"github.com/akaspin/bar/proto"
-	"github.com/akaspin/bar/client/lists"
-	"time"
 	"fmt"
+	"github.com/akaspin/bar/client/lists"
+	"github.com/akaspin/bar/client/model"
+	"github.com/akaspin/bar/client/transport"
+	"github.com/akaspin/bar/fixtures"
+	"github.com/akaspin/bar/proto"
+	"github.com/stretchr/testify/assert"
+	"testing"
+	"time"
 )
 
 func seed(t *testing.T, root string) (halt func(), tree *fixtures.Tree, ml *model.Model, srv *fixtures.FixtureServer, trans *transport.Transport) {
@@ -135,15 +136,15 @@ func Test_Transport_Download(t *testing.T) {
 	tree.KillBLOB("one/file-three.bin")
 
 	err = tr.Download(lists.BlobMap{
-		"file-two.bin": mx["file-two.bin"],
-		"one/file-two.bin": mx["one/file-two.bin"],
+		"file-two.bin":       mx["file-two.bin"],
+		"one/file-two.bin":   mx["one/file-two.bin"],
 		"one/file-three.bin": mx["one/file-three.bin"],
 	})
 	assert.NoError(t, err)
 }
 
 func Test_Transport_Download_Many(t *testing.T) {
-//	t.Skip()
+	//	t.Skip()
 	root := "Download-many"
 
 	halt, tree, ml, _, tr := seed(t, root)
@@ -162,8 +163,8 @@ func Test_Transport_Download_Many(t *testing.T) {
 	tree.KillBLOB("one/file-two.bin")
 	tree.KillBLOB("one/file-three.bin")
 	req := lists.BlobMap{
-		"file-two.bin": mx["file-two.bin"],
-		"one/file-two.bin": mx["one/file-two.bin"],
+		"file-two.bin":       mx["file-two.bin"],
+		"one/file-two.bin":   mx["one/file-two.bin"],
 		"one/file-three.bin": mx["one/file-three.bin"],
 	}
 	for i := 0; i < 256; i++ {
@@ -198,7 +199,7 @@ func Test_Transport_Check(t *testing.T) {
 }
 
 func Test_Transport_UploadSpec(t *testing.T) {
-//	t.Skip()
+	//	t.Skip()
 	root := "Spec"
 	halt, tree, ml, _, tr := seed(t, root)
 	defer halt()
@@ -221,12 +222,12 @@ func Test_Transport_UploadSpec(t *testing.T) {
 	err = tr.UploadSpec(spec1)
 	assert.NoError(t, err)
 
-//	_, err = tr.GetSpec(spec1.ID)
-//	assert.NoError(t, err)
+	//	_, err = tr.GetSpec(spec1.ID)
+	//	assert.NoError(t, err)
 }
 
 func Test_Transport_FetchSpec(t *testing.T) {
-//	t.Skip()
+	//	t.Skip()
 	root := "Spec"
 	halt, tree, ml, _, tr := seed(t, root)
 	defer halt()
@@ -254,5 +255,3 @@ func Test_Transport_FetchSpec(t *testing.T) {
 
 	assert.Equal(t, spec1.ID, spec2.ID)
 }
-
-

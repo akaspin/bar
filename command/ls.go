@@ -1,14 +1,15 @@
 package command
+
 import (
-	"github.com/spf13/cobra"
 	"fmt"
-	"github.com/akaspin/bar/client/model"
-	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/client/lists"
+	"github.com/akaspin/bar/client/model"
 	"github.com/akaspin/bar/client/transport"
-	"text/tabwriter"
-"strings"
+	"github.com/akaspin/bar/proto"
+	"github.com/spf13/cobra"
 	"sort"
+	"strings"
+	"text/tabwriter"
 )
 
 type LsCmd struct {
@@ -18,19 +19,19 @@ type LsCmd struct {
 	UseGit bool
 
 	NoHeader bool
-	FullID bool
+	FullID   bool
 
-	NoBlobs bool
+	NoBlobs     bool
 	NoManifests bool
 
 	NoRemote bool
-	NoName bool
-	NoID bool
-	NoSize bool
+	NoName   bool
+	NoID     bool
+	NoSize   bool
 }
 
 func (c *LsCmd) Init(cc *cobra.Command) {
-	cc.Use = "ls"
+	cc.Use = "ls [# path]"
 	cc.Short = "show info about bar-tracked BLOBs"
 
 	cc.Flags().BoolVarP(&c.UseGit, "git", "", false, "use git infrastructure")

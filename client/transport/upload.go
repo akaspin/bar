@@ -1,12 +1,13 @@
 package transport
+
 import (
-	"github.com/nu7hatch/gouuid"
 	"github.com/akaspin/bar/client/lists"
-	"time"
 	"github.com/akaspin/bar/proto"
+	"github.com/nu7hatch/gouuid"
+	"time"
 )
 
-type Upload struct  {
+type Upload struct {
 	*Transport
 	*uuid.UUID
 	ttl time.Duration
@@ -35,7 +36,7 @@ func (u *Upload) SendCreateUpload(links lists.BlobMap) (missing []proto.ID, err 
 	if err != nil {
 		return
 	}
-    var r2 proto.IDSlice
+	var r2 proto.IDSlice
 	err = (&r2).UnmarshalThrift(res1)
 	missing = r2
 	return

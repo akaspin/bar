@@ -1,7 +1,8 @@
 package proto
+
 import (
-	"strings"
 	"github.com/akaspin/bar/proto/wire"
+	"strings"
 )
 
 // Server info
@@ -31,9 +32,9 @@ func (i ServerInfo) MarshalThrift() (res wire.ServerInfo, err error) {
 	res = wire.ServerInfo{
 		HttpEndpoint: i.HTTPEndpoint,
 		RpcEndpoints: i.RPCEndpoints,
-		ChunkSize: i.ChunkSize,
-		MaxConn: int32(i.PoolSize),
-		BufferSize: int32(i.BufferSize),
+		ChunkSize:    i.ChunkSize,
+		MaxConn:      int32(i.PoolSize),
+		BufferSize:   int32(i.BufferSize),
 	}
 	return
 }

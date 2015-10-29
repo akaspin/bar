@@ -1,19 +1,19 @@
 package command
+
 import (
-	"github.com/spf13/cobra"
-	"github.com/tamtam-im/logx"
+	"github.com/akaspin/bar/client/git"
 	"github.com/akaspin/bar/client/model"
 	"github.com/akaspin/bar/client/transport"
-	"github.com/akaspin/bar/client/git"
+	"github.com/spf13/cobra"
+	"github.com/tamtam-im/logx"
 )
 
-type GitInstallCmd struct  {
+type GitInstallCmd struct {
 	*Environment
 	*CommonOptions
 
 	// Installable logging level
 	Log string
-
 }
 
 func (c *GitInstallCmd) Init(cc *cobra.Command) {
@@ -46,4 +46,3 @@ func (c *GitInstallCmd) Run(args ...string) (err error) {
 
 	return
 }
-

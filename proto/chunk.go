@@ -1,4 +1,5 @@
 package proto
+
 import (
 	"fmt"
 	"github.com/akaspin/bar/proto/wire"
@@ -7,8 +8,7 @@ import (
 const CHUNK_SIZE = 1024 * 1024 * 2
 
 // Manifest chunk
-type Chunk struct  {
-
+type Chunk struct {
 	Data
 
 	// Offset
@@ -61,5 +61,3 @@ func (s *ChunkSlice) UnmarshalThrift(data []*wire.Chunk) (err error) {
 	}
 	return
 }
-
-

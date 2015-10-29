@@ -1,15 +1,14 @@
 package command
 
 import (
+	"github.com/akaspin/bar/proto"
 	"github.com/spf13/cobra"
 	"github.com/tamtam-im/logx"
-	"github.com/akaspin/bar/proto"
 )
 
-type GitSmudgeCmd struct  {
+type GitSmudgeCmd struct {
 	*Environment
 	*CommonOptions
-
 }
 
 func (c *GitSmudgeCmd) Init(cc *cobra.Command) {

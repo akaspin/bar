@@ -1,24 +1,25 @@
 package command
+
 import (
-	"io"
 	"github.com/spf13/cobra"
+	"io"
 )
 
 // Command environment
 type Environment struct {
-	Stdin io.Reader
+	Stdin  io.Reader
 	Stdout io.Writer
 	Stderr io.Writer
 }
 
 // Common bar options
-type CommonOptions struct  {
+type CommonOptions struct {
 	LoggingLevel string
-	WD string
+	WD           string
 
-	Endpoint string
-	ChunkSize int64
-	PoolSize int
+	Endpoint   string
+	ChunkSize  int64
+	PoolSize   int
 	BufferSize int
 }
 

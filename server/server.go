@@ -1,4 +1,5 @@
 package server
+
 import "golang.org/x/net/context"
 
 type Server interface {
@@ -7,8 +8,8 @@ type Server interface {
 }
 
 type CompositeServer struct {
-	ctx context.Context
-	cancel context.CancelFunc
+	ctx     context.Context
+	cancel  context.CancelFunc
 	servers []Server
 }
 
@@ -28,12 +29,12 @@ func (s *CompositeServer) Start() (err error) {
 	}
 	defer s.cancel()
 
-	loop:
+loop:
 	for {
 		select {
 		case <-s.ctx.Done():
 			break loop
-		case err = <- errChan:
+		case err = <-errChan:
 			s.cancel()
 			break loop
 		}
@@ -42,7 +43,7 @@ func (s *CompositeServer) Start() (err error) {
 	return
 }
 
-func (s *CompositeServer) Stop() (err error)  {
+func (s *CompositeServer) Stop() (err error) {
 	s.cancel()
 	return
 }

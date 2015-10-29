@@ -1,14 +1,14 @@
 package command
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/tamtam-im/logx"
-	"github.com/akaspin/bar/client/model"
 	"fmt"
 	"github.com/akaspin/bar/client/git"
+	"github.com/akaspin/bar/client/model"
+	"github.com/spf13/cobra"
+	"github.com/tamtam-im/logx"
 )
 
-type GitCleanCmd struct  {
+type GitCleanCmd struct {
 	*Environment
 	*CommonOptions
 

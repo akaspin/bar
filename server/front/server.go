@@ -1,15 +1,15 @@
 package front
 
 import (
-	"net"
-	"net/http"
+	"github.com/akaspin/bar/server/storage"
 	"github.com/tamtam-im/logx"
 	"golang.org/x/net/context"
-	"github.com/akaspin/bar/server/storage"
+	"net"
+	"net/http"
 )
 
-type Server struct  {
-	ctx context.Context
+type Server struct {
+	ctx    context.Context
 	cancel context.CancelFunc
 
 	options *Options
@@ -45,7 +45,7 @@ func (s *Server) Start() (err error) {
 	mux.HandleFunc("/v1/win/bar.exe", hs.HandleBarExe)
 	mux.HandleFunc("/v1/spec/", hs.HandleSpec)
 	logx.Debugf("bard http serving at http://%s/v1", s.options.Bind)
-	srv := &http.Server{Handler:mux}
+	srv := &http.Server{Handler: mux}
 
 	errChan := make(chan error, 1)
 	go func() {
@@ -58,7 +58,7 @@ func (s *Server) Start() (err error) {
 	select {
 	case <-s.ctx.Done():
 		break
-	case err = <- errChan:
+	case err = <-errChan:
 		break
 	}
 	return
@@ -69,4 +69,3 @@ func (s *Server) Stop() (err error) {
 	logx.Debugf("http %s closed", s.options.Bind)
 	return
 }
-

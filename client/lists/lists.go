@@ -1,9 +1,10 @@
 package lists
+
 import (
-	"strings"
-	"regexp"
-	"path/filepath"
 	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
 )
 
 type FileList struct {
@@ -45,7 +46,6 @@ func (l *FileList) ListDir(dir string) (res []string) {
 
 	return
 }
-
 
 func (l *FileList) List(in []string) (res []string) {
 	for _, name := range in {

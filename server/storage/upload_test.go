@@ -1,28 +1,28 @@
 package storage_test
+
 import (
-	"testing"
-	"github.com/akaspin/bar/fixtures"
-	"github.com/stretchr/testify/assert"
+	"bytes"
+	"github.com/akaspin/bar/client/lists"
 	"github.com/akaspin/bar/client/model"
+	"github.com/akaspin/bar/fixtures"
 	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/server/storage"
-	"github.com/akaspin/bar/client/lists"
-	"time"
-	"os"
-	"github.com/tamtam-im/logx"
-	"bytes"
 	"github.com/nu7hatch/gouuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/tamtam-im/logx"
+	"os"
+	"testing"
+	"time"
 )
 
-
-func Test_Storage_Upload_CreateUpload(t *testing.T)  {
+func Test_Storage_Upload_CreateUpload(t *testing.T) {
 	logx.SetLevel(logx.DEBUG)
 
 	tree := fixtures.NewTree("create-upload", "")
 	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
-	m, err :=  model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
+	m, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
 	os.RemoveAll("testdata/create-upload-storage")
@@ -40,14 +40,14 @@ func Test_Storage_Upload_CreateUpload(t *testing.T)  {
 	assert.Len(t, missing, 4)
 }
 
-func Test_Storage_Upload_UploadChunk(t *testing.T)  {
+func Test_Storage_Upload_UploadChunk(t *testing.T) {
 	logx.SetLevel(logx.DEBUG)
 
 	tree := fixtures.NewTree("upload-chunk", "")
 	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
-	m, err :=  model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
+	m, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
 	os.RemoveAll("testdata/upload-chunk-storage")
@@ -78,14 +78,14 @@ func Test_Storage_Upload_UploadChunk(t *testing.T)  {
 	}
 }
 
-func Test_Storage_Upload_FinishUpload(t *testing.T)  {
+func Test_Storage_Upload_FinishUpload(t *testing.T) {
 	logx.SetLevel(logx.DEBUG)
 
 	tree := fixtures.NewTree("finish-upload", "")
 	defer tree.Squash()
 	assert.NoError(t, tree.Populate())
 
-	m, err :=  model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
+	m, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
 	assert.NoError(t, err)
 
 	os.RemoveAll("testdata/finish-upload-storage")

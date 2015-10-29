@@ -1,7 +1,8 @@
 package proto
+
 import (
-	"github.com/akaspin/bar/proto/wire"
 	"encoding/hex"
+	"github.com/akaspin/bar/proto/wire"
 )
 
 // SHA3-256

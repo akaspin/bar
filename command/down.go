@@ -1,13 +1,14 @@
 package command
+
 import (
-	"github.com/spf13/cobra"
-	"github.com/akaspin/bar/client/model"
-	"github.com/akaspin/bar/client/lists"
 	"fmt"
+	"github.com/akaspin/bar/client/lists"
+	"github.com/akaspin/bar/client/model"
 	"github.com/akaspin/bar/client/transport"
+	"github.com/spf13/cobra"
 )
 
-type DownCmd struct  {
+type DownCmd struct {
 	*Environment
 	*CommonOptions
 
@@ -15,7 +16,7 @@ type DownCmd struct  {
 }
 
 func (c *DownCmd) Init(cc *cobra.Command) {
-	cc.Use = "down"
+	cc.Use = "down [# path]"
 	cc.Short = "download BLOBs from bar server"
 
 	cc.Flags().BoolVarP(&c.UseGit, "git", "", false, "use git infrastructure")

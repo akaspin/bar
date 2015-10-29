@@ -1,9 +1,10 @@
 package transport_test
+
 import (
-	"testing"
-	"net/url"
 	"github.com/stretchr/testify/assert"
+	"net/url"
 	"path"
+	"testing"
 )
 
 func Test_CloneURL(t *testing.T) {

@@ -1,14 +1,15 @@
 package proto
+
 import (
-	"io"
-	"bytes"
-	"fmt"
 	"bufio"
+	"bytes"
+	"encoding/hex"
+	"fmt"
+	"github.com/akaspin/bar/proto/wire"
 	"golang.org/x/crypto/sha3"
 	"hash"
+	"io"
 	"strings"
-	"encoding/hex"
-	"github.com/akaspin/bar/proto/wire"
 )
 
 const (

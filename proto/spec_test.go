@@ -1,12 +1,13 @@
 package proto_test
+
 import (
-	"testing"
-	"github.com/akaspin/bar/fixtures"
-	"github.com/stretchr/testify/assert"
-	"github.com/akaspin/bar/proto"
-	"sort"
-	"golang.org/x/crypto/sha3"
 	"encoding/hex"
+	"github.com/akaspin/bar/fixtures"
+	"github.com/akaspin/bar/proto"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/sha3"
+	"sort"
+	"testing"
 	"time"
 )
 

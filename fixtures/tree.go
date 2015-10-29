@@ -1,13 +1,13 @@
 package fixtures
+
 import (
+	"fmt"
+	"github.com/nu7hatch/gouuid"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"time"
-	"fmt"
-	"github.com/nu7hatch/gouuid"
-"math/rand"
 )
-
 
 type Tree struct {
 	CWD string
@@ -36,9 +36,9 @@ func (f *Tree) Populate() (err error) {
 	}
 	for _, sub := range []string{"one", "two", "three", ""} {
 		for n, s := range map[string]int64{
-			"file-one.bin": 3,
-			"file-two.bin": 1024 * 1024 * 2 + 45,
-			"file-three.bin": 1024 + 45,
+			"file-one.bin":              3,
+			"file-two.bin":              1024*1024*2 + 45,
+			"file-three.bin":            1024 + 45,
 			"file-four with spaces.bin": 1024 + 45,
 		} {
 			if err = f.WriteBLOB(filepath.Join(sub, n), s); err != nil {
@@ -46,7 +46,7 @@ func (f *Tree) Populate() (err error) {
 			}
 		}
 	}
-//	time.Sleep(time.Millisecond * 100)
+	//	time.Sleep(time.Millisecond * 100)
 	return
 }
 
@@ -55,12 +55,12 @@ func (f *Tree) PopulateN(size int64, n int) (err error) {
 		rand.Seed(time.Now().Unix())
 		if err = f.WriteBLOB(
 			filepath.Join("big", fmt.Sprintf("file-big-%d.bin", i)),
-			size + int64(rand.Int31n(100))); err != nil {
+			size+int64(rand.Int31n(100))); err != nil {
 			return
 		}
 	}
 
-//	time.Sleep(time.Millisecond * 100)
+	//	time.Sleep(time.Millisecond * 100)
 	return
 }
 
@@ -82,7 +82,3 @@ func (f *Tree) Squash() (err error) {
 	err = os.RemoveAll(f.CWD)
 	return
 }
-
-
-
-

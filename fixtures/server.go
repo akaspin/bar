@@ -1,16 +1,17 @@
 package fixtures
+
 import (
-	"github.com/akaspin/bar/server/storage"
-	"time"
 	"fmt"
-	"path/filepath"
-	"github.com/tamtam-im/logx"
 	"github.com/akaspin/bar/proto"
-	"os"
 	"github.com/akaspin/bar/server"
-	"github.com/akaspin/bar/server/thrift"
-	"golang.org/x/net/context"
 	"github.com/akaspin/bar/server/front"
+	"github.com/akaspin/bar/server/storage"
+	"github.com/akaspin/bar/server/thrift"
+	"github.com/tamtam-im/logx"
+	"golang.org/x/net/context"
+	"os"
+	"path/filepath"
+	"time"
 )
 
 type FixtureServer struct {
@@ -23,7 +24,7 @@ func NewFixtureServer(name string) (res *FixtureServer, err error) {
 	logx.SetLevel(logx.DEBUG)
 
 	wd, _ := os.Getwd()
-	rt := filepath.Join(wd, "testdata", name + "-srv")
+	rt := filepath.Join(wd, "testdata", name+"-srv")
 	os.RemoveAll(rt)
 
 	p := storage.NewBlockStorage(&storage.BlockStorageOptions{rt, 2, 32, 64})
@@ -36,9 +37,9 @@ func NewFixtureServer(name string) (res *FixtureServer, err error) {
 	info := &proto.ServerInfo{
 		HTTPEndpoint: fmt.Sprintf("http://localhost:%d/v1", ports[0]),
 		RPCEndpoints: []string{fmt.Sprintf("localhost:%d", ports[1])},
-		ChunkSize: 1024 * 1024 * 2,
-		PoolSize: 16,
-		BufferSize: 1024 * 1024 * 8,
+		ChunkSize:    1024 * 1024 * 2,
+		PoolSize:     16,
+		BufferSize:   1024 * 1024 * 8,
 	}
 
 	tServer := thrift.NewServer(ctx,
@@ -63,6 +64,6 @@ func (s *FixtureServer) Stop() {
 
 func ServerStoredName(root string, id string) string {
 	wd, _ := os.Getwd()
-	rt := filepath.Join(wd, "testdata", root + "srv")
+	rt := filepath.Join(wd, "testdata", root+"srv")
 	return filepath.Join(rt, "blobs", id[:2], id)
 }

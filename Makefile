@@ -19,7 +19,9 @@ TESTS=.
 .PHONY: clean uninstall test bench
 
 
-dist: dist-win dist-linux dist-darwin bindir
+all: install bindir dist
+
+dist: dist-win dist-linux dist-darwin dist/bar-bindir-${V}.tar.gz
 
 dist-win: dist/bar-${V}-windows-amd64.zip
 
@@ -35,6 +37,9 @@ clean:
 
 dist/bar-${V}-windows-amd64.zip: dist/win/bar.exe
 	zip -r -j -D $@ ${<D}
+
+dist/bar-bindir-${V}.tar.gz: dist/bindir/windows dist/bindir/linux dist/bindir/darwin
+	tar -czf $@ -C ${<D} .
 
 dist/bar-${V}-%-amd64.tar.gz: dist/%/bar
 	tar -czf $@ -C ${<D} .

@@ -1,10 +1,11 @@
 package transport
+
 import (
-	"github.com/vireshas/minimal_vitess_pool/pools"
-	"github.com/apache/thrift/lib/go/thrift"
 	"github.com/akaspin/bar/proto/wire"
-	"time"
+	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/vireshas/minimal_vitess_pool/pools"
 	"math/rand"
+	"time"
 )
 
 // Bar thrift client wrapper
@@ -35,23 +36,23 @@ func (c *TClient) Close() {
 }
 
 type TPool struct {
-	endpoints []string
+	endpoints    []string
 	endpointsCap int
-	ttl time.Duration
+	ttl          time.Duration
 
 	transportFactory thrift.TTransportFactory
-	protoFactory thrift.TProtocolFactory
+	protoFactory     thrift.TProtocolFactory
 
 	*pools.ResourcePool
 }
 
 func NewTPool(endpoints []string, bufferSize int, n int, ttl time.Duration) (res *TPool) {
 	res = &TPool{
-		endpoints: endpoints,
-		endpointsCap: len(endpoints) - 1,
-		ttl: ttl,
+		endpoints:        endpoints,
+		endpointsCap:     len(endpoints) - 1,
+		ttl:              ttl,
 		transportFactory: thrift.NewTBufferedTransportFactory(bufferSize),
-		protoFactory: thrift.NewTBinaryProtocolFactoryDefault(),
+		protoFactory:     thrift.NewTBinaryProtocolFactoryDefault(),
 	}
 	res.ResourcePool = pools.NewResourcePool(res.factory, n, n, ttl)
 	return
@@ -69,7 +70,7 @@ func (p *TPool) Take() (res *TClient, err error) {
 	return
 }
 
-func (p *TPool) factory() (res pools.Resource, err error)  {
+func (p *TPool) factory() (res pools.Resource, err error) {
 	// peek endpoint
 	var endpoint string
 	if p.endpointsCap == 0 {

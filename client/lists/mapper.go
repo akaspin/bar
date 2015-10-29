@@ -1,4 +1,5 @@
 package lists
+
 import (
 	"path/filepath"
 )
@@ -59,7 +60,7 @@ func (m *Mapper) remap(from, to string, arg ...string) (res []string, err error)
 
 func (m *Mapper) ToShell(arg ...string) (res []string) {
 	for _, f := range arg {
-		res = append(res, `` + filepath.FromSlash(f) + ``)
+		res = append(res, ``+filepath.FromSlash(f)+``)
 	}
 	return
 }

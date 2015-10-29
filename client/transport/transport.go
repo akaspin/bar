@@ -1,22 +1,23 @@
 package transport
+
 import (
-	"time"
-	"github.com/akaspin/bar/proto"
-	"github.com/tamtam-im/logx"
+	"bytes"
 	"github.com/akaspin/bar/client/lists"
 	"github.com/akaspin/bar/client/model"
-	"bytes"
-	"strings"
+	"github.com/akaspin/bar/proto"
 	"github.com/akaspin/bar/proto/wire"
-	"golang.org/x/net/context"
 	"github.com/akaspin/concurrency"
+	"github.com/tamtam-im/logx"
+	"golang.org/x/net/context"
+	"strings"
+	"time"
 )
 
 // Common transport with pooled connections
 type Transport struct {
-	model *model.Model
+	model   *model.Model
 	rpcPool *RPCPool
-	tPool *TPool
+	tPool   *TPool
 	*concurrency.BatchPool
 }
 
@@ -24,9 +25,9 @@ type Transport struct {
 func NewTransport(mod *model.Model, endpoint string, rpcEndpoints string, n int) (res *Transport) {
 	rpcEP := strings.Split(rpcEndpoints, ",")
 	res = &Transport{
-		model: mod,
-		rpcPool: NewRPCPool(n, time.Hour, endpoint, rpcEP),
-		tPool: NewTPool(strings.Split(rpcEndpoints, ","), 1024 * 1024 * 8,  n, time.Hour),
+		model:     mod,
+		rpcPool:   NewRPCPool(n, time.Hour, endpoint, rpcEP),
+		tPool:     NewTPool(strings.Split(rpcEndpoints, ","), 1024*1024*8, n, time.Hour),
 		BatchPool: concurrency.NewPool(n),
 	}
 	return
@@ -80,7 +81,6 @@ func (t *Transport) Upload(blobs lists.BlobMap) (err error) {
 	return
 }
 
-
 func (t *Transport) Download(blobs lists.BlobMap) (err error) {
 
 	logx.Tracef("fetching blobs %s", blobs.IDMap())
@@ -88,13 +88,19 @@ func (t *Transport) Download(blobs lists.BlobMap) (err error) {
 
 	// little funny, but all chunks are equal - flatten them
 	var req, res []interface{}
-	chunkMap := map[string]struct{proto.ID; proto.Chunk}{}
+	chunkMap := map[string]struct {
+		proto.ID
+		proto.Chunk
+	}{}
 	fetchIds := map[proto.ID]struct{}{}
 
 	for _, mt := range fetch {
 		fetchIds[mt.ID] = struct{}{}
-		for _, ch := range mt.Chunks    {
-			chunkMap[ch.ID.String()] = struct{proto.ID; proto.Chunk}{mt.ID, ch}
+		for _, ch := range mt.Chunks {
+			chunkMap[ch.ID.String()] = struct {
+				proto.ID
+				proto.Chunk
+			}{mt.ID, ch}
 		}
 	}
 	for _, v := range chunkMap {
@@ -107,8 +113,11 @@ func (t *Transport) Download(blobs lists.BlobMap) (err error) {
 
 	// Fetch all chunks
 	err = t.model.BatchPool.Do(
-		func (ctx context.Context, in interface{}) (out interface{}, err error) {
-			r := in.(struct{proto.ID; proto.Chunk})
+		func(ctx context.Context, in interface{}) (out interface{}, err error) {
+			r := in.(struct {
+				proto.ID
+				proto.Chunk
+			})
 
 			tclient, err := t.tPool.Take()
 			if err != nil {

@@ -1,4 +1,5 @@
 package transport
+
 import (
 	"github.com/vireshas/minimal_vitess_pool/pools"
 	"net/rpc"
@@ -6,10 +7,10 @@ import (
 	"time"
 )
 
-type RPCClient struct  {
+type RPCClient struct {
 	endpoint *url.URL
-	pool *RPCPool
-	client *rpc.Client
+	pool     *RPCPool
+	client   *rpc.Client
 }
 
 func (c *RPCClient) Connect() (err error) {
@@ -17,7 +18,7 @@ func (c *RPCClient) Connect() (err error) {
 		c.client, err = rpc.DialHTTPPath(
 			"tcp",
 			c.endpoint.Host,
-			c.endpoint.Path + "/rpc")
+			c.endpoint.Path+"/rpc")
 	}
 	return
 }
@@ -45,11 +46,10 @@ func (c *RPCClient) Close() {
 	c.client = nil
 }
 
-
 type RPCPool struct {
-	endpoint string
+	endpoint     string
 	rpcEndpoints string
-	timeout time.Duration
+	timeout      time.Duration
 	*pools.ResourcePool
 }
 
@@ -57,7 +57,7 @@ func NewRPCPool(n int, ttl time.Duration,
 	endpoint string, rpcEndpoints []string) (res *RPCPool) {
 	res = &RPCPool{
 		endpoint: endpoint,
-		timeout: ttl,
+		timeout:  ttl,
 	}
 	res.ResourcePool = pools.NewResourcePool(res.factory, n, n, ttl)
 	return
@@ -86,5 +86,3 @@ func (p *RPCPool) factory() (res pools.Resource, err error) {
 	res = &RPCClient{endpoint: u, pool: p}
 	return
 }
-
-

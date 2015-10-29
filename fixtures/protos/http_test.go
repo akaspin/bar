@@ -1,12 +1,13 @@
 package protos_test
+
 import (
-"net/http"
-"testing"
-	"github.com/stretchr/testify/assert"
-	"net/rpc"
 	"fmt"
-	"time"
+	"github.com/stretchr/testify/assert"
+	"net/http"
+	"net/rpc"
 	"strings"
+	"testing"
+	"time"
 )
 
 type httpTestServer struct {
@@ -16,13 +17,13 @@ type httpTestServer struct {
 func (s *httpTestServer) start() (err error) {
 	mux := http.NewServeMux()
 	mux.Handle("/v1/rpc", s.service)
-	srv := &http.Server{Handler:mux}
+	srv := &http.Server{Handler: mux}
 	go srv.Serve(s.Listener)
-//	time.Sleep(time.Second)
+	//	time.Sleep(time.Second)
 	return
 }
 
-func Test_Proto_HTTP(t *testing.T)  {
+func Test_Proto_HTTP(t *testing.T) {
 	t.Skip()
 	srv := &httpTestServer{&baseTestServer{}}
 	port, err := srv.listen()
@@ -45,7 +46,7 @@ func Test_Proto_HTTP(t *testing.T)  {
 	assert.Equal(t, req, res)
 }
 
-func Test_Proto_HTTP_Large(t *testing.T)  {
+func Test_Proto_HTTP_Large(t *testing.T) {
 	t.Skip()
 	srv := &httpTestServer{&baseTestServer{}}
 	port, err := srv.listen()
@@ -61,14 +62,14 @@ func Test_Proto_HTTP_Large(t *testing.T)  {
 	var res TestMessage
 	req := TestMessage{
 		"12345678910",
-		[]byte(strings.Repeat("0", 1024 * 1024)),
+		[]byte(strings.Repeat("0", 1024*1024)),
 	}
 	err = client.Call("ServiceFixture.Ping", &req, &res)
 	assert.NoError(t, err)
 	assert.Equal(t, req, res)
 }
 
-func Test_Proto_HTTP_Timeout(t *testing.T)  {
+func Test_Proto_HTTP_Timeout(t *testing.T) {
 	t.Skip()
 	srv := &httpTestServer{&baseTestServer{}}
 	port, err := srv.listen()
@@ -96,7 +97,7 @@ func Test_Proto_HTTP_Timeout(t *testing.T)  {
 	assert.Equal(t, req, res1)
 }
 
-func Test_Proto_HTTP_Large_Timeout(t *testing.T)  {
+func Test_Proto_HTTP_Large_Timeout(t *testing.T) {
 	t.Skip()
 	srv := &httpTestServer{&baseTestServer{}}
 	port, err := srv.listen()
@@ -112,7 +113,7 @@ func Test_Proto_HTTP_Large_Timeout(t *testing.T)  {
 	var res, res1 TestMessage
 	req := TestMessage{
 		"12345678910",
-		[]byte(strings.Repeat("0", 1024 * 1024)),
+		[]byte(strings.Repeat("0", 1024*1024)),
 	}
 	err = client.Call("ServiceFixture.Ping", &req, &res)
 	assert.NoError(t, err)
@@ -124,7 +125,7 @@ func Test_Proto_HTTP_Large_Timeout(t *testing.T)  {
 	assert.Equal(t, req, res1)
 }
 
-func Benchmark_Proto_HTTP(b *testing.B)  {
+func Benchmark_Proto_HTTP(b *testing.B) {
 	b.Skip()
 	srv := &httpTestServer{&baseTestServer{}}
 	port, err := srv.listen()
@@ -141,21 +142,21 @@ func Benchmark_Proto_HTTP(b *testing.B)  {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-			b.StartTimer()
-			var res TestMessage
-			req := TestMessage{
-				fmt.Sprintf("%d", i),
-				[]byte("mama myla ramu"),
-			}
-			err = client.Call("ServiceFixture.Ping", &req, &res)
-			b.StopTimer()
-			assert.NoError(b, err)
-			assert.Equal(b, req, res)
-			b.SetBytes(int64(len(req.Data) * 2))
+		b.StartTimer()
+		var res TestMessage
+		req := TestMessage{
+			fmt.Sprintf("%d", i),
+			[]byte("mama myla ramu"),
+		}
+		err = client.Call("ServiceFixture.Ping", &req, &res)
+		b.StopTimer()
+		assert.NoError(b, err)
+		assert.Equal(b, req, res)
+		b.SetBytes(int64(len(req.Data) * 2))
 	}
 }
 
-func Benchmark_Proto_HTTP_Large(b *testing.B)  {
+func Benchmark_Proto_HTTP_Large(b *testing.B) {
 	b.Skip()
 	srv := &httpTestServer{&baseTestServer{}}
 	port, err := srv.listen()
@@ -172,16 +173,16 @@ func Benchmark_Proto_HTTP_Large(b *testing.B)  {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-			b.StartTimer()
-			var res TestMessage
-			req := TestMessage{
-				fmt.Sprintf("%d", i),
-				[]byte(strings.Repeat("0", 1024 * 1024)),
-			}
-			err = client.Call("ServiceFixture.Ping", &req, &res)
-			b.StopTimer()
-			assert.NoError(b, err)
-			assert.Equal(b, req, res)
-			b.SetBytes(int64(len(req.Data) * 2))
+		b.StartTimer()
+		var res TestMessage
+		req := TestMessage{
+			fmt.Sprintf("%d", i),
+			[]byte(strings.Repeat("0", 1024*1024)),
+		}
+		err = client.Call("ServiceFixture.Ping", &req, &res)
+		b.StopTimer()
+		assert.NoError(b, err)
+		assert.Equal(b, req, res)
+		b.SetBytes(int64(len(req.Data) * 2))
 	}
 }

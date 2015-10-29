@@ -1,4 +1,5 @@
 package lists
+
 import (
 	"github.com/akaspin/bar/proto"
 	"path/filepath"

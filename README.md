@@ -108,6 +108,20 @@ To check status of bar-tracked BLOBs use `git bar-ls`
     NAME                BLOB    SYNC    ID                  SIZE
     my/blobs/test.txt   no      yes     309a349019013151    4
 
+## Paths and globs
+
+Many `bar` commands accepts optional `[# path]` parameters. `path` is git-like 
+pattern for restrict bar to search files in tree relative to working directory. 
+All patterns must use forward slashes ("/") in POSIX notation. Single 
+asterisk ("*") matches any symbols to next slash. Double asterisks matches any 
+symbols across slashes. To exclude `path` prepend it with explamation ("!"). 
+All patterns are must match full path.
+    
+    recursive/pattern/**
+    recursive/**/with.file
+    non/*/recursive
+    !excluded/**
+
 ## Covert ops
 
 With `bar divert` you can change specific files from inactive branch without 
@@ -132,7 +146,7 @@ You can also push inactive branch:
 To install just grab latest binaries archive from releases and unpack 
 somewhere to `PATH`.
 
-## `bar server` BLOB server
+## `bar server` (bard)
 
     $ bar server run \
         --bind-http=:3000 \
@@ -140,10 +154,13 @@ somewhere to `PATH`.
         --storage=block:root=testdata \
         --endpoint=${HOSTNAME}:3001 \
         --endpoint-http=http://${HOSTNAME}:3000/v1 \
-        --bindir=dist/bindir
+        --bin-dir=dist/bindir
     DEBUG server.go:23: serving at http://0.0.0.0:3000/v1
 
-Use `bar server run -help` to get available options.
+Tricky part is `bin-dir` flag. Bar server has functionality to serve `bar` 
+binaries by `HTTP`. Bar server searches binaries in `bin-dir`:
+
+    http://<bar-host>:<port>/v1/win/bar.exe -> bin-dir/windows
 
 ## Gitless usage
 

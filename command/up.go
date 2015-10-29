@@ -1,14 +1,15 @@
 package command
+
 import (
-	"github.com/spf13/cobra"
-	"github.com/akaspin/bar/client/model"
-	"github.com/akaspin/bar/client/lists"
 	"fmt"
-	"github.com/tamtam-im/logx"
+	"github.com/akaspin/bar/client/lists"
+	"github.com/akaspin/bar/client/model"
 	"github.com/akaspin/bar/client/transport"
+	"github.com/spf13/cobra"
+	"github.com/tamtam-im/logx"
 )
 
-type UpCmd struct  {
+type UpCmd struct {
 	*Environment
 	*CommonOptions
 
@@ -17,7 +18,7 @@ type UpCmd struct  {
 }
 
 func (c *UpCmd) Init(cc *cobra.Command) {
-	cc.Use = "up"
+	cc.Use = "up [# path]"
 	cc.Short = "upload BLOBs to bar server"
 	cc.Flags().BoolVarP(&c.UseGit, "git", "", false, "use git infrastructure")
 	cc.Flags().BoolVarP(&c.Squash, "squash", "", false,
@@ -72,4 +73,3 @@ func (c *UpCmd) Run(args ...string) (err error) {
 
 	return
 }
-

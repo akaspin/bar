@@ -1,16 +1,17 @@
 package t10_test
+
 import (
+	"fmt"
+	"github.com/akaspin/bar/fixtures"
 	"github.com/akaspin/bar/fixtures/protos/t10/srv"
 	"github.com/apache/thrift/lib/go/thrift"
-	"github.com/akaspin/bar/fixtures"
-	"fmt"
-	"testing"
 	"github.com/stretchr/testify/assert"
-"strings"
+	"strings"
+	"testing"
 	"time"
 )
 
-type service struct {}
+type service struct{}
 
 const thrift_buffer = 1024 * 1024 * 8
 
@@ -20,7 +21,7 @@ func (s *service) Test(par *srv.TestRep) (r *srv.TestRep, err error) {
 }
 
 type TServer struct {
-	Port int
+	Port   int
 	Server thrift.TServer
 }
 
@@ -42,7 +43,6 @@ func (s *TServer) Start(transportFactory thrift.TTransportFactory) (err error) {
 	time.Sleep(time.Millisecond * 100)
 	return
 }
-
 
 func Test_Proto_Thrift(t *testing.T) {
 	t.Skip()
@@ -66,7 +66,7 @@ func Test_Proto_Thrift(t *testing.T) {
 	client := srv.NewTSrvClientFactory(transport, protoFactory)
 
 	req := srv.TestRep{
-		ID: "test",
+		ID:   "test",
 		Data: []byte("mama myla ramy"),
 	}
 	res, err := client.Test(&req)
@@ -99,16 +99,16 @@ func Benchmark_Proto_Thrift_Buffered(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-			b.StartTimer()
-			req := srv.TestRep{
-				ID: fmt.Sprintf("%d", i),
-				Data: []byte("mama myla ramy"),
-			}
-			res, err := client.Test(&req)
-			b.StopTimer()
-			assert.NoError(b, err)
-			assert.EqualValues(b, req, *res)
-			b.SetBytes(int64(len(req.Data) * 2))
+		b.StartTimer()
+		req := srv.TestRep{
+			ID:   fmt.Sprintf("%d", i),
+			Data: []byte("mama myla ramy"),
+		}
+		res, err := client.Test(&req)
+		b.StopTimer()
+		assert.NoError(b, err)
+		assert.EqualValues(b, req, *res)
+		b.SetBytes(int64(len(req.Data) * 2))
 	}
 }
 
@@ -137,15 +137,15 @@ func Benchmark_Proto_Thrift_Buffered_Large(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-			b.StartTimer()
-			req := srv.TestRep{
-				ID: fmt.Sprintf("%d", i),
-				Data: []byte(strings.Repeat("0", 1024 * 1024)),
-			}
-			res, err := client.Test(&req)
-			b.StopTimer()
-			assert.NoError(b, err)
-			assert.EqualValues(b, req, *res)
-			b.SetBytes(int64(len(req.Data) * 2))
+		b.StartTimer()
+		req := srv.TestRep{
+			ID:   fmt.Sprintf("%d", i),
+			Data: []byte(strings.Repeat("0", 1024*1024)),
+		}
+		res, err := client.Test(&req)
+		b.StopTimer()
+		assert.NoError(b, err)
+		assert.EqualValues(b, req, *res)
+		b.SetBytes(int64(len(req.Data) * 2))
 	}
 }

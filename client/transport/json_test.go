@@ -1,8 +1,9 @@
 package transport_test
+
 import (
-	"testing"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func Test_JSONUnmarshallTypeless(t *testing.T) {

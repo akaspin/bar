@@ -1,14 +1,15 @@
 package git_test
+
 import (
-	"testing"
-	"github.com/akaspin/bar/fixtures"
-	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/bar/client/git"
 	"github.com/akaspin/bar/client/lists"
+	"github.com/akaspin/bar/client/model"
+	"github.com/akaspin/bar/fixtures"
+	"github.com/akaspin/bar/proto"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
-	"github.com/akaspin/bar/client/model"
-	"github.com/akaspin/bar/proto"
+	"testing"
 )
 
 func Test_Git_LsTree(t *testing.T) {
@@ -102,7 +103,7 @@ func Test_Git_Checkout_Files(t *testing.T) {
 		"two/file-four with spaces.bin"}, diff)
 }
 
-func Test_Git_Divert1(t *testing.T)  {
+func Test_Git_Divert1(t *testing.T) {
 
 	tree := fixtures.NewTree("Git_divert", "")
 	assert.NoError(t, tree.Populate())
@@ -111,7 +112,7 @@ func Test_Git_Divert1(t *testing.T)  {
 	g, err := gitFixture(tree)
 	assert.NoError(t, err)
 
-//	logx.SetLevel(logx.TRACE)
+	//	logx.SetLevel(logx.TRACE)
 
 	// get blobmap for further checks
 	mod, err := model.New(tree.CWD, false, proto.CHUNK_SIZE, 16)
@@ -176,7 +177,7 @@ func Test_Git_Divert1(t *testing.T)  {
 	assert.EqualValues(t, oMan2, oMan2p)
 }
 
-func gitFixture(tree *fixtures.Tree) (res *git.Git, err error)  {
+func gitFixture(tree *fixtures.Tree) (res *git.Git, err error) {
 	res = &git.Git{lists.NewMapper(tree.CWD, tree.CWD)}
 	if _, err = res.Run("init"); err != nil {
 		return

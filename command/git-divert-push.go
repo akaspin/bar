@@ -1,8 +1,9 @@
 package command
+
 import (
-	"github.com/spf13/cobra"
-	"github.com/akaspin/bar/client/model"
 	"fmt"
+	"github.com/akaspin/bar/client/model"
+	"github.com/spf13/cobra"
 	"github.com/tamtam-im/logx"
 )
 
@@ -11,12 +12,12 @@ type GitDivertPushCmd struct {
 	*CommonOptions
 }
 
-func (c *GitDivertPushCmd) Init(cc *cobra.Command)  {
-	cc.Use = "push [UPSTREAM] BRANCH"
+func (c *GitDivertPushCmd) Init(cc *cobra.Command) {
+	cc.Use = "push [upstream] branch"
 	cc.Short = "push specific branch"
 }
 
-func (c *GitDivertPushCmd) Run(args ...string) (err error)  {
+func (c *GitDivertPushCmd) Run(args ...string) (err error) {
 	mod, err := model.New(c.WD, true, c.ChunkSize, c.PoolSize)
 	if err != nil {
 		return

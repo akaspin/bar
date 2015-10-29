@@ -1,27 +1,28 @@
 package storage
+
 import (
-	"io"
-	"path/filepath"
-	"os"
-	"fmt"
-	"golang.org/x/crypto/sha3"
-	"github.com/akaspin/go-contentaddressable"
-	"github.com/akaspin/bar/proto"
-	"encoding/json"
-	"time"
-	"github.com/akaspin/concurrency"
-	"golang.org/x/net/context"
-	"github.com/nu7hatch/gouuid"
-	"strings"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"github.com/akaspin/bar/proto"
+	"github.com/akaspin/concurrency"
+	"github.com/akaspin/go-contentaddressable"
+	"github.com/nu7hatch/gouuid"
 	"github.com/tamtam-im/logx"
+	"golang.org/x/crypto/sha3"
+	"golang.org/x/net/context"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 )
 
 const (
-	blob_ns = "blobs"
-	spec_ns = "specs"
+	blob_ns      = "blobs"
+	spec_ns      = "specs"
 	manifests_ns = "manifests"
-	upload_ns = "uploads"
+	upload_ns    = "uploads"
 )
 
 func BlockStorageFactory(opts map[string]string) (res Storage, err error) {
@@ -65,7 +66,6 @@ type BlockStorageOptions struct {
 
 // Simple block device storage
 type BlockStorage struct {
-
 	*BlockStorageOptions
 
 	// Max Open files locker
@@ -77,8 +77,8 @@ type BlockStorage struct {
 func NewBlockStorage(options *BlockStorageOptions) *BlockStorage {
 	return &BlockStorage{
 		BlockStorageOptions: options,
-		FDLocks: concurrency.NewLocks(context.Background(), options.MaxFiles, time.Minute * 5),
-		BatchPool: concurrency.NewPool(options.PoolSize),
+		FDLocks:             concurrency.NewLocks(context.Background(), options.MaxFiles, time.Minute*5),
+		BatchPool:           concurrency.NewPool(options.PoolSize),
 	}
 }
 
@@ -178,7 +178,6 @@ func (s *BlockStorage) GetMissingBlobIDs(ids []proto.ID) (res []proto.ID, err er
 	return
 }
 
-
 func (s *BlockStorage) WriteChunk(blobID, chunkID proto.ID, size int64, r io.Reader) (err error) {
 	lock, err := s.FDLocks.Take()
 	if err != nil {
@@ -235,7 +234,6 @@ func (s *BlockStorage) ReadChunkFromBlob(blobID proto.ID, size, offset int64, w 
 	return
 }
 
-
 func (s *BlockStorage) CreateUploadSession(uploadID uuid.UUID, in []proto.Manifest, ttl time.Duration) (missing []proto.ID, err error) {
 	hexid := proto.ID(hex.EncodeToString(uploadID[:]))
 
@@ -269,7 +267,7 @@ func (s *BlockStorage) CreateUploadSession(uploadID uuid.UUID, in []proto.Manife
 				return
 			}
 
-			w, err := os.OpenFile(filepath.Join(base, m.ID.String() + "-manifest.json"),
+			w, err := os.OpenFile(filepath.Join(base, m.ID.String()+"-manifest.json"),
 				os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 			if err != nil {
 				return
@@ -326,18 +324,17 @@ func (s *BlockStorage) FinishUploadSession(uploadID uuid.UUID) (err error) {
 	base := s.idPath(upload_ns, hexid)
 	defer os.RemoveAll(base)
 
-
 	// load manifests
 	manifests_base := filepath.Join(base, manifests_ns)
 	var manifests []proto.Manifest
-	if err = func () (err error) {
+	if err = func() (err error) {
 		lock, err := s.FDLocks.Take()
 		if err != nil {
 			return
 		}
 		defer lock.Release()
 
-		err = filepath.Walk(manifests_base, func (path string, info os.FileInfo, ferr error) (err error){
+		err = filepath.Walk(manifests_base, func(path string, info os.FileInfo, ferr error) (err error) {
 			if strings.HasSuffix(path, "-manifest.json") {
 				var man proto.Manifest
 				if man, err = s.readManifest(path); err != nil {
@@ -404,7 +401,7 @@ func (s *BlockStorage) FinishUploadSession(uploadID uuid.UUID) (err error) {
 			// move manifest
 			manTarget := s.idPath(manifests_ns, m.ID) + ".json"
 			os.MkdirAll(filepath.Dir(manTarget), 0755)
-			err = os.Rename(filepath.Join(manifests_base, m.ID.String() + "-manifest.json"), manTarget)
+			err = os.Rename(filepath.Join(manifests_base, m.ID.String()+"-manifest.json"), manTarget)
 			return
 		}, &req, &res, concurrency.DefaultBatchOptions().AllowErrors(),
 	)

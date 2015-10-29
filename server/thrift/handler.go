@@ -8,8 +8,8 @@ import (
 	"github.com/akaspin/bar/server/storage"
 	"github.com/nu7hatch/gouuid"
 	"github.com/tamtam-im/logx"
-	"time"
 	"golang.org/x/net/context"
+	"time"
 )
 
 // Bar server thrift handler

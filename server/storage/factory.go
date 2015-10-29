@@ -1,7 +1,8 @@
 package storage
+
 import (
-	"strings"
 	"fmt"
+	"strings"
 )
 
 // Storage factory

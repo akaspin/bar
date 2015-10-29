@@ -1,20 +1,20 @@
 package command
+
 import (
+	"fmt"
+	"github.com/akaspin/bar/client/git"
+	"github.com/akaspin/bar/client/model"
 	"github.com/spf13/cobra"
 	"github.com/tamtam-im/logx"
-	"fmt"
-	"github.com/akaspin/bar/client/model"
-	"github.com/akaspin/bar/client/git"
 )
 
-type GitDivertBeginCmd struct  {
+type GitDivertBeginCmd struct {
 	*Environment
 	*CommonOptions
-
 }
 
 func (c *GitDivertBeginCmd) Init(cc *cobra.Command) {
-	cc.Use = "begin BRANCH [# TREE-ISH ...]"
+	cc.Use = "begin branch [# tree-ish ...]"
 	cc.Short = "begin covert op"
 }
 

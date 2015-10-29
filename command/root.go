@@ -76,7 +76,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) (err error) {
 		Attach(&PingCmd{Environment: env, CommonOptions: cOpts}, env),
 		Attach(&ServerCmd{}, env,
 			Attach(&ServerRunCmd{
-				Environment: env,
+				Environment:   env,
 				CommonOptions: cOpts,
 				ServerOptions: serverOpts,
 			}, env),
