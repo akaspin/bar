@@ -9,13 +9,12 @@ import (
 	"github.com/akaspin/bar/proto"
 	"encoding/json"
 	"time"
-	"github.com/akaspin/bar/concurrent"
+	"github.com/akaspin/concurrency"
 	"golang.org/x/net/context"
 	"github.com/nu7hatch/gouuid"
 	"strings"
 	"encoding/hex"
 	"github.com/tamtam-im/logx"
-"github.com/akaspin/concurrency"
 )
 
 const (
@@ -72,14 +71,14 @@ type BlockStorage struct {
 	// Max Open files locker
 	FDLocks *concurrency.Locks
 
-	*concurrent.BatchPool
+	*concurrency.BatchPool
 }
 
 func NewBlockStorage(options *BlockStorageOptions) *BlockStorage {
 	return &BlockStorage{
 		BlockStorageOptions: options,
 		FDLocks: concurrency.NewLocks(context.Background(), options.MaxFiles, time.Minute * 5),
-		BatchPool: concurrent.NewPool(options.PoolSize),
+		BatchPool: concurrency.NewPool(options.PoolSize),
 	}
 }
 
@@ -147,7 +146,7 @@ func (s *BlockStorage) GetManifests(ids []proto.ID) (res []proto.Manifest, err e
 			r := in.(proto.ID)
 			out, err = s.readManifest(s.idPath(manifests_ns, r) + ".json")
 			return
-		}, &req, &res1, concurrent.DefaultBatchOptions(),
+		}, &req, &res1, concurrency.DefaultBatchOptions(),
 	); err != nil {
 		return
 	}
@@ -407,7 +406,7 @@ func (s *BlockStorage) FinishUploadSession(uploadID uuid.UUID) (err error) {
 			os.MkdirAll(filepath.Dir(manTarget), 0755)
 			err = os.Rename(filepath.Join(manifests_base, m.ID.String() + "-manifest.json"), manTarget)
 			return
-		}, &req, &res, concurrent.DefaultBatchOptions().AllowErrors(),
+		}, &req, &res, concurrency.DefaultBatchOptions().AllowErrors(),
 	)
 	return
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/akaspin/bar/proto"
 	"strings"
 	"golang.org/x/net/context"
-	"github.com/akaspin/bar/concurrent"
+	"github.com/akaspin/concurrency"
 )
 
 type Assembler struct  {
@@ -106,7 +106,7 @@ func (a *Assembler) Done(what lists.BlobMap) (err error) {
 			err = a.commitBlob(r.Name, r.Manifest.ID)
 
 			return
-		}, &req, &res, concurrent.DefaultBatchOptions().AllowErrors(),
+		}, &req, &res, concurrency.DefaultBatchOptions().AllowErrors(),
 	)
 	if err != nil {
 		return

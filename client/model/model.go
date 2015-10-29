@@ -8,9 +8,8 @@ import (
 	"path/filepath"
 	"github.com/akaspin/bar/client/lists"
 	"time"
-	"github.com/akaspin/bar/concurrent"
+	"github.com/akaspin/concurrency"
 	"golang.org/x/net/context"
-"github.com/akaspin/concurrency"
 )
 
 
@@ -18,14 +17,14 @@ type Model struct {
 	WD string
 	Git *git.Git
 	FdLocks *concurrency.Locks
-	*concurrent.BatchPool
+	*concurrency.BatchPool
 	chunkSize int64
 }
 
 func New(wd string, useGit bool, chunkSize int64, pool int) (res *Model, err error) {
 	res = &Model{
 		WD: wd,
-		BatchPool: concurrent.NewPool(pool * 32),
+		BatchPool: concurrency.NewPool(pool * 32),
 		chunkSize: chunkSize,
 		FdLocks: concurrency.NewLocks(context.Background(), pool, time.Minute * 5),
 	}
@@ -96,7 +95,7 @@ func (m *Model) FeedManifests(blobs, manifests, strict bool, names ...string) (r
 			}{in.(string), res2}
 			return
 		},
-		&req, &res1, concurrent.DefaultBatchOptions().AllowErrors(),
+		&req, &res1, concurrency.DefaultBatchOptions().AllowErrors(),
 	)
 	res = lists.BlobMap{}
 	for _, r := range res1 {
@@ -175,7 +174,7 @@ func (m *Model) IsBlobs(names ...string) (res map[string]bool, err error) {
 			out = struct{name string; isBlob bool}{in.(string), !isManifest}
 			return
 		},
-		&req, &res1, concurrent.DefaultBatchOptions(),
+		&req, &res1, concurrency.DefaultBatchOptions(),
 	)
 
 	for _, r := range res1 {
@@ -222,7 +221,7 @@ func (m *Model) SquashBlobs(blobs lists.BlobMap) (err error) {
 			logx.Debugf("squashed %s", r.Name)
 			return
 		},
-		&req, &res, concurrent.DefaultBatchOptions().AllowErrors(),
+		&req, &res, concurrency.DefaultBatchOptions().AllowErrors(),
 	)
 	if err != nil {
 		return

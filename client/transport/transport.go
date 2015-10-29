@@ -9,7 +9,7 @@ import (
 	"strings"
 	"github.com/akaspin/bar/proto/wire"
 	"golang.org/x/net/context"
-	"github.com/akaspin/bar/concurrent"
+	"github.com/akaspin/concurrency"
 )
 
 // Common transport with pooled connections
@@ -17,7 +17,7 @@ type Transport struct {
 	model *model.Model
 	rpcPool *RPCPool
 	tPool *TPool
-	*concurrent.BatchPool
+	*concurrency.BatchPool
 }
 
 // New RPC pool with default endpoint
@@ -27,7 +27,7 @@ func NewTransport(mod *model.Model, endpoint string, rpcEndpoints string, n int)
 		model: mod,
 		rpcPool: NewRPCPool(n, time.Hour, endpoint, rpcEP),
 		tPool: NewTPool(strings.Split(rpcEndpoints, ","), 1024 * 1024 * 8,  n, time.Hour),
-		BatchPool: concurrent.NewPool(n),
+		BatchPool: concurrency.NewPool(n),
 	}
 	return
 }
@@ -72,7 +72,7 @@ func (t *Transport) Upload(blobs lists.BlobMap) (err error) {
 			l := in.(lists.ChunkLink)
 			err = upload.UploadChunk(l.Name, l.Chunk)
 			return
-		}, &req, &res, concurrent.DefaultBatchOptions().AllowErrors(),
+		}, &req, &res, concurrency.DefaultBatchOptions().AllowErrors(),
 	)
 	logx.OnError(err)
 
@@ -132,7 +132,7 @@ func (t *Transport) Download(blobs lists.BlobMap) (err error) {
 
 			err = a.StoreChunk(bytes.NewReader(data), r.Chunk.ID)
 			return
-		}, &req, &res, concurrent.DefaultBatchOptions().AllowErrors(),
+		}, &req, &res, concurrency.DefaultBatchOptions().AllowErrors(),
 	)
 	logx.OnError(err)
 
