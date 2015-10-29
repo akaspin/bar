@@ -117,12 +117,15 @@ touching other files in working tree.
     ...
     
     $ git bar-divert-finish
-    # or
-    $ git bar-divert-abort
+    # or $ git bar-divert-abort to abort
     
 To check divert status use `bar divert status`
 
     $ git bar-divert-status
+    
+You can also push inactive branch:
+
+    $ git bar-divert-push other-branch
    
 ## Installation
 
