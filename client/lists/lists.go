@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"github.com/tamtam-im/logx"
 )
 
 type FileList struct {
@@ -30,6 +31,7 @@ func NewFileList(arg ...string) (res *FileList) {
 }
 
 func (l *FileList) ListDir(dir string) (res []string) {
+	logx.Trace("listing %s", dir)
 	filepath.Walk(dir, func(path string, info os.FileInfo, err1 error) error {
 		if info.IsDir() {
 			return nil

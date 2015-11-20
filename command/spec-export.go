@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tamtam-im/logx"
 	"os"
-	"path/filepath"
 	"time"
 )
 
@@ -75,7 +74,7 @@ func (c *SpecExportCmd) Run(args ...string) (err error) {
 		ccName := fmt.Sprintf("bar-spec-%d-%s.json",
 			time.Now().UnixNano(), spec.ID)
 		logx.Infof("storing carbon copy to %s", ccName)
-		ccf, err := os.Create(filepath.Join(c.WD, ccName))
+		ccf, err := os.Create(lists.OSFromSlash(lists.OSJoin(c.WD, ccName)))
 		if err != nil {
 			return err
 		}

@@ -56,7 +56,6 @@ func (s *ThriftServer) Start() (err error) {
 	case err = <-errChan:
 		return
 	}
-	return
 }
 
 func (s *ThriftServer) Stop() (err error) {

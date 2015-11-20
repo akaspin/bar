@@ -314,6 +314,7 @@ func (g *Git) FilterByAttr(diff string, filenames ...string) (res []string, err 
 			res = append(res, strings.TrimSuffix(line, suffix))
 		}
 	}
+
 	res, err = g.FromRoot(res...)
 	return
 }

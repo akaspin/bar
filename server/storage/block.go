@@ -23,6 +23,8 @@ const (
 	spec_ns      = "specs"
 	manifests_ns = "manifests"
 	upload_ns    = "uploads"
+	tags_fw_ns   = "tags-fw"
+	tags_rw_ns   = "tags-rw"
 )
 
 func BlockStorageFactory(opts map[string]string) (res Storage, err error) {
@@ -405,6 +407,23 @@ func (s *BlockStorage) FinishUploadSession(uploadID uuid.UUID) (err error) {
 			return
 		}, &req, &res, concurrency.DefaultBatchOptions().AllowErrors(),
 	)
+	return
+}
+
+//
+func (s *BlockStorage) SetTag(tag string, blobIDs []proto.ID) (err error) {
+
+
+	return
+}
+
+func (s *BlockStorage) getBlobIDsByTag(tag string) (blobIDs []proto.ID, err error) {
+	lock, err := s.FDLocks.Take()
+	if err != nil {
+		return
+	}
+	defer lock.Release()
+
 	return
 }
 

@@ -35,4 +35,11 @@ type Storage interface {
 
 	// Finish upload session
 	FinishUploadSession(uploadID uuid.UUID) (err error)
+
+	// Set tag on blobs
+	SetTag(tag string, blobIDs []proto.ID) (err error)
+
+	// Remove tag from blobs
+//	RemoveTag(tag string)
+
 }

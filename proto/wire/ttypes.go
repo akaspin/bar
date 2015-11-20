@@ -30,11 +30,11 @@ func IDPtr(v ID) *ID { return &v }
 //  - MaxConn: Preferred max connections for client
 //  - BufferSize: Thrift client buffer size
 type ServerInfo struct {
-	HttpEndpoint string   `thrift:"httpEndpoint,1" json:"httpEndpoint"`
-	RpcEndpoints []string `thrift:"rpcEndpoints,2" json:"rpcEndpoints"`
-	ChunkSize    int64    `thrift:"chunkSize,3" json:"chunkSize"`
-	MaxConn      int32    `thrift:"maxConn,4" json:"maxConn"`
-	BufferSize   int32    `thrift:"bufferSize,5" json:"bufferSize"`
+	HttpEndpoint string   `thrift:"httpEndpoint,1" db:"httpEndpoint" json:"httpEndpoint"`
+	RpcEndpoints []string `thrift:"rpcEndpoints,2" db:"rpcEndpoints" json:"rpcEndpoints"`
+	ChunkSize    int64    `thrift:"chunkSize,3" db:"chunkSize" json:"chunkSize"`
+	MaxConn      int32    `thrift:"maxConn,4" db:"maxConn" json:"maxConn"`
+	BufferSize   int32    `thrift:"bufferSize,5" db:"bufferSize" json:"bufferSize"`
 }
 
 func NewServerInfo() *ServerInfo {
@@ -75,23 +75,23 @@ func (p *ServerInfo) Read(iprot thrift.TProtocol) error {
 		}
 		switch fieldId {
 		case 1:
-			if err := p.readField1(iprot); err != nil {
+			if err := p.ReadField1(iprot); err != nil {
 				return err
 			}
 		case 2:
-			if err := p.readField2(iprot); err != nil {
+			if err := p.ReadField2(iprot); err != nil {
 				return err
 			}
 		case 3:
-			if err := p.readField3(iprot); err != nil {
+			if err := p.ReadField3(iprot); err != nil {
 				return err
 			}
 		case 4:
-			if err := p.readField4(iprot); err != nil {
+			if err := p.ReadField4(iprot); err != nil {
 				return err
 			}
 		case 5:
-			if err := p.readField5(iprot); err != nil {
+			if err := p.ReadField5(iprot); err != nil {
 				return err
 			}
 		default:
@@ -109,7 +109,7 @@ func (p *ServerInfo) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *ServerInfo) readField1(iprot thrift.TProtocol) error {
+func (p *ServerInfo) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
@@ -118,7 +118,7 @@ func (p *ServerInfo) readField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *ServerInfo) readField2(iprot thrift.TProtocol) error {
+func (p *ServerInfo) ReadField2(iprot thrift.TProtocol) error {
 	_, size, err := iprot.ReadListBegin()
 	if err != nil {
 		return thrift.PrependError("error reading list begin: ", err)
@@ -140,7 +140,7 @@ func (p *ServerInfo) readField2(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *ServerInfo) readField3(iprot thrift.TProtocol) error {
+func (p *ServerInfo) ReadField3(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return thrift.PrependError("error reading field 3: ", err)
 	} else {
@@ -149,7 +149,7 @@ func (p *ServerInfo) readField3(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *ServerInfo) readField4(iprot thrift.TProtocol) error {
+func (p *ServerInfo) ReadField4(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI32(); err != nil {
 		return thrift.PrependError("error reading field 4: ", err)
 	} else {
@@ -158,7 +158,7 @@ func (p *ServerInfo) readField4(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *ServerInfo) readField5(iprot thrift.TProtocol) error {
+func (p *ServerInfo) ReadField5(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI32(); err != nil {
 		return thrift.PrependError("error reading field 5: ", err)
 	} else {
@@ -282,8 +282,8 @@ func (p *ServerInfo) String() string {
 //  - Id
 //  - Size: data size
 type DataInfo struct {
-	Id   ID    `thrift:"id,1" json:"id"`
-	Size int64 `thrift:"size,2" json:"size"`
+	Id   ID    `thrift:"id,1" db:"id" json:"id"`
+	Size int64 `thrift:"size,2" db:"size" json:"size"`
 }
 
 func NewDataInfo() *DataInfo {
@@ -312,11 +312,11 @@ func (p *DataInfo) Read(iprot thrift.TProtocol) error {
 		}
 		switch fieldId {
 		case 1:
-			if err := p.readField1(iprot); err != nil {
+			if err := p.ReadField1(iprot); err != nil {
 				return err
 			}
 		case 2:
-			if err := p.readField2(iprot); err != nil {
+			if err := p.ReadField2(iprot); err != nil {
 				return err
 			}
 		default:
@@ -334,7 +334,7 @@ func (p *DataInfo) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *DataInfo) readField1(iprot thrift.TProtocol) error {
+func (p *DataInfo) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadBinary(); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
@@ -344,7 +344,7 @@ func (p *DataInfo) readField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *DataInfo) readField2(iprot thrift.TProtocol) error {
+func (p *DataInfo) ReadField2(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {
@@ -412,8 +412,8 @@ func (p *DataInfo) String() string {
 //  - Info
 //  - Chunks
 type Manifest struct {
-	Info   *DataInfo `thrift:"info,1" json:"info"`
-	Chunks []*Chunk  `thrift:"chunks,2" json:"chunks"`
+	Info   *DataInfo `thrift:"info,1" db:"info" json:"info"`
+	Chunks []*Chunk  `thrift:"chunks,2" db:"chunks" json:"chunks"`
 }
 
 func NewManifest() *Manifest {
@@ -451,11 +451,11 @@ func (p *Manifest) Read(iprot thrift.TProtocol) error {
 		}
 		switch fieldId {
 		case 1:
-			if err := p.readField1(iprot); err != nil {
+			if err := p.ReadField1(iprot); err != nil {
 				return err
 			}
 		case 2:
-			if err := p.readField2(iprot); err != nil {
+			if err := p.ReadField2(iprot); err != nil {
 				return err
 			}
 		default:
@@ -473,7 +473,7 @@ func (p *Manifest) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Manifest) readField1(iprot thrift.TProtocol) error {
+func (p *Manifest) ReadField1(iprot thrift.TProtocol) error {
 	p.Info = &DataInfo{}
 	if err := p.Info.Read(iprot); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Info), err)
@@ -481,7 +481,7 @@ func (p *Manifest) readField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Manifest) readField2(iprot thrift.TProtocol) error {
+func (p *Manifest) ReadField2(iprot thrift.TProtocol) error {
 	_, size, err := iprot.ReadListBegin()
 	if err != nil {
 		return thrift.PrependError("error reading list begin: ", err)
@@ -568,9 +568,9 @@ func (p *Manifest) String() string {
 //  - Info
 //  - Offset
 type Chunk struct {
-	Info *DataInfo `thrift:"info,1" json:"info"`
+	Info *DataInfo `thrift:"info,1" db:"info" json:"info"`
 	// unused field # 2
-	Offset int64 `thrift:"offset,3" json:"offset"`
+	Offset int64 `thrift:"offset,3" db:"offset" json:"offset"`
 }
 
 func NewChunk() *Chunk {
@@ -608,11 +608,11 @@ func (p *Chunk) Read(iprot thrift.TProtocol) error {
 		}
 		switch fieldId {
 		case 1:
-			if err := p.readField1(iprot); err != nil {
+			if err := p.ReadField1(iprot); err != nil {
 				return err
 			}
 		case 3:
-			if err := p.readField3(iprot); err != nil {
+			if err := p.ReadField3(iprot); err != nil {
 				return err
 			}
 		default:
@@ -630,7 +630,7 @@ func (p *Chunk) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Chunk) readField1(iprot thrift.TProtocol) error {
+func (p *Chunk) ReadField1(iprot thrift.TProtocol) error {
 	p.Info = &DataInfo{}
 	if err := p.Info.Read(iprot); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Info), err)
@@ -638,7 +638,7 @@ func (p *Chunk) readField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Chunk) readField3(iprot thrift.TProtocol) error {
+func (p *Chunk) ReadField3(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return thrift.PrependError("error reading field 3: ", err)
 	} else {
@@ -705,10 +705,10 @@ func (p *Chunk) String() string {
 //  - Blobs
 //  - Removes
 type Spec struct {
-	Id        ID            `thrift:"id,1" json:"id"`
-	Timestamp int64         `thrift:"timestamp,2" json:"timestamp"`
-	Blobs     map[string]ID `thrift:"blobs,3" json:"blobs"`
-	Removes   []string      `thrift:"removes,4" json:"removes"`
+	Id        ID            `thrift:"id,1" db:"id" json:"id"`
+	Timestamp int64         `thrift:"timestamp,2" db:"timestamp" json:"timestamp"`
+	Blobs     map[string]ID `thrift:"blobs,3" db:"blobs" json:"blobs"`
+	Removes   []string      `thrift:"removes,4" db:"removes" json:"removes"`
 }
 
 func NewSpec() *Spec {
@@ -745,19 +745,19 @@ func (p *Spec) Read(iprot thrift.TProtocol) error {
 		}
 		switch fieldId {
 		case 1:
-			if err := p.readField1(iprot); err != nil {
+			if err := p.ReadField1(iprot); err != nil {
 				return err
 			}
 		case 2:
-			if err := p.readField2(iprot); err != nil {
+			if err := p.ReadField2(iprot); err != nil {
 				return err
 			}
 		case 3:
-			if err := p.readField3(iprot); err != nil {
+			if err := p.ReadField3(iprot); err != nil {
 				return err
 			}
 		case 4:
-			if err := p.readField4(iprot); err != nil {
+			if err := p.ReadField4(iprot); err != nil {
 				return err
 			}
 		default:
@@ -775,7 +775,7 @@ func (p *Spec) Read(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Spec) readField1(iprot thrift.TProtocol) error {
+func (p *Spec) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadBinary(); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
@@ -785,7 +785,7 @@ func (p *Spec) readField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Spec) readField2(iprot thrift.TProtocol) error {
+func (p *Spec) ReadField2(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {
@@ -794,7 +794,7 @@ func (p *Spec) readField2(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Spec) readField3(iprot thrift.TProtocol) error {
+func (p *Spec) ReadField3(iprot thrift.TProtocol) error {
 	_, _, size, err := iprot.ReadMapBegin()
 	if err != nil {
 		return thrift.PrependError("error reading map begin: ", err)
@@ -823,7 +823,7 @@ func (p *Spec) readField3(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Spec) readField4(iprot thrift.TProtocol) error {
+func (p *Spec) ReadField4(iprot thrift.TProtocol) error {
 	_, size, err := iprot.ReadListBegin()
 	if err != nil {
 		return thrift.PrependError("error reading list begin: ", err)

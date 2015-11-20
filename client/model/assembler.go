@@ -41,7 +41,7 @@ func (a *Assembler) StoreChunk(r io.Reader, id proto.ID) (err error) {
 	caOpts.Hasher = sha3.New256()
 
 	w, err := contentaddressable.NewFileWithOptions(
-		filepath.Join(a.Where, id.String()), caOpts)
+		lists.OSFromSlash(lists.OSJoin(a.Where, id.String())), caOpts)
 	if os.IsExist(err) {
 		err = nil
 		return
@@ -92,18 +92,18 @@ func (a *Assembler) Done(what lists.BlobMap) (err error) {
 			}
 			defer lock.Release()
 
-			w, err := os.Create(filepath.Join(a.model.WD,
-				r.Name+r.Manifest.ID.String()))
+			w, err := os.Create(lists.OSFromSlash(lists.OSJoin(a.model.WD,
+				r.Name + "-" + r.Manifest.ID.String())))
 			if err != nil {
 				return
 			}
-			defer w.Close()
 
 			for _, chunk := range r.Manifest.Chunks {
 				if err = a.writeChunkTo(w, chunk.ID); err != nil {
 					return
 				}
 			}
+			w.Close()
 			err = a.commitBlob(r.Name, r.Manifest.ID)
 
 			return
@@ -117,9 +117,10 @@ func (a *Assembler) Done(what lists.BlobMap) (err error) {
 }
 
 func (a *Assembler) commitBlob(name string, id proto.ID) (err error) {
-	dst := filepath.Join(a.model.WD, name)
-	src := dst + id.String()
-	bak := dst + ".bak"
+	dst := lists.OSFromSlash(lists.OSJoin(a.model.WD, name))
+	src := dst + "-" + id.String()
+	bak := dst + "-bak"
+
 
 	os.Rename(dst, bak)
 	if err = os.Rename(src, dst); err != nil {
@@ -127,8 +128,8 @@ func (a *Assembler) commitBlob(name string, id proto.ID) (err error) {
 		os.Rename(bak, dst)
 		return
 	}
-	defer os.Remove(src)
-	defer os.Remove(bak)
+	os.Remove(src)
+	os.Remove(bak)
 	return
 }
 
@@ -139,7 +140,7 @@ func (a *Assembler) writeChunkTo(w io.Writer, id proto.ID) (err error) {
 	}
 	defer lock.Release()
 
-	name := filepath.Join(a.Where, id.String())
+	name := lists.OSFromSlash(lists.OSJoin(a.Where, id.String()))
 	r, err := os.Open(name)
 	if err != nil {
 		return

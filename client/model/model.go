@@ -64,7 +64,7 @@ func (m *Model) ReadChunk(name string, chunk proto.Chunk, res []byte) (err error
 	}
 	defer lock.Release()
 
-	f, err := os.Open(filepath.Join(m.WD, name))
+	f, err := os.Open(lists.OSFromSlash(lists.OSJoin(m.WD, name)))
 	if err != nil {
 		return
 	}
@@ -115,8 +115,11 @@ func (m *Model) getManifest(name string, blobs, manifests bool) (res *proto.Mani
 	}
 	defer lock.Release()
 
-	f, err := os.Open(filepath.Join(m.WD, name))
+	logx.Tracef("feeding manifest from %s",
+		lists.OSFromSlash(lists.OSJoin(m.WD, name)))
+	f, err := os.Open(lists.OSFromSlash(lists.OSJoin(m.WD, name)))
 	if err != nil {
+		logx.Errorf("!!! %s", err)
 		return
 	}
 	defer f.Close()
@@ -162,7 +165,7 @@ func (m *Model) IsBlobs(names ...string) (res map[string]bool, err error) {
 			}
 			defer lock.Release()
 
-			f, err := os.Open(filepath.Join(m.WD, in.(string)))
+			f, err := os.Open(lists.OSFromSlash(lists.OSJoin(m.WD, in.(string))))
 			if err != nil {
 				return
 			}
@@ -208,7 +211,7 @@ func (m *Model) SquashBlobs(blobs lists.BlobMap) (err error) {
 			}
 			defer lock.Release()
 
-			absname := filepath.Join(m.WD, r.Name)
+			absname := lists.OSFromSlash(lists.OSJoin(m.WD, r.Name))
 			backName := absname + ".bar-backup"
 			os.Rename(absname, absname+".bar-backup")
 			os.MkdirAll(filepath.Dir(absname), 0755)

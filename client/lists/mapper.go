@@ -2,7 +2,31 @@ package lists
 
 import (
 	"path/filepath"
+	"strings"
+	"github.com/tamtam-im/logx"
 )
+
+func OSFromSlash(name string) (res string)  {
+	res = filepath.Join(filepath.SplitList(filepath.FromSlash(name))...)
+	return
+}
+
+func OSJoin(chunks ...string) (res string) {
+	var osChunks []string
+	var escaped bool
+	for _, c := range chunks {
+		if strings.HasPrefix(c, `"`) || strings.HasSuffix(c, `"`) {
+			c = strings.Trim(c, `"`)
+			escaped = true
+		}
+		osChunks = append(osChunks, filepath.Clean(filepath.FromSlash(c)))
+	}
+	res = filepath.ToSlash(filepath.Join(osChunks...))
+	if escaped {
+		res = `"` + res + `"`
+	}
+	return
+}
 
 /*
 Mapper remaps paths from primary to secondary or vise-versa.
@@ -44,23 +68,27 @@ func (m *Mapper) FromRoot(arg ...string) (res []string, err error) {
 }
 
 func (m *Mapper) remap(from, to string, arg ...string) (res []string, err error) {
-	if from == to {
+	logx.Tracef("remapping from %s to %s %s", from, to, arg)
+	if filepath.ToSlash(from) == filepath.ToSlash(to) {
 		res = arg
 		return
 	}
 	var one string
 	for _, p := range arg {
-		if one, err = filepath.Rel(to, filepath.Join(from, p)); err != nil {
+		if one, err = filepath.Rel(OSFromSlash(to), OSFromSlash(OSJoin(from, p))); err != nil {
+			logx.Errorf(">>> %s %s %s", err, OSJoin(from, p), to)
 			return
 		}
-		res = append(res, filepath.Clean(one))
+		res = append(res, one)
 	}
+	logx.Tracef("remapped %s", res)
+
 	return
 }
 
 func (m *Mapper) ToShell(arg ...string) (res []string) {
 	for _, f := range arg {
-		res = append(res, ``+filepath.FromSlash(f)+``)
+		res = append(res, filepath.FromSlash(f))
 	}
 	return
 }

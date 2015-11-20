@@ -6,6 +6,7 @@ import (
 	"github.com/tamtam-im/logx"
 	"os"
 	"path/filepath"
+	"github.com/akaspin/bar/client/lists"
 )
 
 // Diversion spec
@@ -179,7 +180,7 @@ func (d *Divert) Cleanup(spec DivertSpec) (err error) {
 		}
 	}
 	for f, _ := range orphans {
-		os.Remove(filepath.Join(d.Git.Root, f))
+		os.Remove(lists.OSFromSlash(lists.OSJoin(d.Git.Root, f)))
 		logx.Debugf("removed orphan %s", f)
 	}
 
@@ -210,7 +211,7 @@ func (d *Divert) IsInProgress() (res bool, err error) {
 }
 
 func (d *Divert) ReadSpec() (res DivertSpec, err error) {
-	f, err := os.Open(d.specFilename())
+	f, err := os.Open(filepath.FromSlash(d.specFilename()))
 	if err != nil {
 		return
 	}

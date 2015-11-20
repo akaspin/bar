@@ -1,4 +1,6 @@
 
+
+
 /** Bard server info */
 struct ServerInfo {
     /** HTTP endpoint (http://bard.served:3000/v1) */
@@ -106,15 +108,15 @@ service Bar {
     /**
     * Tag blobs. Untagged blobs will be removed by GC.
     **/
-//    void TagBlobs (
-//        1: list<ID> ids,
-//        2: list<binary> tags,
-//    ),
-//
-//    void UntagBlobs (
-//        1: list<ID> ids,
-//        2: list<binary> tags,
-//    ),
+    void SetTag (
+        1: list<ID> ids,
+        2: binary tag,
+    ),
+
+    void RemoveTag (
+        1: list<ID> ids,
+        2: binary tag,
+    ),
 
 ///
 

@@ -57,7 +57,7 @@ dist/bindir/%: dist/%/bar
 	@mkdir -p ${@D}
 	cp dist/$*/bar dist/bindir/$*
 
-bindir: dist/bindir/windows dist/bindir/linux dist/bindir/darwin
+bindir: dist/bindir/windows #dist/bindir/linux dist/bindir/darwin
 
 install: ${INSTALL_DIR}/bar
 
@@ -65,7 +65,7 @@ uninstall:
 	-rm ${INSTALL_DIR}/bar
 
 ${INSTALL_DIR}/bar: ${SRC}
-	CGO_ENABLED=0 go install -v ${GOOPTS} ${REPO}
+	go install -ldflags '-s -X github.com/akaspin/bar/command.Version=${V}' ${REPO}
 
 run-server: install dist/bindir/windows
 	bar server run --log-level=DEBUG \

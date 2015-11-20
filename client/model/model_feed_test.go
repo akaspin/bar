@@ -19,7 +19,7 @@ func Test_Model_FeedManifests(t *testing.T) {
 	assert.NoError(t, err)
 	lx, err := m.FeedManifests(true, true, true, names...)
 	assert.NoError(t, err)
-
+	t.Log(lx.Names())
 	assert.Len(t, lx.Names(), 16)
 }
 

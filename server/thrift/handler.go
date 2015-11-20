@@ -76,6 +76,14 @@ func (h *Handler) FinishUpload(uploadId []byte) (err error) {
 	return
 }
 
+func (h *Handler) SetTag(ids [][]byte, tag []byte) (err error) {
+	return
+}
+
+func (h *Handler) RemoveTag(ids [][]byte, tag []byte) (err error) {
+	return
+}
+
 func (h *Handler) GetMissingBlobIds(ids [][]byte) (r [][]byte, err error) {
 	var req proto.IDSlice
 	if err = (&req).UnmarshalThrift(ids); err != nil {
